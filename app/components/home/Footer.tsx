@@ -68,7 +68,7 @@ export default function Footer() {
                     <a href="contact.html">Contact us</a>
                   </li>
                   <li>
-                    <a href="login.html">Log in</a>
+                    <a href="/login#signin-2">Log in</a>
                   </li>
                 </ul>
               </div>
@@ -107,7 +107,7 @@ export default function Footer() {
 
                 <ul className="widget-list">
                   <li>
-                    <a href="#">Sign In</a>
+                    <a href="/login#signin-2">Sign In</a>
                   </li>
                   <li>
                     <a href="cart.html">View Cart</a>
