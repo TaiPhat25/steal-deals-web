@@ -1,26 +1,72 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+* {
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.drag-scroll-row {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.drag-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+.drag-scroll-row__track {
+  display: flex;
+  width: max-content;
+}
+
+.drag-scroll-row.is-dragging {
+  cursor: grabbing;
+}
+
+.drag-scroll-row--products .product {
+  flex: 0 0 180px;
+  width: auto !important;
+  max-width: 180px;
+}
+
+@media (min-width: 768px) {
+  .drag-scroll-row--products .product {
+    flex: 0 0 200px;
+    width: auto !important;
+    max-width: 200px;
+  }
+}
+
+@media (min-width: 992px) {
+  .drag-scroll-row--products .product {
+    flex: 0 0 210px;
+    width: auto !important;
+    max-width: 210px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .drag-scroll-row--products .product {
+    flex: 0 0 220px;
+    width: auto !important;
+    max-width: 220px;
+  }
 }
