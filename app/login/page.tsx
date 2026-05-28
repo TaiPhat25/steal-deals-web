@@ -1,7 +1,7 @@
 import Script from "next/script";
-import LoginFooter from "./components/LoginFooter";
-import LoginHeader from "./components/LoginHeader";
-import LoginTabHashHandler from "./components/LoginTabHashHandler";
+import LoginFooter from "@/components/login/LoginFooter";
+import LoginHeader from "@/components/login/LoginHeader";
+import LoginTabHashHandler from "@/components/login/LoginTabHashHandler";
 
 const loginMainMarkup = `
             <nav aria-label="breadcrumb" class="breadcrumb-nav border-0 mb-0">
