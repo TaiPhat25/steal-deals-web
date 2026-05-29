@@ -307,7 +307,8 @@ export default function ContactPage() {
       </div>
       <div dangerouslySetInnerHTML={{ __html: contactPageExtrasMarkup }} />
       <Script src="../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js" strategy="afterInteractive" data-cfasync="false" />
-      <Script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDc3LRykbLB-y8MuomRUIY0qH5S6xgBLX4" strategy="afterInteractive" />
+      {/* Google Map script disabled until a valid API key is configured. */}
+      {/* <Script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDc3LRykbLB-y8MuomRUIY0qH5S6xgBLX4" strategy="afterInteractive" /> */}
       <Script src="/assets/js/jquery.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/jquery.hoverIntent.min.js" strategy="afterInteractive" />

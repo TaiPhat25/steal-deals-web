@@ -160,7 +160,7 @@ const contactMainMarkup = `
 	                	</div><!-- End .row -->
                 	</div><!-- End .stores -->
                 </div><!-- End .container -->
-            	<div id="map"></div><!-- End #map -->
+            	<!-- <div id="map"></div> --><!-- Google Map section disabled. -->
             </div><!-- End .page-content -->
         `;
 
