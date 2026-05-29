@@ -63,7 +63,7 @@ export default function Header() {
                     </a>
                   </li>
                   <li>
-                    <a href="#">About Us</a>
+                    <a href="/about">About Us</a>
                   </li>
                   <li>
                     <a href="#">Contact Us</a>
@@ -716,12 +716,12 @@ export default function Header() {
                     </a>
                     <ul>
                       <li>
-                        <a href="about.html" className="sf-with-ul">
+                        <a href="/about" className="sf-with-ul">
                           About
                         </a>
                         <ul>
                           <li>
-                            <a href="about.html">About 01</a>
+                            <a href="/about">About 01</a>
                           </li>
                           <li>
                             <a href="about-2.html">About 02</a>

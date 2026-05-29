@@ -194,11 +194,11 @@ export default function MobileMenu() {
                 <a href="#">Pages</a>
                 <ul>
                   <li>
-                    <a href="about.html">About</a>
+                    <a href="/about">About</a>
 
                     <ul>
                       <li>
-                        <a href="about.html">About 01</a>
+                        <a href="/about">About 01</a>
                       </li>
                       <li>
                         <a href="about-2.html">About 02</a>

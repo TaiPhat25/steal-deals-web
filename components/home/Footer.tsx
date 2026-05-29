@@ -56,7 +56,7 @@ export default function Footer() {
 
                 <ul className="widget-list">
                   <li>
-                    <a href="about.html">About Molla</a>
+                    <a href="/about">About Molla</a>
                   </li>
                   <li>
                     <a href="#">How to shop on Molla</a>
