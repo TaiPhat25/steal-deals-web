@@ -1,4 +1,4 @@
-const contactFooterMarkup = `
+const layoutFooterMarkup = `
         	<div class="footer-middle border-0">
 	            <div class="container">
 	            	<div class="row">
@@ -73,6 +73,6 @@ const contactFooterMarkup = `
 	        </div><!-- End .footer-bottom -->
         `;
 
-export default function ContactFooter() {
-  return <footer className="footer" dangerouslySetInnerHTML={{ __html: contactFooterMarkup }} />;
+export default function Footer() {
+  return <footer className="footer" dangerouslySetInnerHTML={{ __html: layoutFooterMarkup }} />;
 }

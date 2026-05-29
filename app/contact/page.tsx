@@ -1,6 +1,6 @@
 import Script from "next/script";
-import ContactFooter from "@/components/contact/ContactFooter";
-import ContactHeader from "@/components/contact/ContactHeader";
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
 import ContactMain from "@/components/contact/ContactMain";
 
 const contactPageExtrasMarkup = `
@@ -301,9 +301,9 @@ export default function ContactPage() {
   return (
     <>
       <div className="page-wrapper">
-        <ContactHeader />
+        <Header />
         <ContactMain />
-        <ContactFooter />
+        <Footer />
       </div>
       <div dangerouslySetInnerHTML={{ __html: contactPageExtrasMarkup }} />
       <Script src="../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js" strategy="afterInteractive" data-cfasync="false" />

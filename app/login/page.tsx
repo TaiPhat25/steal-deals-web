@@ -1,6 +1,6 @@
 import Script from "next/script";
-import LoginFooter from "@/components/login/LoginFooter";
-import LoginHeader from "@/components/login/LoginHeader";
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
 import LoginTabHashHandler from "@/components/login/LoginTabHashHandler";
 
 const loginMainMarkup = `
@@ -419,9 +419,9 @@ export default function LoginPage() {
   return (
     <>
       <div className="page-wrapper">
-        <LoginHeader />
+        <Header />
         <LoginMain />
-        <LoginFooter />
+        <Footer />
       </div>
       <div dangerouslySetInnerHTML={{ __html: loginPageExtrasMarkup }} />
       <LoginTabHashHandler />

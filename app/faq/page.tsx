@@ -1,6 +1,6 @@
 import Script from "next/script";
-import FaqFooter from "@/components/faq/FaqFooter";
-import FaqHeader from "@/components/faq/FaqHeader";
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
 import FaqMain from "@/components/faq/FaqMain";
 
 const faqPageExtrasMarkup = `
@@ -300,9 +300,9 @@ export default function FaqPage() {
   return (
     <>
       <div className="page-wrapper">
-        <FaqHeader />
+        <Header />
         <FaqMain />
-        <FaqFooter />
+        <Footer />
       </div>
       <div dangerouslySetInnerHTML={{ __html: faqPageExtrasMarkup }} />
       <Script src="/assets/js/jquery.min.js" strategy="afterInteractive" />

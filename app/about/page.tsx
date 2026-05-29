@@ -1,6 +1,6 @@
 import Script from "next/script";
-import AboutFooter from "@/components/about/AboutFooter";
-import AboutHeader from "@/components/about/AboutHeader";
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
 import AboutMain from "@/components/about/AboutMain";
 
 const aboutPageExtrasMarkup = `
@@ -299,9 +299,9 @@ export default function AboutPage() {
   return (
     <>
       <div className="page-wrapper">
-        <AboutHeader />
+        <Header />
         <AboutMain />
-        <AboutFooter />
+        <Footer />
       </div>
       <div dangerouslySetInnerHTML={{ __html: aboutPageExtrasMarkup }} />
       <Script src="/assets/js/jquery.min.js" strategy="afterInteractive" />
