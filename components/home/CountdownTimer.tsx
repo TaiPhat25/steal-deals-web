@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type CountdownTimerProps = {
   hours: number;
@@ -13,16 +13,18 @@ function formatTwoDigits(value: number) {
 }
 
 export default function CountdownTimer({ hours, className, compact }: CountdownTimerProps) {
-  const targetTime = useMemo(() => Date.now() + hours * 60 * 60 * 1000, [hours]);
-  const [remainingMs, setRemainingMs] = useState(() => Math.max(targetTime - Date.now(), 0));
+  const durationMs = hours * 60 * 60 * 1000;
+  const [remainingMs, setRemainingMs] = useState(durationMs);
 
   useEffect(() => {
+    const targetTime = Date.now() + durationMs;
+
     const intervalId = window.setInterval(() => {
       setRemainingMs(Math.max(targetTime - Date.now(), 0));
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [targetTime]);
+  }, [durationMs]);
 
   const totalSeconds = Math.floor(remainingMs / 1000);
   const hoursLeft = Math.floor(totalSeconds / 3600);
