@@ -62,10 +62,10 @@ export default function Footer() {
                     <a href="#">How to shop on Molla</a>
                   </li>
                   <li>
-                    <a href="faq.html">FAQ</a>
+                    <a href="/faq">FAQ</a>
                   </li>
                   <li>
-                    <a href="contact.html">Contact us</a>
+                    <a href="/contact">Contact us</a>
                   </li>
                   <li>
                     <a href="/login#signin-2">Log in</a>

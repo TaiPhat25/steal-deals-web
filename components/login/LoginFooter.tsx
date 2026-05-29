@@ -24,8 +24,8 @@ const loginFooterMarkup = `
 	            				<ul class="widget-list">
 	            					<li><a href="/about">About Molla</a></li>
 	            					<li><a href="#">How to shop on Molla</a></li>
-	            					<li><a href="#">FAQ</a></li>
-	            					<li><a href="contact.html">Contact us</a></li>
+	            					<li><a href="/faq">FAQ</a></li>
+	            					<li><a href="/contact">Contact us</a></li>
 	            					<li><a href="login.html">Log in</a></li>
 	            				</ul><!-- End .widget-list -->
 	            			</div><!-- End .widget -->

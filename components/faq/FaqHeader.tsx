@@ -1,4 +1,4 @@
-const loginHeaderMarkup = `
+const faqHeaderMarkup = `
             <div class="header-top">
                 <div class="container">
                     <div class="header-left">
@@ -33,7 +33,7 @@ const loginHeaderMarkup = `
                                     <li><a href="wishlist.html"><i class="icon-heart-o"></i>Wishlist <span>(3)</span></a></li>
                                     <li><a href="/about">About Us</a></li>
                                     <li><a href="/contact">Contact Us</a></li>
-                                    <li><a href="#signin-modal" data-toggle="modal"><i class="icon-user"></i>Login</a></li>
+                                    <li><a href="/login#signin-2"><i class="icon-user"></i>Login</a></li>
                                 </ul>
                             </li>
                         </ul><!-- End .top-menu -->
@@ -352,7 +352,7 @@ const loginHeaderMarkup = `
                                                 <li><a href="contact-2.html">Contact 02</a></li>
                                             </ul>
                                         </li>
-                                        <li><a href="login.html">Login</a></li>
+                                        <li><a href="/login#signin-2">Login</a></li>
                                         <li><a href="/faq">FAQs</a></li>
                                         <li><a href="404.html">Error 404</a></li>
                                         <li><a href="coming-soon.html">Coming Soon</a></li>
@@ -523,6 +523,6 @@ const loginHeaderMarkup = `
             </div><!-- End .header-middle -->
         `;
 
-export default function LoginHeader() {
-  return <header className="header" dangerouslySetInnerHTML={{ __html: loginHeaderMarkup }} />;
+export default function FaqHeader() {
+  return <header className="header" dangerouslySetInnerHTML={{ __html: faqHeaderMarkup }} />;
 }

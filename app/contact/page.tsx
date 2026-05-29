@@ -1,125 +1,9 @@
 import Script from "next/script";
-import LoginFooter from "@/components/login/LoginFooter";
-import LoginHeader from "@/components/login/LoginHeader";
-import LoginTabHashHandler from "@/components/login/LoginTabHashHandler";
+import ContactFooter from "@/components/contact/ContactFooter";
+import ContactHeader from "@/components/contact/ContactHeader";
+import ContactMain from "@/components/contact/ContactMain";
 
-const loginMainMarkup = `
-            <nav aria-label="breadcrumb" class="breadcrumb-nav border-0 mb-0">
-                <div class="container">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="/">Home</a></li>
-                        <li class="breadcrumb-item"><a href="#">Pages</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Login</li>
-                    </ol>
-                </div><!-- End .container -->
-            </nav><!-- End .breadcrumb-nav -->
-
-            <div class="login-page bg-image pt-8 pb-8 pt-md-12 pb-md-12 pt-lg-17 pb-lg-17" style="background-image: url('/assets/images/backgrounds/login-bg.jpg')">
-            	<div class="container">
-            		<div class="form-box">
-            			<div class="form-tab">
-	            			<ul class="nav nav-pills nav-fill" role="tablist">
-							    <li class="nav-item">
-							        <a class="nav-link" id="signin-tab-2" data-toggle="tab" href="#signin-2" role="tab" aria-controls="signin-2" aria-selected="false">Sign In</a>
-							    </li>
-							    <li class="nav-item">
-							        <a class="nav-link active" id="register-tab-2" data-toggle="tab" href="#register-2" role="tab" aria-controls="register-2" aria-selected="true">Register</a>
-							    </li>
-							</ul>
-							<div class="tab-content">
-							    <div class="tab-pane fade" id="signin-2" role="tabpanel" aria-labelledby="signin-tab-2">
-							    	<form action="#">
-							    		<div class="form-group">
-							    			<label for="singin-email-2">Username or email address *</label>
-							    			<input type="text" class="form-control" id="singin-email-2" name="singin-email" required>
-							    		</div><!-- End .form-group -->
-
-							    		<div class="form-group">
-							    			<label for="singin-password-2">Password *</label>
-							    			<input type="password" class="form-control" id="singin-password-2" name="singin-password" required>
-							    		</div><!-- End .form-group -->
-
-							    		<div class="form-footer">
-							    			<button type="submit" class="btn btn-outline-primary-2">
-			                					<span>LOG IN</span>
-			            						<i class="icon-long-arrow-right"></i>
-			                				</button>
-
-			                				<div class="custom-control custom-checkbox">
-												<input type="checkbox" class="custom-control-input" id="signin-remember-2">
-												<label class="custom-control-label" for="signin-remember-2">Remember Me</label>
-											</div><!-- End .custom-checkbox -->
-
-											<a href="#" class="forgot-link">Forgot Your Password?</a>
-							    		</div><!-- End .form-footer -->
-							    	</form>
-							    	<div class="form-choice">
-								    	<p class="text-center">or sign in with</p>
-								    	<div class="row">
-								    		<div class="col-sm-6">
-								    			<a href="#" class="btn btn-login btn-g">
-								    				<i class="icon-google"></i>
-								    				Login With Google
-								    			</a>
-								    		</div><!-- End .col-6 -->
-								    		<div class="col-sm-6">
-								    			<a href="#" class="btn btn-login btn-f">
-								    				<i class="icon-facebook-f"></i>
-								    				Login With Facebook
-								    			</a>
-								    		</div><!-- End .col-6 -->
-								    	</div><!-- End .row -->
-							    	</div><!-- End .form-choice -->
-							    </div><!-- .End .tab-pane -->
-							    <div class="tab-pane fade show active" id="register-2" role="tabpanel" aria-labelledby="register-tab-2">
-							    	<form action="#">
-							    		<div class="form-group">
-							    			<label for="register-email-2">Your email address *</label>
-							    			<input type="email" class="form-control" id="register-email-2" name="register-email" required>
-							    		</div><!-- End .form-group -->
-
-							    		<div class="form-group">
-							    			<label for="register-password-2">Password *</label>
-							    			<input type="password" class="form-control" id="register-password-2" name="register-password" required>
-							    		</div><!-- End .form-group -->
-
-							    		<div class="form-footer">
-							    			<button type="submit" class="btn btn-outline-primary-2">
-			                					<span>SIGN UP</span>
-			            						<i class="icon-long-arrow-right"></i>
-			                				</button>
-
-			                				<div class="custom-control custom-checkbox">
-												<input type="checkbox" class="custom-control-input" id="register-policy-2" required>
-												<label class="custom-control-label" for="register-policy-2">I agree to the <a href="#">privacy policy</a> *</label>
-											</div><!-- End .custom-checkbox -->
-							    		</div><!-- End .form-footer -->
-							    	</form>
-							    	<div class="form-choice">
-								    	<p class="text-center">or sign in with</p>
-								    	<div class="row">
-								    		<div class="col-sm-6">
-								    			<a href="#" class="btn btn-login btn-g">
-								    				<i class="icon-google"></i>
-								    				Login With Google
-								    			</a>
-								    		</div><!-- End .col-6 -->
-								    		<div class="col-sm-6">
-								    			<a href="#" class="btn btn-login  btn-f">
-								    				<i class="icon-facebook-f"></i>
-								    				Login With Facebook
-								    			</a>
-								    		</div><!-- End .col-6 -->
-								    	</div><!-- End .row -->
-							    	</div><!-- End .form-choice -->
-							    </div><!-- .End .tab-pane -->
-							</div><!-- End .tab-content -->
-						</div><!-- End .form-tab -->
-            		</div><!-- End .form-box -->
-            	</div><!-- End .container -->
-            </div><!-- End .login-page section-bg -->
-        `;
-const loginPageExtrasMarkup = `
+const contactPageExtrasMarkup = `
     <button id="scroll-top" title="Back to Top"><i class="icon-arrow-up"></i></button>
 
     <!-- Mobile Menu -->
@@ -216,7 +100,7 @@ const loginPageExtrasMarkup = `
                                     <li><a href="contact-2.html">Contact 02</a></li>
                                 </ul>
                             </li>
-                            <li><a href="login.html">Login</a></li>
+                            <li><a href="/login#signin-2">Login</a></li>
                             <li><a href="/faq">FAQs</a></li>
                             <li><a href="404.html">Error 404</a></li>
                             <li><a href="coming-soon.html">Coming Soon</a></li>
@@ -408,23 +292,22 @@ const loginPageExtrasMarkup = `
         </div><!-- End .modal-dialog -->
     </div><!-- End .modal -->
 
+    <!-- Google Map -->
+
     <!-- Plugins JS File -->
     <!-- Main JS File -->`;
 
-function LoginMain() {
-  return <main className="main" dangerouslySetInnerHTML={{ __html: loginMainMarkup }} />;
-}
-
-export default function LoginPage() {
+export default function ContactPage() {
   return (
     <>
       <div className="page-wrapper">
-        <LoginHeader />
-        <LoginMain />
-        <LoginFooter />
+        <ContactHeader />
+        <ContactMain />
+        <ContactFooter />
       </div>
-      <div dangerouslySetInnerHTML={{ __html: loginPageExtrasMarkup }} />
-      <LoginTabHashHandler />
+      <div dangerouslySetInnerHTML={{ __html: contactPageExtrasMarkup }} />
+      <Script src="../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js" strategy="afterInteractive" data-cfasync="false" />
+      <Script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDc3LRykbLB-y8MuomRUIY0qH5S6xgBLX4" strategy="afterInteractive" />
       <Script src="/assets/js/jquery.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/jquery.hoverIntent.min.js" strategy="afterInteractive" />
@@ -433,7 +316,7 @@ export default function LoginPage() {
       <Script src="/assets/js/owl.carousel.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/main.js" strategy="afterInteractive" />
       <Script src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" strategy="afterInteractive" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"ecd4920e43e14654b78e65dbf8311922","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossOrigin="anonymous" />
-      <Script id="login-inline-script-9" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f3404a4db91b5bc',t:'MTc3NzM1NzgyNA=='};var a=document.createElement('script');a.src='../../cdn-cgi/challenge-platform/h/g/scripts/jsd/a80f1640690f/maind41d.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();` }} />
+      <Script id="contact-inline-script-11" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f3404a19ce1b5bc',t:'MTc3NzM1NzgyNA=='};var a=document.createElement('script');a.src='../../cdn-cgi/challenge-platform/h/g/scripts/jsd/a80f1640690f/maind41d.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();` }} />
     </>
   );
 }

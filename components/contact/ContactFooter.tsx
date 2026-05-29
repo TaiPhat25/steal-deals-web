@@ -1,4 +1,4 @@
-const aboutFooterMarkup = `
+const contactFooterMarkup = `
         	<div class="footer-middle border-0">
 	            <div class="container">
 	            	<div class="row">
@@ -73,6 +73,6 @@ const aboutFooterMarkup = `
 	        </div><!-- End .footer-bottom -->
         `;
 
-export default function AboutFooter() {
-  return <footer className="footer" dangerouslySetInnerHTML={{ __html: aboutFooterMarkup }} />;
+export default function ContactFooter() {
+  return <footer className="footer" dangerouslySetInnerHTML={{ __html: contactFooterMarkup }} />;
 }

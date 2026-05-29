@@ -93,15 +93,15 @@ const aboutPageExtrasMarkup = `
                                 </ul>
                             </li>
                             <li>
-                                <a href="contact.html">Contact</a>
+                                <a href="/contact">Contact</a>
 
                                 <ul>
-                                    <li><a href="contact.html">Contact 01</a></li>
+                                    <li><a href="/contact">Contact 01</a></li>
                                     <li><a href="contact-2.html">Contact 02</a></li>
                                 </ul>
                             </li>
                             <li><a href="/login#signin-2">Login</a></li>
-                            <li><a href="faq.html">FAQs</a></li>
+                            <li><a href="/faq">FAQs</a></li>
                             <li><a href="404.html">Error 404</a></li>
                             <li><a href="coming-soon.html">Coming Soon</a></li>
                         </ul>

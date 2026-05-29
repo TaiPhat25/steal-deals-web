@@ -206,11 +206,11 @@ export default function MobileMenu() {
                     </ul>
                   </li>
                   <li>
-                    <a href="contact.html">Contact</a>
+                    <a href="/contact">Contact</a>
 
                     <ul>
                       <li>
-                        <a href="contact.html">Contact 01</a>
+                        <a href="/contact">Contact 01</a>
                       </li>
                       <li>
                         <a href="contact-2.html">Contact 02</a>
@@ -221,7 +221,7 @@ export default function MobileMenu() {
                     <a href="login.html">Login</a>
                   </li>
                   <li>
-                    <a href="faq.html">FAQs</a>
+                    <a href="/faq">FAQs</a>
                   </li>
                   <li>
                     <a href="404.html">Error 404</a>
