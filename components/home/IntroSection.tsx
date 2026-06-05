@@ -40,7 +40,7 @@ export default function IntroSection() {
               backgroundColor: "#dd6584",
             }}
           >
-            <div className="intro-content intro-content-right">
+            {/* <div className="intro-content intro-content-right">
               <h6 className="font-weight-normal text-white my-2 mt-0">
                 100% Recyclable Packaging
               </h6>
@@ -54,7 +54,7 @@ export default function IntroSection() {
               <a href="#" className="btn btn-primary text-uppercase">
                 Shop now
               </a>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

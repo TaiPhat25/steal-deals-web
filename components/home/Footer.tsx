@@ -9,6 +9,7 @@ export default function Footer() {
           <div className="row">
             <div className="col-12 col-lg-2-5cols">
               <div className="widget widget-about mb-4">
+                {/*
                 <img
                   src="/assets/images/demos/demo-26/logo-footer.png"
                   className="footer-logo"
@@ -16,6 +17,22 @@ export default function Footer() {
                   width="105"
                   height="25"
                 />
+                */}
+                <a
+                  href="/"
+                  className="footer-logo"
+                  style={{
+                    display: "inline-block",
+                    color: "#22a642",
+                    fontSize: "2.6rem",
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    textDecoration: "none",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Steal Deal
+                </a>
                 <p className="font-weight-light second-primary-color text-light">
                   Praesent dapibus, neque id cursus ucibus, tortor neque egestas augue,
                   eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi,
@@ -56,10 +73,10 @@ export default function Footer() {
 
                 <ul className="widget-list">
                   <li>
-                    <a href="/about">About Molla</a>
+                    <a href="/about">About Steal Deal</a>
                   </li>
                   <li>
-                    <a href="#">How to shop on Molla</a>
+                    <a href="#">How to shop on Steal Deal</a>
                   </li>
                   <li>
                     <a href="/faq">FAQ</a>
@@ -110,7 +127,7 @@ export default function Footer() {
                     <a href="/login#signin-2">Sign In</a>
                   </li>
                   <li>
-                    <a href="cart.html">View Cart</a>
+                    <a href="/cart">View Cart</a>
                   </li>
                   <li>
                     <a href="#">My Wishlist</a>
@@ -131,7 +148,7 @@ export default function Footer() {
       <div className="footer-bottom font-weight-normal">
         <div className="container">
           <p className="footer-copyright font-weight-light text-light">
-            Copyright © 2020 Molla Store. All Rights Reserved.
+            Copyright © 2020 Steal Deal Store. All Rights Reserved.
           </p>
           <ul className="footer-menu justify-content-center">
             <li>

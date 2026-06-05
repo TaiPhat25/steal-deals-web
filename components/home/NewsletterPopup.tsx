@@ -18,7 +18,7 @@ export default function NewsletterPopup() {
                   <mark>%</mark> off
                 </h2>
                 <p>
-                  Subscribe to the Molla eCommerce newsletter to receive timely updates from your favorite products.
+                  Subscribe to the Steal Deal eCommerce newsletter to receive timely updates from your favorite products.
                 </p>
                 <form action="#">
                   <div className="input-group input-group-round">

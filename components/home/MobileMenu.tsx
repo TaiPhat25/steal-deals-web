@@ -142,10 +142,10 @@ export default function MobileMenu() {
                     </a>
                   </li>
                   <li>
-                    <a href="cart.html">Cart</a>
+                    <a href="/cart">Cart</a>
                   </li>
                   <li>
-                    <a href="checkout.html">Checkout</a>
+                    <a href="/checkout">Checkout</a>
                   </li>
                   <li>
                     <a href="wishlist.html">Wishlist</a>

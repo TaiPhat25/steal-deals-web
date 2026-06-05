@@ -1,9 +1,9 @@
 import Script from "next/script";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
-import AboutMain from "@/components/about/AboutMain";
+import CheckoutMain from "@/components/checkout/CheckoutMain";
 
-const aboutPageExtrasMarkup = `
+const checkoutPageExtrasMarkup = `
     <button id="scroll-top" title="Back to Top"><i class="icon-arrow-up"></i></button>
 
     <!-- Mobile Menu -->
@@ -293,17 +293,18 @@ const aboutPageExtrasMarkup = `
     </div><!-- End .modal -->
 
     <!-- Plugins JS File -->
-    <!-- Main JS File -->`;
+    <!-- Main JS File -->
+`;
 
-export default function AboutPage() {
+export default function CheckoutPage() {
   return (
     <>
       <div className="page-wrapper">
         <Header />
-        <AboutMain />
+        <CheckoutMain />
         <Footer />
       </div>
-      <div dangerouslySetInnerHTML={{ __html: aboutPageExtrasMarkup }} />
+      <div dangerouslySetInnerHTML={{ __html: checkoutPageExtrasMarkup }} />
       <Script src="/assets/js/jquery.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/jquery.hoverIntent.min.js" strategy="afterInteractive" />
@@ -311,8 +312,8 @@ export default function AboutPage() {
       <Script src="/assets/js/superfish.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/owl.carousel.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/main.js" strategy="afterInteractive" />
+      <Script id="checkout-inline-script-8" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f34048a1c6e85ef',t:'MTc3NzM1NzgyMA=='};var a=document.createElement('script');a.src='../../cdn-cgi/challenge-platform/h/g/scripts/jsd/a80f1640690f/maind41d.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();` }} />
       <Script src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" strategy="afterInteractive" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"ecd4920e43e14654b78e65dbf8311922","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossOrigin="anonymous" />
-      <Script id="about-inline-script-9" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f34049e1d1ab5bc',t:'MTc3NzM1NzgyMw=='};var a=document.createElement('script');a.src='../../cdn-cgi/challenge-platform/h/g/scripts/jsd/a80f1640690f/maind41d.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();` }} />
     </>
   );
 }

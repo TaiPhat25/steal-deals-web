@@ -10,7 +10,7 @@ export default function NewsletterSection() {
             New Customer Discount
           </h3>
           <h2 className="newsletter-text font-weight-bold text-center my-4 mt-0">
-            <span className="text-primary">20% Off </span>Your First Order at Molla
+            <span className="text-primary">20% Off </span>Your First Order at Steal Deal
           </h2>
           <p className="text-light font-weight-normal text-center mb-2">
             New customers: <b className="text-dark">Save 20%</b> when you sign up for

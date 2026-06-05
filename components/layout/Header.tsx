@@ -48,8 +48,9 @@ const layoutHeaderMarkup = `
                             <span class="sr-only">Toggle mobile menu</span>
                             <i class="icon-bars"></i>
                         </button>
-                        <a href="/" class="logo">
-                            <img src="/assets/images/demos/demo-28/logo.png" alt="Molla Logo" width="105" height="25">
+                        <a href="/" class="logo" style="color: #22a642; font-size: 2.6rem; font-weight: 700; line-height: 1; text-decoration: none; white-space: nowrap;">
+                            <!-- <img src="/assets/images/demos/demo-28/logo.png" alt="Steal Deal Logo" width="105" height="25"> -->
+                            Steal Deal
                         </a>
 
                         <nav class="main-nav">
@@ -271,8 +272,8 @@ const layoutHeaderMarkup = `
                                                             </ul>
                                                             <div class="menu-title">Shop Pages</div><!-- End .menu-title -->
                                                             <ul>
-                                                                <li><a href="cart.html">Cart</a></li>
-                                                                <li><a href="checkout.html">Checkout</a></li>
+                                                                <li><a href="/cart">Cart</a></li>
+                                                                <li><a href="/checkout">Checkout</a></li>
                                                                 <li><a href="wishlist.html">Wishlist</a></li>
                                                                 <li><a href="dashboard.html">My Account</a></li>
                                                                 <li><a href="#">Lookbook</a></li>
@@ -512,8 +513,8 @@ const layoutHeaderMarkup = `
                                 </div><!-- End .dropdown-cart-total -->
 
                                 <div class="dropdown-cart-action">
-                                    <a href="cart.html" class="btn btn-primary">View Cart</a>
-                                    <a href="checkout.html" class="btn btn-outline-primary-2"><span>Checkout</span><i class="icon-long-arrow-right"></i></a>
+                                    <a href="/cart" class="btn btn-primary">View Cart</a>
+                                    <a href="/checkout" class="btn btn-outline-primary-2"><span>Checkout</span><i class="icon-long-arrow-right"></i></a>
                                 </div><!-- End .dropdown-cart-total -->
                             </div><!-- End .dropdown-menu -->
                         </div><!-- End .cart-dropdown -->

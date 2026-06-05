@@ -87,13 +87,27 @@ export default function Header() {
                 <span className="sr-only">Toggle mobile menu</span>
                 <i className="icon-bars"></i>
               </button>
-              <a href="#" className="logo">
+              <a
+                href="#"
+                className="logo"
+                style={{
+                  color: "#22a642",
+                  fontSize: "2.6rem",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {/*
                 <img
                   src="/assets/images/demos/demo-28/logo.png"
-                  alt="Molla Logo"
+                  alt="Steal Deal Logo"
                   width="105"
                   height="25"
                 />
+                */}
+                Steal Deal
               </a>
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
@@ -611,10 +625,10 @@ export default function Header() {
                                 <div className="menu-title">Shop Pages</div>
                                 <ul>
                                   <li>
-                                    <a href="cart.html">Cart</a>
+                                    <a href="/cart">Cart</a>
                                   </li>
                                   <li>
-                                    <a href="checkout.html">Checkout</a>
+                                    <a href="/checkout">Checkout</a>
                                   </li>
                                   <li>
                                     <a href="wishlist.html">Wishlist</a>
@@ -988,10 +1002,10 @@ export default function Header() {
                   </div>
 
                   <div className="dropdown-cart-action">
-                    <a href="cart.html" className="btn btn-primary">
+                    <a href="/cart" className="btn btn-primary">
                       View Cart
                     </a>
-                    <a href="checkout.html" className="btn btn-outline-primary-2">
+                    <a href="/checkout" className="btn btn-outline-primary-2">
                       <span>Checkout</span>
                       <i className="icon-long-arrow-right"></i>
                     </a>

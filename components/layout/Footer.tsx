@@ -4,7 +4,8 @@ const layoutFooterMarkup = `
 	            	<div class="row">
 	            		<div class="col-sm-6 col-lg-3">
 	            			<div class="widget widget-about">
-	            				<img src="/assets/images/demos/demo-28/logo.png" class="footer-logo" alt="Footer Logo" width="105" height="25">
+	            				<!-- <img src="/assets/images/demos/demo-28/logo.png" class="footer-logo" alt="Footer Logo" width="105" height="25"> -->
+	            				<a href="/" class="footer-logo" style="display: inline-block; color: #22a642; font-size: 2.6rem; font-weight: 700; line-height: 1; text-decoration: none; white-space: nowrap;">Steal Deal</a>
 	            				<p>Praesent dapibus, neque id cursus ucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. </p>
 
 	            				<div class="social-icons">
@@ -22,8 +23,8 @@ const layoutFooterMarkup = `
 	            				<h4 class="widget-title">Useful Links</h4><!-- End .widget-title -->
 
 	            				<ul class="widget-list">
-	            					<li><a href="/about">About Molla</a></li>
-	            					<li><a href="#">How to shop on Molla</a></li>
+	            					<li><a href="/about">About Steal Deal</a></li>
+	            					<li><a href="#">How to shop on Steal Deal</a></li>
 	            					<li><a href="/faq">FAQ</a></li>
 	            					<li><a href="/contact">Contact us</a></li>
 	            					<li><a href="/login#signin-2">Log in</a></li>
@@ -52,7 +53,7 @@ const layoutFooterMarkup = `
 
 	            				<ul class="widget-list">
 	            					<li><a href="#">Sign In</a></li>
-	            					<li><a href="cart.html">View Cart</a></li>
+	            					<li><a href="/cart">View Cart</a></li>
 	            					<li><a href="#">My Wishlist</a></li>
 	            					<li><a href="#">Track My Order</a></li>
 	            					<li><a href="#">Help</a></li>
@@ -65,7 +66,7 @@ const layoutFooterMarkup = `
 
 	        <div class="footer-bottom">
 	        	<div class="container">
-	        		<p class="footer-copyright">Copyright © 2019 Molla Store. All Rights Reserved.</p><!-- End .footer-copyright -->
+	        		<p class="footer-copyright">Copyright © 2019 Steal Deal Store. All Rights Reserved.</p><!-- End .footer-copyright -->
 	        		<figure class="footer-payments">
 	        			<img src="/assets/images/payments.png" alt="Payment methods" width="272" height="20">
 	        		</figure><!-- End .footer-payments -->
