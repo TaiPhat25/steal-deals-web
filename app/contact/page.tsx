@@ -306,9 +306,6 @@ export default function ContactPage() {
         <Footer />
       </div>
       <div dangerouslySetInnerHTML={{ __html: contactPageExtrasMarkup }} />
-      <Script src="../../cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js" strategy="afterInteractive" data-cfasync="false" />
-      {/* Google Map script disabled until a valid API key is configured. */}
-      {/* <Script src="Google Maps API key" strategy="afterInteractive" /> */}
       <Script src="/assets/js/jquery.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/jquery.hoverIntent.min.js" strategy="afterInteractive" />
@@ -316,8 +313,6 @@ export default function ContactPage() {
       <Script src="/assets/js/superfish.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/owl.carousel.min.js" strategy="afterInteractive" />
       <Script src="/assets/js/main.js" strategy="afterInteractive" />
-      <Script src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" strategy="afterInteractive" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"ecd4920e43e14654b78e65dbf8311922","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossOrigin="anonymous" />
-      <Script id="contact-inline-script-11" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f3404a19ce1b5bc',t:'MTc3NzM1NzgyNA=='};var a=document.createElement('script');a.src='../../cdn-cgi/challenge-platform/h/g/scripts/jsd/a80f1640690f/maind41d.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();` }} />
     </>
   );
 }

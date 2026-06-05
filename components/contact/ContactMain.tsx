@@ -36,7 +36,7 @@ const contactMainMarkup = `
                 							</li>
                 							<li>
                 								<i class="icon-envelope"></i>
-                								<a href="https://portotheme.com/cdn-cgi/l/email-protection#2102"><span class="__cf_email__" data-cfemail="95fcfbf3fad5d8faf9f9f4bbf6faf8">[email&#160;protected]</span></a>
+                								<a href="mailto:info@stealdeals.com">info@stealdeals.com</a>
                 							</li>
                 						</ul><!-- End .contact-list -->
                 					</div><!-- End .contact-info -->
