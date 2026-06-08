@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer
@@ -18,7 +20,7 @@ export default function Footer() {
                   height="25"
                 />
                 */}
-                <a
+                <Link
                   href="/"
                   className="footer-logo"
                   style={{
@@ -32,7 +34,7 @@ export default function Footer() {
                   }}
                 >
                   Steal Deal
-                </a>
+                </Link>
                 <p className="font-weight-light second-primary-color text-light">
                   Praesent dapibus, neque id cursus ucibus, tortor neque egestas augue,
                   eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi,

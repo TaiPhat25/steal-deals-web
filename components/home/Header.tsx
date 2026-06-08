@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Header() {
   return (
     <header className="header header-28 bg-transparent">
@@ -87,8 +89,8 @@ export default function Header() {
                 <span className="sr-only">Toggle mobile menu</span>
                 <i className="icon-bars"></i>
               </button>
-              <a
-                href="#"
+              <Link
+                href="/"
                 className="logo"
                 style={{
                   color: "#22a642",
@@ -108,7 +110,7 @@ export default function Header() {
                 />
                 */}
                 Steal Deal
-              </a>
+              </Link>
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
                   <li className="megamenu-container active megamenu-list">

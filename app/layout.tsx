@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Poppins } from "next/font/google";
+import LayoutChrome from "@/components/layout/LayoutChrome";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -50,9 +51,19 @@ export default function RootLayout({
         <link rel="stylesheet" href="/assets/css/skins/skin-demo-28.css" />
         <link rel="stylesheet" href="/assets/css/demos/demo-28.css" />
         <link rel="stylesheet" href="/assets/css/demos/carousel-layout.css" />
+        <link rel="stylesheet" href="/assets/css/custom.css" />
+        <Script src="/assets/js/jquery.min.js" strategy="beforeInteractive" />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <LayoutChrome>{children}</LayoutChrome>
+        <Script src="/assets/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
+        <Script src="/assets/js/jquery.hoverIntent.min.js" strategy="afterInteractive" />
+        <Script src="/assets/js/jquery.waypoints.min.js" strategy="afterInteractive" />
+        <Script src="/assets/js/superfish.min.js" strategy="afterInteractive" />
+        <Script src="/assets/js/owl.carousel.min.js" strategy="afterInteractive" />
+        <Script src="/assets/js/jquery.magnific-popup.min.js" strategy="afterInteractive" />
+        <Script src="/assets/js/bootstrap-input-spinner.js" strategy="afterInteractive" />
+        <Script src="/assets/js/main.js" strategy="afterInteractive" />
       </body>
     </html>
   );

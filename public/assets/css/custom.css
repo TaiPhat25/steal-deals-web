@@ -1,0 +1,35 @@
+.page-wrapper--inner .header-28 {
+  position: relative;
+  background-color: #fff !important;
+}
+
+.page-wrapper--inner .header-28 .header-top,
+.page-wrapper--inner .header-28 .header-middle {
+  background-color: #fff;
+}
+
+.page-wrapper--inner .header-28 .header-top {
+  border-bottom: 1px solid #ebebeb;
+  color: #777 !important;
+}
+
+.page-wrapper--inner .header-28 .header-top a,
+.page-wrapper--inner .header-28 .header-top i {
+  color: #777 !important;
+}
+
+.page-wrapper--inner .header-28 .header-middle {
+  border-bottom: 1px solid #ebebeb;
+}
+
+.page-wrapper--inner .header-28 .menu > li > a,
+.page-wrapper--inner .header-28 .search-toggle,
+.page-wrapper--inner .header-28 .wishlist-link,
+.page-wrapper--inner .header-28 .cart-dropdown .dropdown-toggle,
+.page-wrapper--inner .header-28 .cart-txt {
+  color: #333;
+}
+
+.page-wrapper--inner .header-28 .promo-top {
+  position: static;
+}
