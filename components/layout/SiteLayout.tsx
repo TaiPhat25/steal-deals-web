@@ -7,7 +7,7 @@ import InteractiveHandlers from "@/components/home/InteractiveHandlers";
 import MobileMenu from "@/components/home/MobileMenu";
 import SigninModal from "@/components/home/SigninModal";
 
-export default function LayoutChrome({ children }: { children: React.ReactNode }) {
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
 

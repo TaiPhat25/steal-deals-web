@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Poppins } from "next/font/google";
-import LayoutChrome from "@/components/layout/LayoutChrome";
+import SiteLayout from "@/components/layout/SiteLayout";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -55,7 +55,7 @@ export default function RootLayout({
         <Script src="/assets/js/jquery.min.js" strategy="beforeInteractive" />
       </head>
       <body className="min-h-full flex flex-col">
-        <LayoutChrome>{children}</LayoutChrome>
+        <SiteLayout>{children}</SiteLayout>
         <Script src="/assets/js/bootstrap.bundle.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/jquery.hoverIntent.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/jquery.waypoints.min.js" strategy="afterInteractive" />
