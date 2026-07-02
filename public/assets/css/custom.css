@@ -33,3 +33,27 @@
 .page-wrapper--inner .header-28 .promo-top {
   position: static;
 }
+
+.recommend-section .flash-style-product-card {
+  padding: 3rem 2rem 6.8rem;
+}
+
+.recommend-section .flash-style-product-card .product-footer {
+  bottom: -1px;
+}
+
+.recommend-section .flash-style-product-card .product-sold {
+  bottom: 5.1rem;
+  width: calc(100% - 4rem);
+  height: 1rem;
+  background: #f3f3f3;
+}
+
+.recommend-section .flash-style-product-card .product-sold .product-sold-val {
+  height: 100%;
+  background-color: #ffd04d;
+}
+
+.recommend-section .flash-style-product-card .sold-text {
+  bottom: 2rem;
+}

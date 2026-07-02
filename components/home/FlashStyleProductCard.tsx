@@ -26,7 +26,7 @@ export default function FlashStyleProductCard({
   labelSale,
 }: FlashStyleProductCardProps) {
   return (
-    <div className="product mb-0 rounded-0 w-100">
+    <div className="product flash-style-product-card mb-0 rounded-0 w-100">
       <figure className="product-media bg-white ">
         <a href="#">
           {labelTop ? <span className="product-label label-top">{labelTop}</span> : null}
