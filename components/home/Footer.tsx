@@ -132,7 +132,7 @@ export default function Footer() {
                     <a href="/cart">View Cart</a>
                   </li>
                   <li>
-                    <a href="#">My Wishlist</a>
+                    <a href="/wishlist">My Wishlist</a>
                   </li>
                   <li>
                     <a href="#">Track My Order</a>

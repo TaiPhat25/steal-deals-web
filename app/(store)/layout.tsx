@@ -63,6 +63,7 @@ export default function RootLayout({
         <Script src="/assets/js/owl.carousel.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/jquery.magnific-popup.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/bootstrap-input-spinner.js" strategy="afterInteractive" />
+        <Script src="/assets/js/jquery.elevateZoom.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/main.js" strategy="afterInteractive" />
       </body>
     </html>

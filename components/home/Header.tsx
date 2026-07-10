@@ -633,7 +633,7 @@ export default function Header() {
                                     <a href="/checkout">Checkout</a>
                                   </li>
                                   <li>
-                                    <a href="wishlist.html">Wishlist</a>
+                                    <a href="/wishlist">Wishlist</a>
                                   </li>
                                   <li>
                                     <a href="dashboard.html">My Account</a>
@@ -918,7 +918,7 @@ export default function Header() {
                 </form>
               </div>
 
-              <a href="wishlist.html" className="wishlist-link">
+              <a href="/wishlist" className="wishlist-link">
                 <div className="icon position-relative">
                   <i className="icon-heart-o"></i>
                   <span className="wishlist-count">3</span>
