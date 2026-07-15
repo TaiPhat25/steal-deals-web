@@ -71,7 +71,7 @@ export default function Header() {
                     <a href="/contact">Contact Us</a>
                   </li>
                   <li>
-                    <a href="/login#signin-2">
+                    <a href="/login">
                       <i className="icon-user"></i>Login
                     </a>
                   </li>
@@ -759,7 +759,7 @@ export default function Header() {
                         </ul>
                       </li>
                       <li>
-                        <a href="/login#signin-2">Login</a>
+                        <a href="/login">Login</a>
                       </li>
                       <li>
                         <a href="/faq">FAQs</a>

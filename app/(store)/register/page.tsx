@@ -1,5 +1,5 @@
 import LoginMain from "@/components/login/LoginMain";
 
 export default function Page() {
-  return <LoginMain initialTab="signin" />;
+  return <LoginMain initialTab="register" />;
 }
