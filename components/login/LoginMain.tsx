@@ -4,6 +4,7 @@ import { useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ApiClientError } from "@/lib/api/client";
+import { verifyEmail } from "@/lib/api/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
 import LoginTabHashHandler from './LoginTabHashHandler';
 
@@ -16,7 +17,7 @@ type LoginMainProps = {
 export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
   const isSignIn = initialTab === "signin";
   const router = useRouter();
-  const { login, register, isLoading } = useAuth();
+  const { login, register, logout, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -27,6 +28,11 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"Customer" | "Seller">("Customer");
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [verificationOtp, setVerificationOtp] = useState("");
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const handleLoginSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,7 +63,10 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
         phone: phone || undefined,
         role,
       });
-      router.push("/");
+      setVerificationEmail(registerEmail);
+      setVerificationOtp("");
+      setVerificationError(null);
+      setShowVerificationModal(true);
     } catch (error) {
       setRegisterError(
         error instanceof ApiClientError
@@ -65,6 +74,42 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
           : "Unable to create your account. Please try again.",
       );
     }
+  };
+
+  const handleVerifyEmail = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setVerificationError(null);
+
+    const normalizedOtp = verificationOtp.trim();
+    if (!/^\d{6}$/.test(normalizedOtp)) {
+      setVerificationError("Please enter the 6-digit verification code.");
+      return;
+    }
+
+    setIsVerifying(true);
+
+    try {
+      await verifyEmail({ email: verificationEmail, otp: normalizedOtp });
+      setShowVerificationModal(false);
+      void logout().catch(() => undefined);
+      router.replace("/login");
+    } catch (error) {
+      setVerificationError(
+        error instanceof ApiClientError && error.status === 400
+          ? "The verification code is incorrect or expired."
+          : error instanceof ApiClientError
+            ? error.message
+            : "Unable to verify your email. Please try again.",
+      );
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleEnterLater = () => {
+    setShowVerificationModal(false);
+    void logout().catch(() => undefined);
+    window.location.assign("/login");
   };
 
   return (
@@ -97,7 +142,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       							    <div className={`tab-pane fade${isSignIn ? " show active" : ""}`} id="signin-2" role="tabpanel" aria-labelledby="signin-tab-2">
       							    	<form onSubmit={handleLoginSubmit}>
       							    		<div className="form-group">
-      							    			<label htmlFor="singin-email-2">Username or email address *</label>
+      							    			<label htmlFor="singin-email-2">Email address *</label>
       							    			<input type="email" className="form-control" id="singin-email-2" name="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
       							    		</div>
       
@@ -223,8 +268,93 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       						</div>
                   		</div>
                   	</div>
-                  </div>
+      </div>
       <LoginTabHashHandler initialTab={initialTab} />
+
+      {showVerificationModal && (
+        <>
+          <div className="modal-backdrop fade show" />
+          <div
+            className="modal fade show"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="verify-email-title"
+            style={{ display: "block" }}
+          >
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <div className="modal-content">
+                <div className="modal-body">
+                  <div className="form-box">
+                    <div className="form-tab">
+                      <h2 id="verify-email-title" className="text-center mb-2">
+                        Verify Your Email
+                      </h2>
+                      <p className="text-center mb-3">
+                        Enter the OTP sent to your email address.
+                      </p>
+
+                      <form onSubmit={handleVerifyEmail}>
+                        <div className="form-group">
+                          <label htmlFor="verification-email">Email address *</label>
+                          <input
+                            type="email"
+                            className="form-control"
+                            id="verification-email"
+                            value={verificationEmail}
+                            autoComplete="email"
+                            readOnly
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="verification-otp">Verification code *</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            id="verification-otp"
+                            value={verificationOtp}
+                            onChange={(event) => setVerificationOtp(event.target.value)}
+                            inputMode="numeric"
+                            pattern="[0-9]{6}"
+                            maxLength={6}
+                            required
+                          />
+                        </div>
+
+                        {verificationError && (
+                          <div className="alert alert-danger" role="alert" aria-live="polite">
+                            {verificationError}
+                          </div>
+                        )}
+
+                        <div className="form-footer d-flex align-items-center justify-content-between">
+                          <button
+                            type="submit"
+                            className="btn btn-outline-primary-2"
+                            disabled={isVerifying || isLoading}
+                          >
+                            <span>{isVerifying ? "VERIFYING..." : "ENTER"}</span>
+                            <i className="icon-long-arrow-right"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-link"
+                            onClick={handleEnterLater}
+                            disabled={isVerifying || isLoading}
+                          >
+                            Enter later
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }

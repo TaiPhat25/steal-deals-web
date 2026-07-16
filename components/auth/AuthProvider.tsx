@@ -59,8 +59,16 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   );
 
   const register = useCallback(
-    (request: RegisterRequest) => runAuthRequest(() => registerRequest(request)),
-    [runAuthRequest],
+    async (request: RegisterRequest) => {
+      setIsLoading(true);
+
+      try {
+        return await registerRequest(request);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
   );
 
   const refreshAccessToken = useCallback(
