@@ -148,7 +148,7 @@ export default function MobileMenu() {
                     <a href="/checkout">Checkout</a>
                   </li>
                   <li>
-                    <a href="wishlist.html">Wishlist</a>
+                    <a href="/wishlist">Wishlist</a>
                   </li>
                   <li>
                     <a href="#">Lookbook</a>

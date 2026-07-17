@@ -2,8 +2,11 @@
 
 import { useEffect } from "react";
 
-function activateTab(tabId: "signin-2" | "register-2") {
-  const tabLink = document.querySelector<HTMLAnchorElement>(`a[href="#${tabId}"]`);
+type LoginTab = "signin" | "register";
+
+function activateTab(tab: LoginTab) {
+  const tabId = tab === "signin" ? "signin-2" : "register-2";
+  const tabLink = document.getElementById(`${tab === "signin" ? "signin" : "register"}-tab-2`);
   const tabPane = document.getElementById(tabId);
   if (!tabLink || !tabPane) return;
 
@@ -22,21 +25,50 @@ function activateTab(tabId: "signin-2" | "register-2") {
   });
 }
 
-export default function LoginTabHashHandler() {
+type LoginTabHashHandlerProps = {
+  initialTab: LoginTab;
+};
+
+export default function LoginTabHashHandler({ initialTab }: LoginTabHashHandlerProps) {
   useEffect(() => {
-    const syncTabFromHash = () => {
-      if (window.location.hash === "#signin-2") {
-        activateTab("signin-2");
-      } else if (window.location.hash === "#register-2") {
-        activateTab("register-2");
+    const signinLink = document.getElementById("signin-tab-2");
+    const registerLink = document.getElementById("register-tab-2");
+
+    const setRoute = (tab: LoginTab, replace = false) => {
+      const path = tab === "signin" ? "/login" : "/register";
+      activateTab(tab);
+
+      if (window.location.pathname !== path || window.location.hash) {
+        const updateUrl = replace ? window.history.replaceState : window.history.pushState;
+        updateUrl.call(window.history, null, "", path);
       }
     };
 
-    syncTabFromHash();
-    window.addEventListener("hashchange", syncTabFromHash);
+    const handleSigninClick = (event: Event) => {
+      event.preventDefault();
+      setRoute("signin");
+    };
 
-    return () => window.removeEventListener("hashchange", syncTabFromHash);
-  }, []);
+    const handleRegisterClick = (event: Event) => {
+      event.preventDefault();
+      setRoute("register");
+    };
+
+    const tabFromLocation = window.location.hash === "#register-2"
+      ? "register"
+      : window.location.hash === "#signin-2"
+        ? "signin"
+        : initialTab;
+
+    setRoute(tabFromLocation, true);
+    signinLink?.addEventListener("click", handleSigninClick);
+    registerLink?.addEventListener("click", handleRegisterClick);
+
+    return () => {
+      signinLink?.removeEventListener("click", handleSigninClick);
+      registerLink?.removeEventListener("click", handleRegisterClick);
+    };
+  }, [initialTab]);
 
   return null;
 }
