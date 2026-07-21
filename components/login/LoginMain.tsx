@@ -17,7 +17,7 @@ type LoginMainProps = {
 export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
   const isSignIn = initialTab === "signin";
   const router = useRouter();
-  const { login, register, logout, isLoading } = useAuth();
+  const { login, register, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
     setRegisterError(null);
 
     try {
-      await register({
+      const registrationResponse = await register({
         email: registerEmail,
         password: registerPassword,
         firstName,
@@ -63,6 +63,12 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
         phone: phone || undefined,
         role,
       });
+
+      if (!registrationResponse.requiresEmailVerification) {
+        router.replace("/login");
+        return;
+      }
+
       setVerificationEmail(registerEmail);
       setVerificationOtp("");
       setVerificationError(null);
@@ -91,8 +97,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
     try {
       await verifyEmail({ email: verificationEmail, otp: normalizedOtp });
       setShowVerificationModal(false);
-      void logout().catch(() => undefined);
-      router.replace("/login");
+      window.location.assign("/login");
     } catch (error) {
       setVerificationError(
         error instanceof ApiClientError && error.status === 400
@@ -108,7 +113,6 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
 
   const handleEnterLater = () => {
     setShowVerificationModal(false);
-    void logout().catch(() => undefined);
     window.location.assign("/login");
   };
 

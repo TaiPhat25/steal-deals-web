@@ -9,7 +9,7 @@ import IntroSection from "@/components/home/IntroSection";
 import NewsletterSection from "@/components/home/NewsletterSection";
 import RecommendSection from "@/components/home/RecommendSection";
 import ServiceSection from "@/components/home/ServiceSection";
-import NewsletterPopup from "@/components/home/NewsletterPopup";
+// import NewsletterPopup from "@/components/home/NewsletterPopup";
 
 export default function Home() {
   return (
@@ -29,7 +29,7 @@ export default function Home() {
           <BlogSection />
         </div>
       </main>
-      <NewsletterPopup />
+      {/* <NewsletterPopup /> */}
     </>
   );
 }

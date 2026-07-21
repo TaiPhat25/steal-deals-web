@@ -1,6 +1,19 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function Header() {
+  const { currentUser, isAuthenticated, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      window.location.assign("/login");
+    }
+  };
+
   return (
     <header className="header header-28 bg-transparent">
       <div
@@ -70,11 +83,38 @@ export default function Header() {
                   <li>
                     <a href="/contact">Contact Us</a>
                   </li>
-                  <li>
-                    <a href="/login">
-                      <i className="icon-user"></i>Login
-                    </a>
-                  </li>
+                  {isAuthenticated && currentUser ? (
+                    <li className="account-menu-trigger">
+                      <button type="button" className="account-link">
+                        <i className="icon-user"></i>
+                        Welcome, {currentUser.name}
+                      </button>
+                      <ul className="account-menu">
+                        <li>
+                          <Link href="/profile">
+                            <i className="icon-user" aria-hidden="true"></i>
+                            Profile
+                          </Link>
+                        </li>
+                        <li>
+                          <button
+                            type="button"
+                            className="account-menu-action"
+                            onClick={handleLogout}
+                          >
+                            <i className="icon-arrow-right" aria-hidden="true"></i>
+                            Logout
+                          </button>
+                        </li>
+                      </ul>
+                    </li>
+                  ) : (
+                    <li>
+                      <Link href="/login">
+                        <i className="icon-user"></i>Login
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </li>
             </ul>

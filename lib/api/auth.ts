@@ -4,6 +4,7 @@ import type {
   CurrentUser,
   LoginRequest,
   MessageResponse,
+  RegistrationResponse,
   RegisterRequest,
   ResendOtpRequest,
   VerifyEmailRequest,
@@ -17,7 +18,7 @@ export function login(request: LoginRequest) {
 }
 
 export function register(request: RegisterRequest) {
-  return apiRequest<AccessTokenResponse>("/api/auth/register", {
+  return apiRequest<RegistrationResponse>("/api/auth/register", {
     method: "POST",
     body: request,
   });
