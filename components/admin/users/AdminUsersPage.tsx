@@ -283,36 +283,36 @@ export default function AdminUsersPage() {
           </div>
 
           <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center">
-            <div className="relative sm:w-[320px] w-full">
+            <div className="relative w-full" style={{ width: "200px", minWidth: "200px", flexShrink: 0 }}>
               <span className="absolute text-light-secondary-text left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">⌕</span>
               <label htmlFor="user-search" className="sr-only">Search users by name or email</label>
               <input
                 id="user-search"
                 className="pl-9 w-full pr-3.5 ring h-9 ring-gray-500/20 py-2 bg-gray-100 border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Search name or email…"
+                placeholder="Search..."
                 type="search"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
               />
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div>
+            <div className="flex items-center" style={{ display: "flex", flexWrap: "nowrap", flexShrink: 0, gap: "12px", alignItems: "center" }}>
+              <div style={{ flexShrink: 0 }}>
                 <label htmlFor="role-filter" className="sr-only">Filter by role</label>
-                <select id="role-filter" value={role} onChange={(event) => updateQuery({ role: event.target.value || null, page: null })} className="h-9 min-w-[150px] ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary">
+                <select id="role-filter" value={role} onChange={(event) => updateQuery({ role: event.target.value || null, page: null })} className="h-9 ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary" style={{ minWidth: "120px" }}>
                   <option value="">All roles</option>
                   {ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>
-              <div>
+              <div style={{ flexShrink: 0 }}>
                 <label htmlFor="status-filter" className="sr-only">Filter by account status</label>
-                <select id="status-filter" value={status} onChange={(event) => updateQuery({ status: event.target.value || null, page: null })} className="h-9 min-w-[165px] ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary">
+                <select id="status-filter" value={status} onChange={(event) => updateQuery({ status: event.target.value || null, page: null })} className="h-9 ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary" style={{ minWidth: "140px" }}>
                   <option value="">All statuses</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
               {hasFilters && (
-                <button type="button" onClick={() => { setSearchInput(""); router.replace("/admin/users", { scroll: false }); }} className="h-9 px-3 rounded-full text-sm font-semibold text-primary hover:bg-primary-lighter">Clear filters</button>
+                <button type="button" onClick={() => { setSearchInput(""); router.replace("/admin/users", { scroll: false }); }} className="h-9 px-3 rounded-full text-sm font-semibold text-primary hover:bg-primary-lighter" style={{ flexShrink: 0 }}>Clear filters</button>
               )}
             </div>
           </div>

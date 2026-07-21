@@ -34,27 +34,7 @@ export default function AdminHeader({ onToggleSidebar }: HeaderProps) {
             ></path>
           </svg>
         </button>
-        <div className="relative hidden md:block cursor-pointer">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 16 16"
-            className="absolute size-4 text-light-primary-text left-3 top-1/2 -translate-y-1/2"
-          >
-            <path
-              fill="currentColor"
-              fillRule="evenodd"
-              d="M7.333.583a6.75 6.75 0 1 0 4.213 12.022l2.59 2.592a.75.75 0 0 0 1.062-1.06l-2.591-2.592A6.75 6.75 0 0 0 7.334.583zm0 1.5a5.25 5.25 0 1 1 0 10.5 5.25 5.25 0 0 1 0-10.5"
-              clipRule="evenodd"
-            ></path>
-          </svg>
-          <input
-            type="text"
-            placeholder="Search..."
-            readOnly
-            className="pl-10 pr-3.5 ring h-10 ring-gray-500/20 py-2 w-[344px] bg-gray-100 border-none rounded-full text-sm focus:outline-none cursor-pointer"
-          />
-        </div>
+
       </div>
       <div className="flex items-center gap-4">
         {/* Language Selector */}

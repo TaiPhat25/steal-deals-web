@@ -41,7 +41,15 @@ export function updateAdminUser(
   id: string,
   request: AdminUpdateUserRequest,
 ) {
-  return apiRequest<null>(`/api/user/${encodeURIComponent(id)}`, {
+  const path = `/api/user/${encodeURIComponent(id)}`;
+
+  if (process.env.NODE_ENV === "development") {
+    console.info(
+      `[Admin users] PUT ${path}\n${JSON.stringify(request, null, 2)}`,
+    );
+  }
+
+  return apiRequest<null>(path, {
     method: "PUT",
     headers: bearer(accessToken),
     body: request,
