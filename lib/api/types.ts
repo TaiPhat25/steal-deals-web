@@ -17,6 +17,11 @@ export type AccessTokenResponse = {
   accessTokenExpiresAt: string;
 };
 
+export type RegistrationResponse = {
+  message: string;
+  requiresEmailVerification: boolean;
+};
+
 export type CurrentUser = {
   userId: string;
   email: string;

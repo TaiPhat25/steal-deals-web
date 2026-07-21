@@ -16,6 +16,31 @@ type ApiRequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
 };
 
+type AccessTokenRefreshHandler = () => Promise<string | null>;
+
+let accessTokenRefreshHandler: AccessTokenRefreshHandler | null = null;
+let refreshInFlight: Promise<string | null> | null = null;
+
+export function setAccessTokenRefreshHandler(
+  handler: AccessTokenRefreshHandler | null,
+) {
+  accessTokenRefreshHandler = handler;
+}
+
+function refreshAccessTokenOnce() {
+  if (!accessTokenRefreshHandler) {
+    return Promise.resolve(null);
+  }
+
+  if (!refreshInFlight) {
+    refreshInFlight = accessTokenRefreshHandler().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+
+  return refreshInFlight;
+}
+
 async function parseResponse(response: Response): Promise<unknown> {
   if (response.status === 204) {
     return null;
@@ -40,12 +65,29 @@ export async function apiRequest<T>(
     requestHeaders.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...requestOptions,
-    headers: requestHeaders,
-    credentials: "include",
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const sendRequest = () =>
+    fetch(`${API_BASE_URL}${path}`, {
+      ...requestOptions,
+      headers: requestHeaders,
+      credentials: "include",
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+
+  let response = await sendRequest();
+
+  const shouldRefresh =
+    response.status === 401 &&
+    requestHeaders.has("Authorization") &&
+    path !== "/api/auth/refresh";
+
+  if (shouldRefresh) {
+    const newAccessToken = await refreshAccessTokenOnce();
+
+    if (newAccessToken) {
+      requestHeaders.set("Authorization", `Bearer ${newAccessToken}`);
+      response = await sendRequest();
+    }
+  }
 
   const responseBody = await parseResponse(response);
 

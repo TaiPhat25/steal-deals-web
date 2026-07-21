@@ -47,6 +47,82 @@ img {
   max-width: 180px;
 }
 
+.top-menu .account-menu-trigger {
+  position: relative;
+}
+
+.top-menu .account-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: uppercase;
+  cursor: default;
+}
+
+.top-menu .account-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  display: none;
+  width: max-content !important;
+  min-width: 0 !important;
+  padding: 0.6rem 0;
+  margin: 0;
+  list-style: none;
+  background: #fff;
+  box-shadow: 2px 5px 8px rgba(51, 51, 51, 0.05), -2px 5px 8px rgba(51, 51, 51, 0.05);
+  text-transform: none;
+}
+
+.top-menu .account-menu-trigger:hover > .account-menu,
+.top-menu .account-menu-trigger:focus-within > .account-menu {
+  display: block;
+}
+
+.top-menu .account-menu li {
+  display: block !important;
+  width: 100%;
+  margin: 0 !important;
+}
+
+.top-menu .account-menu a,
+.top-menu .account-menu-action {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 0.3rem 1.5rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  justify-content: flex-start;
+  line-height: inherit;
+  margin: 0;
+  appearance: none;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.top-menu .account-menu i {
+  flex: 0 0 1.4rem;
+  margin-right: 0.8rem;
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.top-menu .account-menu a:hover,
+.top-menu .account-menu a:focus,
+.top-menu .account-menu-action:hover,
+.top-menu .account-menu-action:focus {
+  color: #cc9966;
+  text-decoration: none;
+}
+
 @media (min-width: 768px) {
   .drag-scroll-row--products .product {
     flex: 0 0 200px;
