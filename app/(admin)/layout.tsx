@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AuthProvider from "@/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Dashboard | Sellzy - Admin Dashboard",
@@ -25,7 +26,7 @@ export default function AdminRootLayout({
         className="dm_sans_efc253b3-module__w1i8Da__variable public_sans_97488c5b-module__BMdkga__variable urbanist_6ad93ace-module__UTwf1G__variable antialiased min-h-screen"
         style={{ margin: 0 }}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

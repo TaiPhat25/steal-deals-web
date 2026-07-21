@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -24,6 +25,7 @@ import type {
 type AuthContextValue = {
   accessToken: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   isLoading: boolean;
   login: (request: LoginRequest) => Promise<AccessTokenResponse>;
   register: (request: RegisterRequest) => Promise<AccessTokenResponse>;
@@ -33,10 +35,40 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const ACCESS_TOKEN_KEY = "stealdeal_access_token";
+const ACCESS_TOKEN_EXPIRY_KEY = "stealdeal_access_token_expires_at";
+
+function rememberAccessToken(response: AccessTokenResponse) {
+  sessionStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
+  sessionStorage.setItem(ACCESS_TOKEN_EXPIRY_KEY, response.accessTokenExpiresAt);
+}
+
+function forgetAccessToken() {
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+  sessionStorage.removeItem(ACCESS_TOKEN_EXPIRY_KEY);
+}
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const storedToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+      const storedExpiry = sessionStorage.getItem(ACCESS_TOKEN_EXPIRY_KEY);
+      const expiryTime = storedExpiry ? new Date(storedExpiry).getTime() : 0;
+
+      if (storedToken && expiryTime > Date.now()) {
+        setAccessToken(storedToken);
+      } else {
+        forgetAccessToken();
+      }
+      setIsInitialized(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   const runAuthRequest = useCallback(
     async (request: () => Promise<AccessTokenResponse>) => {
@@ -45,6 +77,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       try {
         const response = await request();
         setAccessToken(response.accessToken);
+        rememberAccessToken(response);
         return response;
       } finally {
         setIsLoading(false);
@@ -83,6 +116,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       await logoutRequest();
     } finally {
       setAccessToken(null);
+      forgetAccessToken();
       setIsLoading(false);
     }
   }, []);
@@ -99,6 +133,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     () => ({
       accessToken,
       isAuthenticated: accessToken !== null,
+      isInitialized,
       isLoading,
       login,
       register,
@@ -106,7 +141,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       logout,
       getCurrentUser: getUser,
     }),
-    [accessToken, getUser, isLoading, login, logout, refreshAccessToken, register],
+    [accessToken, getUser, isInitialized, isLoading, login, logout, refreshAccessToken, register],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
