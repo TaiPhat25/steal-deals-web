@@ -26,7 +26,6 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState<"Customer" | "Seller">("Customer");
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
@@ -61,7 +60,6 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
         firstName,
         lastName,
         phone: phone || undefined,
-        role,
       });
 
       if (!registrationResponse.requiresEmailVerification) {
@@ -224,14 +222,6 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       							    			<input type="tel" className="form-control" id="register-phone-2" name="phone" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
       							    		</div>
 
-      							    		<div className="form-group">
-      							    			<label htmlFor="register-role-2">Account type *</label>
-      							    			<select className="form-control" id="register-role-2" name="role" value={role} onChange={(event) => setRole(event.target.value as "Customer" | "Seller")} required>
-      							    				<option value="Customer">Customer</option>
-      							    				<option value="Seller">Seller</option>
-      							    			</select>
-      							    		</div>
-      
       							    		{registerError && (
       							    			<div className="alert alert-danger" role="alert" aria-live="polite">
       							    				{registerError}

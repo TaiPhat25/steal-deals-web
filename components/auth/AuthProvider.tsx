@@ -23,7 +23,7 @@ import type {
   LoginRequest,
   RegistrationResponse,
   RegisterRequest,
-} from "@/lib/api/types";
+} from "@/lib/api/store-types";
 
 type AuthContextValue = {
   accessToken: string | null;

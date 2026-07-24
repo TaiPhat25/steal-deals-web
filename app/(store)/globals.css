@@ -116,11 +116,20 @@ img {
 }
 
 .top-menu .account-menu a:hover,
-.top-menu .account-menu a:focus,
+.top-menu .account-menu a:focus {
+  color: #61ab00;
+  text-decoration: none;
+}
+
 .top-menu .account-menu-action:hover,
 .top-menu .account-menu-action:focus {
-  color: #cc9966;
+  color: #ce0000;
   text-decoration: none;
+}
+
+.profile-action-link:hover,
+.profile-action-link:focus {
+  color: #3f7800 !important;
 }
 
 @media (min-width: 768px) {
