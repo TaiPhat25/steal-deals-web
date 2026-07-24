@@ -1,294 +1,179 @@
-import Link from "next/link";
-import { DashboardCard, PageHeader, ProductImage } from "@/components/dashboard/ui";
+"use client";
+
+import { useMemo, useState, type FormEvent } from "react";
+import {
+  DashboardButton,
+  DashboardCard,
+  PageHeader,
+  ProductImage,
+} from "@/components/dashboard/ui";
+import {
+  DashboardDialog,
+  DashboardToast,
+  DialogActions,
+} from "@/components/dashboard/Dialog";
+
+type Category = {
+  id: number;
+  name: string;
+  createdBy: string;
+  createdAt: string;
+};
+
+const INITIAL_CATEGORIES: Category[] = [
+  { id: 73423, name: "Bakery", createdBy: "Admin", createdAt: "2027-09-11" },
+  { id: 73424, name: "Prepared meals", createdBy: "Admin", createdAt: "2027-09-12" },
+  { id: 73425, name: "Groceries", createdBy: "Mina Patel", createdAt: "2027-09-13" },
+  { id: 73426, name: "Drinks", createdBy: "Admin", createdAt: "2027-09-14" },
+  { id: 73427, name: "Desserts", createdBy: "Mina Patel", createdAt: "2027-09-15" },
+  { id: 73428, name: "Produce", createdBy: "Admin", createdAt: "2027-09-16" },
+];
+
+const PAGE_SIZE = 4;
 
 export default function AdminCategories() {
-  const categories = [
-    {
-      id: "#73423",
-      name: "Cloth",
-      icon: "/dashboard/product-placeholder.png",
-      createdBy: "Admin",
-      date: "11 Sept, 2027",
-    },
-    {
-      id: "#73424",
-      name: "Fashion",
-      icon: "/dashboard/product-placeholder.png",
-      createdBy: "Seller",
-      date: "12 Sept, 2027",
-    },
-    {
-      id: "#73425",
-      name: "Electronics",
-      icon: "/dashboard/product-placeholder.png",
-      createdBy: "Admin",
-      date: "13 Sept, 2027",
-    },
-    {
-      id: "#73426",
-      name: "Groceries",
-      icon: "/dashboard/product-placeholder.png",
-      createdBy: "Seller",
-      date: "14 Sept, 2027",
-    },
-    {
-      id: "#73427",
-      name: "Toys",
-      icon: "/dashboard/product-placeholder.png",
-      createdBy: "Admin",
-      date: "15 Sept, 2027",
-    },
-    {
-      id: "#73428",
-      name: "Automotive",
-      icon: "/dashboard/product-placeholder.png",
-      createdBy: "Seller",
-      date: "16 Sept, 2027",
-    },
-    {
-      id: "#73429",
-      name: "Home Decor",
-      icon: "/dashboard/product-placeholder.png",
-      createdBy: "Admin",
-      date: "17 Sept, 2027",
-    },
-  ];
+  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
+  const [search, setSearch] = useState("");
+  const [creator, setCreator] = useState("");
+  const [date, setDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<number[]>([]);
+  const [editing, setEditing] = useState<Category | "new" | null>(null);
+  const [deleting, setDeleting] = useState<Category | "selected" | null>(null);
+  const [toast, setToast] = useState("");
+
+  const filtered = useMemo(
+    () =>
+      categories.filter(
+        (category) =>
+          category.name.toLowerCase().includes(search.trim().toLowerCase()) &&
+          (!creator || category.createdBy === creator) &&
+          (!date || category.createdAt === date),
+      ),
+    [categories, creator, date, search],
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const allVisibleSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
+
+  function resetPage() {
+    setPage(1);
+    setSelected([]);
+  }
+
+  function saveCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const name = String(data.get("name") ?? "").trim();
+    const editingId = editing === "new" ? null : editing?.id;
+    if (!name) return;
+    if (categories.some((item) => item.name.toLowerCase() === name.toLowerCase() && item.id !== editingId)) {
+      setToast("A category with that name already exists.");
+      return;
+    }
+    if (editing === "new") {
+      setCategories((items) => [
+        { id: Date.now(), name, createdBy: "Admin", createdAt: new Date().toISOString().slice(0, 10) },
+        ...items,
+      ]);
+      setToast(`${name} was created.`);
+    } else if (editing) {
+      setCategories((items) => items.map((item) => item.id === editing.id ? { ...item, name } : item));
+      setToast(`${name} was updated.`);
+    }
+    setEditing(null);
+    resetPage();
+  }
+
+  function confirmDelete() {
+    const ids = deleting === "selected" ? selected : deleting ? [deleting.id] : [];
+    setCategories((items) => items.filter((item) => !ids.includes(item.id)));
+    setToast(`${ids.length} categor${ids.length === 1 ? "y" : "ies"} deleted.`);
+    setDeleting(null);
+    resetPage();
+  }
 
   return (
-    <DashboardCard className="bg-white rounded-2xl w-full">
-        <div className="p-4 sm:p-6 pb-4">
+    <>
+      {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
+      <DashboardCard className="w-full overflow-hidden">
+        <div className="p-4 sm:p-6">
           <PageHeader
-            action={
-              <Link
-                className="inline-flex h-9 items-center justify-center rounded-full bg-primary-dark px-4 text-sm font-bold text-white transition-colors hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary"
-                href="/admin/categories"
-              >
-                Create category
-              </Link>
-            }
-            className="mb-6"
             title="Categories"
+            action={<DashboardButton onClick={() => setEditing("new")}>+ Create category</DashboardButton>}
           />
-          <div className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center">
-            <div className="relative sm:w-[300px] w-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 16 16"
-                className="absolute size-4 text-light-primary-text left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
-              >
-                <path
-                  fill="currentColor"
-                  fillRule="evenodd"
-                  d="M7.333.583a6.75 6.75 0 1 0 4.213 12.022l2.59 2.592a.75.75 0 0 0 1.062-1.06l-2.591-2.592A6.75 6.75 0 0 0 7.334.583zm0 1.5a5.25 5.25 0 1 1 0 10.5 5.25 5.25 0 0 1 0-10.5"
-                  clipRule="evenodd"
-                ></path>
-              </svg>
+          <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <label className="relative w-full lg:w-72">
+              <span className="sr-only">Search categories</span>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-light-secondary-text">⌕</span>
               <input
-                className="pl-9 w-full pr-3.5 ring h-9 ring-gray-500/20 py-2 bg-gray-100 border-none rounded-full text-sm focus:outline-none focus:ring-primary transition-all font-normal text-light-primary-text placeholder:text-light-secondary-text"
-                placeholder="Search..."
-                type="text"
+                type="search"
+                value={search}
+                onChange={(event) => { setSearch(event.target.value); resetPage(); }}
+                placeholder="Search categories..."
+                className="h-9 w-full rounded-full border-none bg-gray-100 pl-9 pr-3 text-sm ring ring-gray-500/20 focus:outline-none focus:ring-2 focus:ring-primary"
               />
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="min-w-[140px]">
-                <button
-                  className="relative h-9 ring inline-flex text-sm items-center justify-between ring-[rgba(145,158,171,0.20)] w-full cursor-default rounded-full bg-gray-200 px-3 py-2 text-left focus:outline-none"
-                  type="button"
-                >
-                  <span className="block truncate text-light-secondary-text">Created by</span>
-                  <span className="pointer-events-none flex items-center pl-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="h-5 w-5">
-                      <path
-                        fill="currentColor"
-                        fillRule="evenodd"
-                        d="M14.47 6.97a.75.75 0 1 1 1.06 1.06l-4.293 4.293c-.151.152-.318.32-.476.44a1.3 1.3 0 0 1-.64.273l-.121.007a1.23 1.23 0 0 1-.76-.28c-.16-.12-.326-.288-.477-.44L4.47 8.03a.75.75 0 1 1 1.06-1.06l4.293 4.293.177.174.177-.174z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                  </span>
-                </button>
-              </div>
-              <div className="min-w-[140px]">
-                <button
-                  className="relative h-9 ring inline-flex text-sm items-center justify-between ring-[rgba(145,158,171,0.20)] w-full cursor-default rounded-full bg-gray-200 px-3 py-2 text-left focus:outline-none"
-                  type="button"
-                >
-                  <span className="block truncate text-light-secondary-text">Date</span>
-                  <span className="pointer-events-none flex items-center pl-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="h-5 w-5">
-                      <path
-                        fill="currentColor"
-                        fillRule="evenodd"
-                        d="M14.47 6.97a.75.75 0 1 1 1.06 1.06l-4.293 4.293c-.151.152-.318.32-.476.44a1.3 1.3 0 0 1-.64.273l-.121.007a1.23 1.23 0 0 1-.76-.28c-.16-.12-.326-.288-.477-.44L4.47 8.03a.75.75 0 1 1 1.06-1.06l4.293 4.293.177.174.177-.174z"
-                        clipRule="evenodd"
-                      ></path>
-                    </svg>
-                  </span>
-                </button>
-              </div>
+            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="sr-only" htmlFor="category-creator">Created by</label>
+              <select id="category-creator" value={creator} onChange={(event) => { setCreator(event.target.value); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary">
+                <option value="">All creators</option>
+                <option>Admin</option>
+                <option>Mina Patel</option>
+              </select>
+              <label className="sr-only" htmlFor="category-date">Created date</label>
+              <input id="category-date" type="date" value={date} onChange={(event) => { setDate(event.target.value); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" />
+              {(search || creator || date) && <button type="button" onClick={() => { setSearch(""); setCreator(""); setDate(""); resetPage(); }} className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter">Clear</button>}
+              {selected.length > 0 && <DashboardButton variant="danger" onClick={() => setDeleting("selected")}>Delete {selected.length}</DashboardButton>}
             </div>
           </div>
         </div>
-        <div className="relative w-full overflow-auto">
-          <table className="w-full caption-bottom text-sm">
-            <thead className="[&_tr]:border-b">
-              <tr className="transition-colors bg-gray-100 hover:bg-gray-100 border-y border-gray-500/20">
-                <th className="h-12 p-3 first:pl-5 last:pr-5 text-left align-middle text-light-primary-text text-sm font-semibold w-[50px] pl-6">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="peer sr-only" />
-                    <div className="h-5 w-5 rounded border-2 border-gray-500 bg-transparent transition-all flex items-center justify-center peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white peer-checked:[&_svg]:opacity-100">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="lucide lucide-check h-3.5 w-3.5 opacity-0 transition-opacity"
-                        aria-hidden="true"
-                      >
-                        <path d="M20 6 9 17l-5-5"></path>
-                      </svg>
-                    </div>
-                  </label>
-                </th>
-                <th className="h-12 p-3 first:pl-5 last:pr-5 text-left align-middle text-light-primary-text text-sm font-semibold">
-                  ID
-                </th>
-                <th className="h-12 p-3 first:pl-5 last:pr-5 text-left align-middle text-light-primary-text text-sm font-semibold">
-                  Icon/ image
-                </th>
-                <th className="h-12 p-3 first:pl-5 last:pr-5 text-left align-middle text-light-primary-text text-sm font-semibold">
-                  Category Name
-                </th>
-                <th className="h-12 p-3 first:pl-5 last:pr-5 text-left align-middle text-light-primary-text text-sm font-semibold">
-                  Create by
-                </th>
-                <th className="h-12 p-3 first:pl-5 last:pr-5 text-left align-middle text-light-primary-text text-sm font-semibold">
-                  Date
-                </th>
-                <th className="h-12 p-3 first:pl-5 last:pr-5 align-middle text-light-primary-text text-sm font-semibold text-start pr-6">
-                  Action
-                </th>
+        <div className="overflow-x-auto border-t border-gray-500/20">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-100 text-left text-light-primary-text">
+              <tr>
+                <th className="p-3 pl-5"><input aria-label="Select visible categories" type="checkbox" checked={allVisibleSelected} onChange={() => setSelected(allVisibleSelected ? selected.filter((id) => !rows.some((row) => row.id === id)) : [...new Set([...selected, ...rows.map((row) => row.id)])])} className="size-4 accent-primary" /></th>
+                <th className="p-3">Category</th><th className="p-3">Created by</th><th className="p-3">Created</th><th className="p-3 pr-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="[&_tr:last-child]:border-0">
-              {categories.map((category) => (
-                <tr
-                  key={category.id}
-                  className="transition-colors border-b last:border-0 border-gray-500/20 hover:bg-gray-50/50"
-                >
-                  <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle pl-6 whitespace-nowrap">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="peer sr-only" />
-                      <div className="h-5 w-5 rounded border-2 border-gray-500 bg-transparent transition-all flex items-center justify-center peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-checked:bg-primary peer-checked:border-primary peer-checked:text-white peer-checked:[&_svg]:opacity-100">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="lucide lucide-check h-3.5 w-3.5 opacity-0 transition-opacity"
-                          aria-hidden="true"
-                        >
-                          <path d="M20 6 9 17l-5-5"></path>
-                        </svg>
-                      </div>
-                    </label>
-                  </td>
-                  <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle font-normal text-sm text-light-secondary-text whitespace-nowrap">
-                    {category.id}
-                  </td>
-                  <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle">
-                    <div className="size-8 relative rounded-lg overflow-hidden shrink-0">
-                      <ProductImage alt={category.name} />
-                    </div>
-                  </td>
-                  <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle text-sm text-light-secondary-text whitespace-nowrap">
-                    {category.name}
-                  </td>
-                  <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle text-sm text-light-secondary-text whitespace-nowrap">
-                    {category.createdBy}
-                  </td>
-                  <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle text-sm text-light-secondary-text whitespace-nowrap">
-                    {category.date}
-                  </td>
-                  <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle pr-6 whitespace-nowrap">
-                    <div className="flex items-center justify-start gap-1">
-                      <Link
-                        className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-primary transition-colors"
-                        href="/admin/categories"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 16 16" className="size-4">
-                          <path
-                            fill="currentColor"
-                            fillRule="evenodd"
-                            d="M10.008.984a2.82 2.82 0 0 1 2.816-.043c.291.162.559.408.874.725l.668.682c.31.322.55.594.706.89a2.95 2.95 0 0 1-.04 2.836c-.221.387-.588.73-1.076 1.2l-6.268 6.038c-.954.919-1.574 1.534-2.37 1.845-.797.312-1.665.276-2.974.241l-.187-.005a4 4 0 0 1-.589-.04 1.16 1.16 0 0 1-.702-.368 1.18 1.18 0 0 1-.28-.734c-.01-.185.008-.404.023-.596l.018-.231c.09-1.146.138-1.895.434-2.574.296-.682.808-1.223 1.58-2.06l6.19-6.706c.46-.498.796-.873 1.177-1.1m4.658 12.935a.75.75 0 1 1 0 1.5H9.333a.75.75 0 0 1 0-1.5zM3.744 9.808c-.84.91-1.136 1.244-1.307 1.64s-.217.846-.314 2.093l-.018.23-.01.119.101.003.187.005c1.433.038 1.94.037 2.39-.138.451-.177.83-.524 1.874-1.528l5.359-5.164-2.983-2.982zm8.352-7.555a1.32 1.32 0 0 0-1.322.02c-.135.081-.285.228-.732.71l3.044 3.044c.428-.414.565-.56.643-.695a1.45 1.45 0 0 0 .02-1.39c-.083-.154-.24-.325-.789-.886-.55-.562-.716-.72-.864-.803"
-                            clipRule="evenodd"
-                          ></path>
-                        </svg>
-                      </Link>
-                      <button type="button" className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-red-500 transition-colors">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="lucide lucide-trash2 w-4 h-4"
-                          aria-hidden="true"
-                        >
-                          <path d="M3 6h18"></path>
-                          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
+            <tbody>
+              {rows.map((category) => (
+                <tr key={category.id} className="border-t border-gray-500/20 hover:bg-gray-50/50">
+                  <td className="p-3 pl-5"><input aria-label={`Select ${category.name}`} type="checkbox" checked={selected.includes(category.id)} onChange={() => setSelected((ids) => ids.includes(category.id) ? ids.filter((id) => id !== category.id) : [...ids, category.id])} className="size-4 accent-primary" /></td>
+                  <td className="p-3"><div className="flex items-center gap-3"><span className="size-10 overflow-hidden rounded-xl"><ProductImage alt="" /></span><span className="font-semibold">{category.name}</span></div></td>
+                  <td className="p-3">{category.createdBy}</td>
+                  <td className="p-3">{new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(`${category.createdAt}T00:00:00`))}</td>
+                  <td className="p-3 pr-5 text-right"><button type="button" onClick={() => setEditing(category)} className="h-8 rounded-lg px-3 font-semibold text-primary hover:bg-primary-lighter">Edit</button><button type="button" onClick={() => setDeleting(category)} className="h-8 rounded-lg px-3 font-semibold text-error-dark hover:bg-error-alpha-16">Delete</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {rows.length === 0 && <div className="px-4 py-14 text-center text-sm text-light-secondary-text">No categories match these filters.</div>}
         </div>
-        <div className="p-4 sm:p-6 border-t border-gray-500/20 flex justify-end">
+        <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6">
+          <span className="text-sm text-light-secondary-text">{filtered.length} categories</span>
           <div className="flex items-center gap-2">
-            <button type="button"
-              disabled
-              className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="size-5">
-                <path fill="currentColor" d="M12.056 4.396a.75.75 0 1 1 .888 1.207v.001l-.002.002-.01.007-.04.03-.155.116a46 46 0 0 0-2.246 1.813c-.615.534-1.21 1.093-1.647 1.587a4.6 4.6 0 0 0-.487.635 1 1 0 0 0-.102.206c.009.027.035.093.102.206q.158.261.487.635c.436.493 1.033 1.052 1.648 1.587a43 43 0 0 0 2.4 1.93l.04.028.01.007.002.002v.001a.75.75 0 1 1-.888 1.207h-.002l-.003-.003-.055-.04-.163-.123a47 47 0 0 1-2.325-1.877c-.634-.55-1.288-1.16-1.79-1.726a6 6 0 0 1-.646-.854c-.157-.26-.322-.607-.322-.98 0-.374.165-.72.322-.98.17-.281.397-.572.647-.854.5-.567 1.155-1.176 1.789-1.727a44 44 0 0 1 2.325-1.877l.163-.122.055-.04q0-.002.003-.003h.002z"></path>
-              </svg>
-            </button>
-            <div className="flex items-center gap-1">
-              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">
-                1
-              </button>
-              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
-                2
-              </button>
-            </div>
-            <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="size-5">
-                <path fill="currentColor" d="M6.897 4.555a.75.75 0 0 1 1.048-.159l.002.001.003.002.054.041.164.122a46 46 0 0 1 2.325 1.877c.634.55 1.288 1.16 1.789 1.727.25.282.477.572.646.853.157.26.322.607.323.98 0 .374-.166.72-.323.981a6 6 0 0 1-.646.854c-.501.566-1.155 1.175-1.79 1.726a44 44 0 0 1-2.324 1.877l-.164.122-.054.041-.003.002-.001.001h-.001a.75.75 0 1 1-.889-1.207l.002-.003.01-.007.041-.029.154-.116a46 46 0 0 0 2.245-1.814c.616-.534 1.212-1.093 1.649-1.587a4.6 4.6 0 0 0 .486-.634c.068-.113.094-.18.103-.206a1 1 0 0 0-.103-.206 4.6 4.6 0 0 0-.486-.635c-.437-.494-1.032-1.053-1.648-1.587a43 43 0 0 0-2.246-1.814l-.154-.116-.04-.03q-.008-.003-.01-.006-.002-.001-.003-.002a.75.75 0 0 1-.159-1.049"></path>
-              </svg>
-            </button>
+            <button type="button" disabled={page === 1} onClick={() => setPage(page - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40" aria-label="Previous page">‹</button>
+            <span className="text-sm font-semibold">Page {page} of {totalPages}</span>
+            <button type="button" disabled={page === totalPages} onClick={() => setPage(page + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40" aria-label="Next page">›</button>
           </div>
         </div>
       </DashboardCard>
+
+      {editing && <DashboardDialog title={editing === "new" ? "Create category" : "Edit category"} onClose={() => setEditing(null)}>
+        <form onSubmit={saveCategory}>
+          <div className="space-y-4 p-5 sm:p-6">
+            <label className="block text-sm font-semibold">Category name<input name="name" required autoFocus defaultValue={editing === "new" ? "" : editing.name} className="mt-2 h-10 w-full rounded-xl border-none bg-gray-100 px-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label>
+            <p className="text-sm text-light-secondary-text">The shared dashboard placeholder remains until category image uploads are available.</p>
+          </div>
+          <DialogActions onCancel={() => setEditing(null)}><DashboardButton type="submit">{editing === "new" ? "Create" : "Save changes"}</DashboardButton></DialogActions>
+        </form>
+      </DashboardDialog>}
+
+      {deleting && <DashboardDialog title={deleting === "selected" ? `Delete ${selected.length} categories?` : `Delete ${deleting.name}?`} onClose={() => setDeleting(null)}>
+        <p className="p-5 text-sm leading-6 text-light-secondary-text sm:p-6">This removes the selected dummy data until the page is refreshed.</p>
+        <DialogActions onCancel={() => setDeleting(null)}><DashboardButton variant="danger" onClick={confirmDelete}>Delete</DashboardButton></DialogActions>
+      </DashboardDialog>}
+    </>
   );
 }

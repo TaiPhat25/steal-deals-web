@@ -14,14 +14,51 @@ foundation. The storefront was deliberately left untouched.
   sidebar, role-specific navigation, menus, and profile presentation.
 - `components/dashboard/ui.tsx` contains the small set of repeated primitives:
   cards, page headers, buttons, badges, avatars, and product placeholders.
+- `components/dashboard/Dialog.tsx` contains the shared native dialog, action
+  footer, and auto-dismissing toast used by the interactive admin screens.
 - Page files are Server Components unless they use state or navigation hooks.
-  Only the two inbox pages and the API-backed admin users component currently
-  require client boundaries.
+  The admin overview keeps its static metrics server-rendered and delegates the
+  interactive recent-orders table to
+  `components/admin/dashboard/RecentOrders.tsx`.
+
+## Admin functionality
+
+The admin routes now behave as a usable prototype instead of a static theme:
+
+- `/admin/users` remains the existing Identity Service CRUD screen.
+- `/admin/customers` reuses the completed admin Users API with a locked
+  `Customer` role filter. It provides backend search, account-status filtering,
+  pagination, trust activity, addresses, and links back to User Accounts for
+  identity changes. It is intentionally not a second user CRUD screen.
+- `/admin/categories` provides in-memory search, creator/date filtering,
+  pagination, selection, create/edit, duplicate-name validation, and confirmed
+  deletion.
+- `/admin/sellers` models seller onboarding rather than identity management.
+  Applications can be searched, filtered, reviewed, approved, rejected with a
+  reason, and exported as CSV.
+- `/admin/support` provides in-memory ticket search/filter/pagination,
+  conversation replies, and resolve/reopen actions.
+- `/admin/inbox` provides contact search, conversation switching, text
+  messages, emoji insertion, local file/image attachment placeholders, contact
+  details, and conversation clearing. Voice and video buttons are explicitly
+  disabled until a calling service exists.
+- `/admin` retains presentational metrics and adds working recent-order
+  pagination and order details.
+
+Except for Customer Operations and User Accounts, admin data is deliberately
+page-local mock state and resets on refresh. There is no mock repository,
+local-storage persistence, fake latency, or invented API layer. When backend
+endpoints arrive, replace each page's local filtering/slicing and mutation
+handlers with API calls while retaining its controls, dialogs, validation, and
+feedback.
 
 ## Styling conventions
 
 - Prefer a named component when the same visual structure occurs on at least
   three screens. Keep one-off layout in visible Tailwind utilities.
+- Match new interactive components to the existing dashboard primitives:
+  rounded cards and controls, theme colors, border/shadow treatment, typography,
+  responsive breakpoints, and hover/focus states.
 - Do not add semantic CSS aliases with `@apply`; component names provide the
   semantic layer.
 - Tailwind variant maps must contain complete class strings. Do not construct
@@ -64,17 +101,22 @@ from two copied 100 KB stylesheets, and dashboard public assets total about
 ## Safe continuation points
 
 - Replace mock arrays in individual pages with backend results without changing
-  the shared shell.
+  the shared shell or page-level interaction patterns.
 - Map backend status values to the static `StatusBadge` tones.
 - Pass real image URLs through a dedicated image component once the backend
   host and Next image policy are known.
-- Add a shared search/filter component only when the current repeated controls
-  become functional; do not abstract inactive mock controls preemptively.
+- Keep search/filter state page-specific until three pages share the same real
+  backend query contract; the current controls have different domain behavior.
+- Connect seller approval, category, support, inbox, and recent-order handlers
+  at their existing local mutation boundaries. Do not preserve the disposable
+  in-memory transformation code after an endpoint replaces it.
 - Browser-level visual regression coverage is not present. Before a design
   overhaul, capture desktop and mobile baselines for the dashboard, tables,
   inbox, product forms, and user dialogs.
 
 ## Out of scope
+
+The seller route group was not changed during the admin functionality pass.
 
 The `(store)` routes still use the crawled Bootstrap/store theme and the
 `public/assets` tree. Existing storefront lint warnings and asset cleanup must
