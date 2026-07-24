@@ -1,146 +1,52 @@
-import { DashboardCard } from "@/components/dashboard/ui";
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { DashboardButton, DashboardCard, ProductImage } from "@/components/dashboard/ui";
+import { DashboardToast } from "@/components/dashboard/Dialog";
+import { useSellerDemo } from "@/components/seller/SellerDemoProvider";
 
 export default function SellerSettings() {
-  const tabs = [
-    { name: "General", active: false },
-    { name: "Shop", active: true },
-    { name: "SEO", active: false },
-    { name: "Payment API", active: false },
-    { name: "Maintains", active: false },
-  ];
+  const { settings, setSettings } = useSellerDemo();
+  const [draft, setDraft] = useState(() => structuredClone(settings));
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState("");
+  const inputClass = "mt-2 h-10 w-full rounded-xl border-none bg-gray-100 px-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary";
 
-  const operatingHours = [
-    { day: "Monday", open: "09:00 AM", close: "06:00 PM", active: true },
-    { day: "Tuesday", open: "09:00 AM", close: "06:00 PM", active: true },
-    { day: "Wednesday", open: "09:00 AM", close: "06:00 PM", active: true },
-    { day: "Thursday", open: "09:00 AM", close: "06:00 PM", active: true },
-    { day: "Friday", open: "09:00 AM", close: "06:00 PM", active: true },
-    { day: "Saturday", open: "09:00 AM", close: "06:00 PM", active: false },
-    { day: "Sunday", open: "Closed", close: "Closed", active: false },
-  ];
+  function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const invalidDay = draft.hours.find((hour) => hour.active && hour.close <= hour.open);
+    if (invalidDay) {
+      setError(`${invalidDay.day}'s closing time must be after its opening time.`);
+      return;
+    }
+    setSettings(structuredClone(draft));
+    setError("");
+    setToast("Store settings saved.");
+  }
+
+  function cancel() {
+    setDraft(structuredClone(settings));
+    setError("");
+    setToast("Unsaved changes were discarded.");
+  }
 
   return (
-    <DashboardCard className="bg-white rounded-2xl p-4 sm:p-6 space-y-6">
-        <div className="mb-1">
-          <h2 className="text-xl font-bold text-light-primary-text">Settings</h2>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-500/20 scrollbar-hide">
-          <nav aria-label="Tabs" className="-mb-px flex space-x-6 sm:space-x-10 min-w-max">
-            {tabs.map((tab, idx) => (
-              <button type="button"
-                key={idx}
-                className={`whitespace-nowrap py-3 border-b-3 font-semibold text-sm transition-colors ${
-                  tab.active
-                    ? "border-primary text-light-primary-text"
-                    : "border-transparent text-light-secondary-text hover:text-light-primary-text hover:border-gray-300"
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Form Fields */}
-        <div className="space-y-6">
-          <div className="border border-gray-500/20 rounded-2xl p-4 sm:p-6 space-y-6">
-            <h3 className="text-lg font-bold text-light-primary-text">Shop Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-              <div className="group relative flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-gray-500/30 bg-white p-6 hover:bg-gray-50">
-                <p className="text-sm font-semibold text-light-secondary-text">Shop Cover Image</p>
-                <p className="text-xs text-light-secondary-text">Max size of 3.1 MB</p>
-              </div>
-              <div className="group relative flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-gray-500/30 bg-white p-6 hover:bg-gray-50">
-                <p className="text-sm font-semibold text-light-secondary-text">Shop Logo</p>
-                <p className="text-xs text-light-secondary-text">Max size of 3.1 MB</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-              <div className="relative">
-                <input
-                  className="block px-3.5 py-4 w-full h-14 text-sm text-light-primary-text bg-transparent rounded-full border border-gray-500/20 appearance-none focus:outline-none focus:ring-0 focus:border-primary peer"
-                  defaultValue="Steal Deals Shop"
-                  type="text"
-                />
-                <label className="absolute text-sm text-primary duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-left left-3.5 bg-white px-1 start-1">
-                  Shop Name
-                </label>
-              </div>
-              <div className="relative">
-                <input
-                  className="block px-3.5 py-4 w-full h-14 text-sm text-light-primary-text bg-transparent rounded-full border border-gray-500/20 appearance-none focus:outline-none focus:ring-0 focus:border-primary peer"
-                  defaultValue="steal-deals-shop"
-                  type="text"
-                />
-                <label className="absolute text-sm text-primary duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-left left-3.5 bg-white px-1 start-1">
-                  Shop Slug
-                </label>
-              </div>
-              <div className="relative">
-                <input
-                  className="block px-3.5 py-4 w-full h-14 text-sm text-light-primary-text bg-transparent rounded-full border border-gray-500/20 appearance-none focus:outline-none focus:ring-0 focus:border-primary peer"
-                  defaultValue="+1 555-0128"
-                  type="text"
-                />
-                <label className="absolute text-sm text-primary duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-left left-3.5 bg-white px-1 start-1">
-                  Phone Number
-                </label>
-              </div>
-              <div className="relative">
-                <input
-                  className="block px-3.5 py-4 w-full h-14 text-sm text-light-primary-text bg-transparent rounded-full border border-gray-500/20 appearance-none focus:outline-none focus:ring-0 focus:border-primary peer"
-                  defaultValue="shop@stealdeals.com"
-                  type="text"
-                />
-                <label className="absolute text-sm text-primary duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-left left-3.5 bg-white px-1 start-1">
-                  Email Address
-                </label>
-              </div>
-            </div>
-
-            <div className="relative">
-              <textarea
-                className="block px-3.5 py-4 w-full text-sm text-light-primary-text bg-transparent rounded-2xl border border-gray-500/20 appearance-none focus:outline-none focus:ring-0 focus:border-primary peer resize-none h-32"
-                defaultValue="Steal Deals Shop offers curated streetwear jackets, footwear and premium brand items at the best prices."
-              />
-              <label className="absolute text-sm text-primary duration-300 transform -translate-y-4 scale-75 top-2 z-10 left-3.5 origin-left bg-white px-1 start-1">
-                Shop Description
-              </label>
-            </div>
+    <>
+      {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
+      <form onSubmit={save} className="space-y-6">
+        <div><p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Store profile</p><h1 className="text-xl font-bold">Settings</h1></div>
+        <DashboardCard className="space-y-6 p-4 sm:p-6">
+          <div><h2 className="text-lg font-bold">Shop information</h2><p className="mt-1 text-sm text-light-secondary-text">The public details customers use to identify your collection point.</p></div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-500/30 bg-gray-50 p-4 text-center hover:bg-gray-100"><span className="size-20 overflow-hidden rounded-xl"><ProductImage alt="" /></span><strong className="mt-3 text-sm">{draft.coverName || "Choose cover image"}</strong><span className="mt-1 text-xs text-light-secondary-text">Local filename only</span><input type="file" accept="image/*" className="sr-only" onChange={(event) => setDraft({ ...draft, coverName: event.target.files?.[0]?.name })} /></label>
+            <label className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-gray-500/30 bg-gray-50 p-4 text-center hover:bg-gray-100"><span className="size-20 overflow-hidden rounded-full"><ProductImage alt="" /></span><strong className="mt-3 text-sm">{draft.logoName || "Choose store logo"}</strong><span className="mt-1 text-xs text-light-secondary-text">Local filename only</span><input type="file" accept="image/*" className="sr-only" onChange={(event) => setDraft({ ...draft, logoName: event.target.files?.[0]?.name })} /></label>
           </div>
-
-          {/* Operating Hours */}
-          <div className="border border-gray-500/20 rounded-2xl p-4 sm:p-6 space-y-6">
-            <h3 className="text-lg font-bold text-light-primary-text">Operating Hours</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-              {operatingHours.map((hour, idx) => (
-                <div key={idx} className={`flex items-center justify-between rounded-lg p-4 ${hour.active ? "bg-primary-alpha-16" : "bg-gray-100"}`}>
-                  <div>
-                    <span className="text-sm font-bold text-light-primary-text block">{hour.day}</span>
-                    <span className="text-xs font-semibold text-light-secondary-text">{hour.open} to {hour.close}</span>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input className="peer sr-only" defaultChecked={hour.active} type="checkbox" />
-                    <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:height-4 after:width-4 after:transition-all peer-checked:bg-primary"></div>
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-4">
-            <button type="button" className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm leading-6">
-              Cancel
-            </button>
-            <button type="button" className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none bg-primary text-white hover:bg-primary-dark px-4 py-2 text-sm leading-6">
-              Save Settings
-            </button>
-          </div>
-        </div>
-      </DashboardCard>
+          <div className="grid gap-5 md:grid-cols-2"><label className="text-sm font-semibold">Shop name *<input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className={inputClass} /></label><label className="text-sm font-semibold">Shop slug *<input required pattern="[a-z0-9-]+" title="Use lowercase letters, numbers, and hyphens." value={draft.slug} onChange={(event) => setDraft({ ...draft, slug: event.target.value })} className={inputClass} /></label><label className="text-sm font-semibold">Phone number *<input required type="tel" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className={inputClass} /></label><label className="text-sm font-semibold">Email address *<input required type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className={inputClass} /></label><label className="text-sm font-semibold md:col-span-2">Description *<textarea required rows={4} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} className="mt-2 w-full rounded-xl border-none bg-gray-100 p-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label></div>
+        </DashboardCard>
+        <DashboardCard className="space-y-5 p-4 sm:p-6"><div><h2 className="text-lg font-bold">Pickup hours</h2><p className="mt-1 text-sm text-light-secondary-text">Set the normal collection availability for each day.</p></div><div className="grid gap-3 lg:grid-cols-2">{draft.hours.map((hour, index) => <div key={hour.day} className={`rounded-xl p-4 ${hour.active ? "bg-primary-alpha-16" : "bg-gray-100"}`}><div className="flex items-center justify-between"><strong>{hour.day}</strong><label className="flex items-center gap-2 text-sm"><span>{hour.active ? "Open" : "Closed"}</span><input type="checkbox" checked={hour.active} onChange={(event) => setDraft({ ...draft, hours: draft.hours.map((item, itemIndex) => itemIndex === index ? { ...item, active: event.target.checked } : item) })} className="size-4 accent-primary" /></label></div>{hour.active && <div className="mt-3 grid grid-cols-2 gap-3"><label className="text-xs font-semibold">Opens<input type="time" value={hour.open} onChange={(event) => setDraft({ ...draft, hours: draft.hours.map((item, itemIndex) => itemIndex === index ? { ...item, open: event.target.value } : item) })} className={inputClass} /></label><label className="text-xs font-semibold">Closes<input type="time" value={hour.close} onChange={(event) => setDraft({ ...draft, hours: draft.hours.map((item, itemIndex) => itemIndex === index ? { ...item, close: event.target.value } : item) })} className={inputClass} /></label></div>}</div>)}</div></DashboardCard>
+        {error && <div role="alert" className="rounded-xl bg-error-alpha-16 px-4 py-3 text-sm text-error-dark">{error}</div>}
+        <div className="flex justify-end gap-3"><DashboardButton variant="secondary" onClick={cancel}>Cancel</DashboardButton><DashboardButton type="submit">Save settings</DashboardButton></div>
+      </form>
+    </>
   );
 }

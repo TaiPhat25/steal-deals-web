@@ -1,166 +1,58 @@
-import { DashboardCard } from "@/components/dashboard/ui";
+"use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Avatar, DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
+import { useSellerDemo, type OrderStatus } from "@/components/seller/SellerDemoProvider";
+
+const PAGE_SIZE = 4;
+const amount = (items: Array<{ quantity: number; price: number }>) => items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+const tone = (status: OrderStatus) => status === "Completed" ? "success" : status === "Cancelled" ? "error" : status === "Ready for pickup" ? "warning" : "info";
 
 export default function SellerOrders() {
-  const stats = [
-    { label: "Total Order", value: "3,823", color: "bg-accent-5/60" },
-    { label: "Pending Payment", value: "934", color: "bg-accent-2/60" },
-    { label: "Processing", value: "993", color: "bg-accent-1/60" },
-    { label: "Shipped", value: "536", color: "bg-accent-3/60" },
-    { label: "Delivered", value: "24,392", color: "bg-accent-4/60" },
-    { label: "Cancelled", value: "9,372", color: "bg-accent-6/60" },
-    { label: "Returned", value: "434", color: "bg-accent-7/60" },
-  ];
+  const { orders } = useSellerDemo();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<OrderStatus | "">("");
+  const [payment, setPayment] = useState("");
+  const [date, setDate] = useState("");
+  const [page, setPage] = useState(1);
+  const stats = ["New", "Confirmed", "Ready for pickup", "Completed", "Cancelled"].map((item) => ({ label: item, value: orders.filter((order) => order.status === item).length }));
+  const filtered = useMemo(() => orders.filter((order) => {
+    const query = search.trim().toLowerCase();
+    return (!query || `${order.id} ${order.customer} ${order.email}`.toLowerCase().includes(query))
+      && (!status || order.status === status)
+      && (!payment || order.paymentStatus === payment)
+      && (!date || order.date === date);
+  }), [date, orders, payment, search, status]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const orders = [
-    {
-      id: "#73423",
-      customer: "Alexa Smith",
-      items: "10 pcs",
-      amount: "$100",
-      paymentStatus: "paid",
-      paymentClass: "border-primary text-primary",
-      receivedStatus: "Delivered",
-      receivedClass: "bg-primary-alpha-16 text-primary-dark",
-      date: "11 Sept, 2027",
-    },
-    {
-      id: "#73424",
-      customer: "Alexa Smith",
-      items: "11 pcs",
-      amount: "$200",
-      paymentStatus: "pending",
-      paymentClass: "border-warning text-warning",
-      receivedStatus: "Processing",
-      receivedClass: "bg-warning-alpha-16 text-warning-dark",
-      date: "12 Sept, 2027",
-    },
-    {
-      id: "#73425",
-      customer: "Alexa Smith",
-      items: "12 pcs",
-      amount: "$300",
-      paymentStatus: "unpaid",
-      paymentClass: "border-error text-error",
-      receivedStatus: "Shipped",
-      receivedClass: "bg-info-alpha-16 text-info-dark",
-      date: "13 Sept, 2027",
-    },
-    {
-      id: "#73426",
-      customer: "Alexa Smith",
-      items: "13 pcs",
-      amount: "$400",
-      paymentStatus: "paid",
-      paymentClass: "border-primary text-primary",
-      receivedStatus: "Delivered",
-      receivedClass: "bg-primary-alpha-16 text-primary-dark",
-      date: "14 Sept, 2027",
-    },
-  ];
+  function resetPage() {
+    setPage(1);
+  }
+
+  function exportCsv() {
+    const escape = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+    const csv = [["Order", "Customer", "Items", "Amount", "Payment", "Status", "Date"], ...filtered.map((order) => [order.id, order.customer, order.items.reduce((sum, item) => sum + item.quantity, 0), amount(order.items), order.paymentStatus, order.status, order.date])].map((row) => row.map(escape).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "seller-orders.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
-    <DashboardCard className="bg-white rounded-2xl py-4 sm:py-6">
-        <div className="px-4 sm:px-6">
-          <div className="pb-4">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h3 className="text-xl font-bold text-light-primary-text">Total Orders</h3>
-              <button type="button" className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none bg-primary text-white hover:bg-primary-dark px-4 py-1 h-7.5 text-[13px] leading-5.5">
-                Export
-              </button>
-            </div>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 sm:gap-6">
-              {stats.map((stat, idx) => (
-                <div key={idx} className={`${stat.color} rounded-xl p-4 flex flex-col justify-center items-start`}>
-                  <p className="text-xs mb-1 text-light-secondary-text font-semibold">{stat.label}</p>
-                  <p className="text-xl font-bold text-light-primary-text">{stat.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{stats.map((stat, index) => <DashboardCard key={stat.label} className={`p-4 ${["bg-accent-5/60", "bg-accent-2/60", "bg-accent-1/60", "bg-accent-4/60", "bg-accent-6/60"][index]}`}><p className="text-sm font-semibold text-light-secondary-text">{stat.label}</p><p className="mt-2 text-2xl font-bold">{stat.value}</p></DashboardCard>)}</div>
+      <DashboardCard className="w-full overflow-hidden">
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-4"><div><p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Pickup workflow</p><h1 className="text-xl font-bold">Orders</h1></div><DashboardButton onClick={exportCsv}>Export CSV</DashboardButton></div>
+          <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><label className="relative w-full lg:w-72"><span className="sr-only">Search orders</span><span className="absolute left-3 top-1/2 -translate-y-1/2 text-light-secondary-text">⌕</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); resetPage(); }} placeholder="Search order or customer..." className="h-9 w-full rounded-full border-none bg-gray-100 pl-9 pr-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label><div className="flex flex-wrap gap-3"><select aria-label="Fulfillment status" value={status} onChange={(event) => { setStatus(event.target.value as OrderStatus | ""); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"><option value="">All statuses</option><option>New</option><option>Confirmed</option><option>Ready for pickup</option><option>Completed</option><option>Cancelled</option></select><select aria-label="Payment status" value={payment} onChange={(event) => { setPayment(event.target.value); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"><option value="">All payments</option><option>Paid</option><option>Pending</option></select><input aria-label="Order date" type="date" value={date} onChange={(event) => { setDate(event.target.value); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" />{(search || status || payment || date) && <button type="button" onClick={() => { setSearch(""); setStatus(""); setPayment(""); setDate(""); resetPage(); }} className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter">Clear</button>}</div></div>
         </div>
-
-        {/* Filters and Search */}
-        <div className="pt-6">
-          <div className="p-4">
-            <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center">
-              <div className="relative sm:w-[300px] w-full">
-                <input
-                  className="pl-9 w-full pr-3.5 ring h-9 ring-gray-500/20 py-2 bg-gray-100 border-none rounded-full text-sm focus:outline-none focus:ring-primary transition-all font-normal text-light-primary-text placeholder:text-light-secondary-text"
-                  placeholder="Search..."
-                  type="text"
-                />
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  className="relative h-9 ring inline-flex text-sm items-center justify-between ring-[rgba(145,158,171,0.20)] w-[140px] cursor-default rounded-full bg-gray-200 px-3 py-2 text-left focus:outline-none text-light-secondary-text"
-                  type="button"
-                >
-                  Payment status
-                </button>
-                <button
-                  className="relative h-9 ring inline-flex text-sm items-center justify-between ring-[rgba(145,158,171,0.20)] w-[140px] cursor-default rounded-full bg-gray-200 px-3 py-2 text-left focus:outline-none text-light-secondary-text"
-                  type="button"
-                >
-                  Received status
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Orders Table */}
-          <div className="relative w-full overflow-auto">
-            <table className="w-full caption-bottom text-sm">
-              <thead>
-                <tr className="bg-gray-100 border-y border-gray-500/20">
-                  <th className="h-12 p-3 pl-6 text-left align-middle text-light-primary-text text-sm font-semibold">ID</th>
-                  <th className="h-12 p-3 text-left align-middle text-light-primary-text text-sm font-semibold">Customer</th>
-                  <th className="h-12 p-3 text-left align-middle text-light-primary-text text-sm font-semibold">Items</th>
-                  <th className="h-12 p-3 text-left align-middle text-light-primary-text text-sm font-semibold">Amount</th>
-                  <th className="h-12 p-3 text-left align-middle text-light-primary-text text-sm font-semibold">Payment status</th>
-                  <th className="h-12 p-3 text-left align-middle text-light-primary-text text-sm font-semibold">Received status</th>
-                  <th className="h-12 p-3 text-left align-middle text-light-primary-text text-sm font-semibold">Date</th>
-                  <th className="h-12 p-3 pr-6 text-left align-middle text-light-primary-text text-sm font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="border-b border-gray-500/20 last:border-0 hover:bg-gray-50/50 transition-colors">
-                    <td className="px-3 py-3.5 pl-6 text-sm text-light-secondary-text">{order.id}</td>
-                    <td className="px-3 py-3.5 text-sm text-light-secondary-text">{order.customer}</td>
-                    <td className="px-3 py-3.5 text-sm text-light-secondary-text">{order.items}</td>
-                    <td className="px-3 py-3.5 text-sm font-semibold text-light-primary-text">{order.amount}</td>
-                    <td className="px-3 py-3.5">
-                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-transparent border ${order.paymentClass}`}>
-                        {order.paymentStatus}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3.5">
-                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${order.receivedClass}`}>
-                        {order.receivedStatus}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3.5 text-sm text-light-secondary-text">{order.date}</td>
-                    <td className="px-3 py-3.5 pr-6">
-                      <Link
-                        className="inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-primary"
-                        href="/seller/orders/details"
-                      >
-                        <svg className="size-4" fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-                          <path
-                            d="M8 2.586c1.789 0 3.311.788 4.474 1.695 1.163.909 2.02 1.98 2.499 2.65.162.228.443.575.443 1.072s-.28.844-.443 1.072c-.479.67-1.336 1.741-2.5 2.65-1.162.907-2.684 1.694-4.473 1.694s-3.311-.787-4.474-1.694c-1.163-.909-2.021-1.98-2.5-2.65-.142-.2-.374-.491-.43-.893l-.013-.18.013-.179c.056-.402.288-.693.43-.892.479-.67 1.336-1.74 2.5-2.65C4.69 3.374 6.211 2.586 8 2.586m0 1.5c-1.337 0-2.541.589-3.55 1.377-1.009.787-1.77 1.732-2.202 2.339-.052.073-.09.126-.121.172l-.019.028.019.03c.03.045.069.099.121.172.433.607 1.194 1.551 2.201 2.338 1.01.788 2.214 1.377 3.551 1.377s2.54-.59 3.55-1.377c1.008-.787 1.77-1.731 2.202-2.338l.121-.173.018-.029-.018-.028c-.03-.046-.069-.1-.121-.172-.433-.607-1.194-1.552-2.202-2.34C10.54 4.676 9.337 4.087 8 4.087zm0 1.167a2.75 2.75 0 1 1 0 5.5 2.75 2.75 0 0 1 0-5.5m0 1.5a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5"
-                            fill="currentColor"
-                          />
-                        </svg>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <div className="overflow-x-auto border-t border-gray-500/20"><table className="w-full text-sm"><thead className="bg-gray-100 text-left"><tr><th className="p-3 pl-5">Order</th><th className="p-3">Customer</th><th className="p-3">Items</th><th className="p-3">Amount</th><th className="p-3">Payment</th><th className="p-3">Status</th><th className="p-3">Date</th><th className="p-3 pr-5 text-right">Action</th></tr></thead><tbody>{rows.map((order) => <tr key={order.id} className="border-t border-gray-500/20 hover:bg-gray-50/50"><td className="p-3 pl-5 font-semibold">{order.id}</td><td className="p-3"><div className="flex items-center gap-3"><Avatar name={order.customer} size="sm" /><div><strong className="block">{order.customer}</strong><span className="text-xs text-light-secondary-text">{order.email}</span></div></div></td><td className="p-3">{order.items.reduce((sum, item) => sum + item.quantity, 0)}</td><td className="p-3 font-semibold">${amount(order.items).toFixed(2)}</td><td className="p-3"><StatusBadge tone={order.paymentStatus === "Paid" ? "success" : "warning"}>{order.paymentStatus}</StatusBadge></td><td className="p-3"><StatusBadge tone={tone(order.status)}>{order.status}</StatusBadge></td><td className="p-3">{order.date}</td><td className="p-3 pr-5 text-right"><Link href={`/seller/orders/details?id=${order.id}`} className="inline-flex h-8 items-center rounded-lg px-3 font-semibold text-primary hover:bg-primary-lighter">Manage</Link></td></tr>)}</tbody></table>{rows.length === 0 && <div className="px-4 py-14 text-center text-sm text-light-secondary-text">No orders match these filters.</div>}</div>
+        <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6"><span className="text-sm text-light-secondary-text">{filtered.length} orders</span><div className="flex items-center gap-2"><button type="button" aria-label="Previous page" disabled={page === 1} onClick={() => setPage(page - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">‹</button><span className="text-sm font-semibold">Page {page} of {totalPages}</span><button type="button" aria-label="Next page" disabled={page === totalPages} onClick={() => setPage(page + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">›</button></div></div>
       </DashboardCard>
+    </div>
   );
 }
