@@ -1,19 +1,16 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
 import Link from "next/link";
+import { DashboardCard, ProductImage } from "@/components/dashboard/ui";
 
 export default function SellerProductDetails() {
   const variants = [
-    { sku: "#73423", variantId: "#V-001", image: "/seller/images/next_assets/01a793.png", color: "Black", size: "S", visible: "1 x 80ml", status: "Draft", statusClass: "bg-warning-alpha-16 text-warning-dark" },
-    { sku: "#73424", variantId: "#V-002", image: "/seller/images/next_assets/023d38.png", color: "White", size: "M", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
-    { sku: "#73425", variantId: "#V-003", image: "/seller/images/next_assets/034b1d.png", color: "Blue", size: "L", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
-    { sku: "#73426", variantId: "#V-004", image: "/seller/images/next_assets/04ba25.png", color: "Red", size: "XL", visible: "1 x 80ml", status: "Draft", statusClass: "bg-warning-alpha-16 text-warning-dark" },
+    { sku: "#73423", variantId: "#V-001", image: "/dashboard/product-placeholder.png", color: "Black", size: "S", visible: "1 x 80ml", status: "Draft", statusClass: "bg-warning-alpha-16 text-warning-dark" },
+    { sku: "#73424", variantId: "#V-002", image: "/dashboard/product-placeholder.png", color: "White", size: "M", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
+    { sku: "#73425", variantId: "#V-003", image: "/dashboard/product-placeholder.png", color: "Blue", size: "L", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
+    { sku: "#73426", variantId: "#V-004", image: "/dashboard/product-placeholder.png", color: "Red", size: "XL", visible: "1 x 80ml", status: "Draft", statusClass: "bg-warning-alpha-16 text-warning-dark" },
   ];
 
   return (
-    <SellerLayout>
-      <div className="bg-white rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6">
+    <DashboardCard className="bg-white rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link
@@ -45,7 +42,7 @@ export default function SellerProductDetails() {
           <div className="p-4 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center pb-4 sm:pb-6">
               <div className="rounded-full size-20 shrink-0 relative overflow-hidden bg-gray-100">
-                <img alt="Product" className="object-cover w-full h-full" src="/seller/images/next_assets/03c8fb.png" />
+                <ProductImage alt="Product" />
               </div>
               <div className="flex-1 flex items-start justify-between">
                 <div className="flex flex-col gap-2">
@@ -58,7 +55,7 @@ export default function SellerProductDetails() {
                   </div>
                 </div>
                 <div>
-                  <span className="h-5.5 inline-flex items-center justify-center font-public-sans rounded-full bg-primary-alpha-16 text-primary-dark px-2.5 py-0.5 text-xs font-semibold">
+                  <span className="h-5.5 inline-flex items-center justify-center font-sans rounded-full bg-primary-alpha-16 text-primary-dark px-2.5 py-0.5 text-xs font-semibold">
                     Published
                   </span>
                 </div>
@@ -123,9 +120,9 @@ export default function SellerProductDetails() {
           <h2 className="text-lg font-bold text-gray-900 border-b border-gray-500/20 py-4 px-4 sm:px-6">Media</h2>
           <div className="p-4 sm:p-6">
             <div className="flex gap-3 flex-wrap">
-              {["01b848.png", "02a502.png", "03c8fb.png", "045d79.png"].map((img, idx) => (
+              {Array.from({ length: 4 }, (_, idx) => (
                 <div key={idx} className="size-16 sm:size-25 rounded-lg overflow-hidden border border-gray-100">
-                  <img alt="Media" className="object-cover w-full h-full" src={`/seller/images/next_assets/${img}`} />
+                  <ProductImage alt={`Product media ${idx + 1}`} />
                 </div>
               ))}
             </div>
@@ -155,14 +152,14 @@ export default function SellerProductDetails() {
                     <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.variantId}</td>
                     <td className="px-3 py-3.5 text-sm text-light-secondary-text">
                       <div className="size-8 rounded-lg relative overflow-hidden bg-gray-50">
-                        <img alt="variant" className="object-contain w-full h-full" src={v.image} />
+                        <ProductImage alt="Product variant" className="object-contain" />
                       </div>
                     </td>
                     <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.color}</td>
                     <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.size}</td>
                     <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.visible}</td>
                     <td className="px-3 py-3.5 pr-5">
-                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium ${v.statusClass}`}>
+                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${v.statusClass}`}>
                         {v.status}
                       </span>
                     </td>
@@ -172,7 +169,6 @@ export default function SellerProductDetails() {
             </table>
           </div>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

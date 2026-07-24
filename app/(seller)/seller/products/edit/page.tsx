@@ -1,17 +1,14 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
 import Link from "next/link";
+import { DashboardCard, ProductImage } from "@/components/dashboard/ui";
 
 export default function SellerEditProduct() {
   const variants = [
-    { sku: "#73423", variantId: "#V-001", image: "/seller/images/next_assets/01a793.png", color: "Black", size: "L", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
-    { sku: "#73424", variantId: "#V-002", image: "/seller/images/next_assets/023d38.png", color: "Black", size: "M", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
+    { sku: "#73423", variantId: "#V-001", image: "/dashboard/product-placeholder.png", color: "Black", size: "L", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
+    { sku: "#73424", variantId: "#V-002", image: "/dashboard/product-placeholder.png", color: "Black", size: "M", visible: "1 x 80ml", status: "Active", statusClass: "bg-primary-alpha-16 text-primary-dark" },
   ];
 
   return (
-    <SellerLayout>
-      <div className="w-full bg-white rounded-2xl mx-auto p-4 sm:p-6">
+    <DashboardCard className="w-full bg-white rounded-2xl mx-auto p-4 sm:p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div className="flex items-center gap-2">
@@ -112,10 +109,10 @@ export default function SellerEditProduct() {
               </div>
               <div className="w-full flex gap-3 items-center">
                 <div className="size-20 rounded-lg overflow-hidden border border-gray-200 relative bg-gray-50">
-                  <img alt="thumb" className="object-cover w-full h-full" src="/seller/images/next_assets/01651b.png" />
+                  <ProductImage alt="Product thumbnail" />
                 </div>
                 <div className="size-20 rounded-lg overflow-hidden border border-gray-200 relative bg-gray-50">
-                  <img alt="thumb" className="object-cover w-full h-full" src="/seller/images/next_assets/02f93d.png" />
+                  <ProductImage alt="Product thumbnail" />
                 </div>
               </div>
             </div>
@@ -144,14 +141,14 @@ export default function SellerEditProduct() {
                       <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.variantId}</td>
                       <td className="px-3 py-3.5 text-sm text-light-secondary-text">
                         <div className="size-8 rounded-lg relative overflow-hidden bg-gray-50">
-                          <img alt="variant" className="object-contain w-full h-full" src={v.image} />
+                          <ProductImage alt="Product variant" className="object-contain" />
                         </div>
                       </td>
                       <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.color}</td>
                       <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.size}</td>
                       <td className="px-3 py-3.5 text-sm text-light-secondary-text">{v.visible}</td>
                       <td className="px-3 py-3.5 pr-5">
-                        <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium ${v.statusClass}`}>
+                        <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${v.statusClass}`}>
                           {v.status}
                         </span>
                       </td>
@@ -178,7 +175,6 @@ export default function SellerEditProduct() {
             Save
           </Link>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

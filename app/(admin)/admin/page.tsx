@@ -1,18 +1,15 @@
-"use client";
-
-import AdminLayout from "@/components/admin/AdminLayout";
+import { DashboardCard } from "@/components/dashboard/ui";
 
 export default function AdminDashboard() {
   return (
-    <AdminLayout>
-      <div className="space-y-6 bg-white p-4 sm:p-6 rounded-2xl">
+    <DashboardCard className="space-y-6 bg-white p-4 sm:p-6 rounded-2xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-[rgba(160,226,224,0.60)] p-6 rounded-2xl flex flex-col justify-between relative">
             <div>
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Total Sales
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 $4,876
               </h3>
             </div>
@@ -31,7 +28,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Total Orders
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 4,876
               </h3>
             </div>
@@ -50,7 +47,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Order Count
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 1M
               </h3>
             </div>
@@ -69,7 +66,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Total Customers
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 50,000
               </h3>
             </div>
@@ -88,7 +85,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Newly Registered Users
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 500
               </h3>
             </div>
@@ -107,7 +104,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Item Sold Today
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 4,876
               </h3>
             </div>
@@ -126,7 +123,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Total Revenue
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 $12,876
               </h3>
             </div>
@@ -145,7 +142,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-semibold text-light-secondary-text mb-2">
                 Today Revenue
               </p>
-              <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">
+              <h3 className="text-2xl font-sans font-bold text-light-primary-text">
                 $4,876
               </h3>
             </div>
@@ -291,7 +288,7 @@ export default function AdminDashboard() {
                       $20
                     </td>
                     <td className="px-3 first:pl-5 last:pr-5 align-middle py-4">
-                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
+                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
                         Pending
                       </span>
                     </td>
@@ -313,7 +310,7 @@ export default function AdminDashboard() {
                       $40
                     </td>
                     <td className="px-3 first:pl-5 last:pr-5 align-middle py-4">
-                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
+                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
                         Processing
                       </span>
                     </td>
@@ -335,7 +332,7 @@ export default function AdminDashboard() {
                       $60
                     </td>
                     <td className="px-3 first:pl-5 last:pr-5 align-middle py-4">
-                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
+                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
                         Processing
                       </span>
                     </td>
@@ -357,7 +354,7 @@ export default function AdminDashboard() {
                       $80
                     </td>
                     <td className="px-3 first:pl-5 last:pr-5 align-middle py-4">
-                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
+                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
                         Pending
                       </span>
                     </td>
@@ -379,7 +376,7 @@ export default function AdminDashboard() {
                       $100
                     </td>
                     <td className="px-3 first:pl-5 last:pr-5 align-middle py-4">
-                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
+                      <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-warning-alpha-16 text-warning-dark">
                         Processing
                       </span>
                     </td>
@@ -389,7 +386,7 @@ export default function AdminDashboard() {
             </div>
             <div className="p-4 sm:p-6 flex justify-end border-t border-[rgba(145,158,171,0.20)]">
               <div className="flex items-center gap-2">
-                <button
+                <button type="button"
                   disabled
                   className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
                 >
@@ -398,17 +395,17 @@ export default function AdminDashboard() {
                   </svg>
                 </button>
                 <div className="flex items-center gap-1">
-                  <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">
+                  <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">
                     1
                   </button>
-                  <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
+                  <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
                     2
                   </button>
-                  <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
+                  <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
                     3
                   </button>
                 </div>
-                <button className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
+                <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="size-5">
                     <path fill="currentColor" d="M6.897 4.555a.75.75 0 0 1 1.048-.159l.002.001.003.002.054.041.164.122a46 46 0 0 1 2.325 1.877c.634.55 1.288 1.16 1.789 1.727.25.282.477.572.646.853.157.26.322.607.323.98 0 .374-.166.72-.323.981a6 6 0 0 1-.646.854c-.501.566-1.155 1.175-1.79 1.726a44 44 0 0 1-2.324 1.877l-.164.122-.054.041-.003.002-.001.001h-.001a.75.75 0 1 1-.889-1.207l.002-.003.01-.007.041-.029.154-.116a46 46 0 0 0 2.245-1.814c.616-.534 1.212-1.093 1.649-1.587a4.6 4.6 0 0 0 .486-.634c.068-.113.094-.18.103-.206a1 1 0 0 0-.103-.206 4.6 4.6 0 0 0-.486-.635c-.437-.494-1.032-1.053-1.648-1.587a43 43 0 0 0-2.246-1.814l-.154-.116-.04-.03q-.008-.003-.01-.006-.002-.001-.003-.002a.75.75 0 0 1-.159-1.049" />
                   </svg>
@@ -417,7 +414,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-      </div>
-    </AdminLayout>
+      </DashboardCard>
   );
 }

@@ -1,6 +1,4 @@
-"use client";
-
-import AdminLayout from "@/components/admin/AdminLayout";
+import { DashboardCard } from "@/components/dashboard/ui";
 import Link from "next/link";
 
 export default function AdminSupport() {
@@ -44,8 +42,7 @@ export default function AdminSupport() {
   ];
 
   return (
-    <AdminLayout>
-      <div className="bg-white rounded-2xl w-full">
+    <DashboardCard className="bg-white rounded-2xl w-full">
         <div className="p-4 sm:p-6 pb-4">
           <div className="mb-4 sm:mb-6">
             <h3 className="text-xl font-bold text-light-primary-text leading-7">Support & Ticket</h3>
@@ -204,7 +201,7 @@ export default function AdminSupport() {
                     {ticket.subject}
                   </td>
                   <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle">
-                    <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium ${ticket.statusClass}`}>
+                    <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${ticket.statusClass}`}>
                       {ticket.status}
                     </span>
                   </td>
@@ -224,7 +221,7 @@ export default function AdminSupport() {
                           ></path>
                         </svg>
                       </Link>
-                      <button className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-primary transition-colors">
+                      <button type="button" className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-primary transition-colors">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="24"
@@ -241,7 +238,7 @@ export default function AdminSupport() {
                           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                         </svg>
                       </button>
-                      <button className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-red-500 transition-colors">
+                      <button type="button" className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-red-500 transition-colors">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="24"
@@ -268,7 +265,7 @@ export default function AdminSupport() {
         </div>
         <div className="p-4 sm:p-6 border-t border-gray-500/20 flex justify-end">
           <div className="flex items-center gap-2">
-            <button
+            <button type="button"
               disabled
               className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
             >
@@ -277,21 +274,20 @@ export default function AdminSupport() {
               </svg>
             </button>
             <div className="flex items-center gap-1">
-              <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">
+              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">
                 1
               </button>
-              <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
+              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
                 2
               </button>
             </div>
-            <button className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
+            <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="size-5">
                 <path fill="currentColor" d="M6.897 4.555a.75.75 0 0 1 1.048-.159l.002.001.003.002.054.041.164.122a46 46 0 0 1 2.325 1.877c.634.55 1.288 1.16 1.789 1.727.25.282.477.572.646.853.157.26.322.607.323.98 0 .374-.166.72-.323.981a6 6 0 0 1-.646.854c-.501.566-1.155 1.175-1.79 1.726a44 44 0 0 1-2.324 1.877l-.164.122-.054.041-.003.002-.001.001h-.001a.75.75 0 1 1-.889-1.207l.002-.003.01-.007.041-.029.154-.116a46 46 0 0 0 2.245-1.814c.616-.534 1.212-1.093 1.649-1.587a4.6 4.6 0 0 0 .486-.634c.068-.113.094-.18.103-.206a1 1 0 0 0-.103-.206 4.6 4.6 0 0 0-.486-.635c-.437-.494-1.032-1.053-1.648-1.587a43 43 0 0 0-2.246-1.814l-.154-.116-.04-.03q-.008-.003-.01-.006-.002-.001-.003-.002a.75.75 0 0 1-.159-1.049"></path>
               </svg>
             </button>
           </div>
         </div>
-      </div>
-    </AdminLayout>
+      </DashboardCard>
   );
 }

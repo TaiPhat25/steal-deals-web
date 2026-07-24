@@ -1,6 +1,4 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
+import { DashboardCard } from "@/components/dashboard/ui";
 
 export default function SellerSettings() {
   const tabs = [
@@ -22,8 +20,7 @@ export default function SellerSettings() {
   ];
 
   return (
-    <SellerLayout>
-      <div className="bg-white rounded-2xl p-4 sm:p-6 space-y-6">
+    <DashboardCard className="bg-white rounded-2xl p-4 sm:p-6 space-y-6">
         <div className="mb-1">
           <h2 className="text-xl font-bold text-light-primary-text">Settings</h2>
         </div>
@@ -32,7 +29,7 @@ export default function SellerSettings() {
         <div className="border-b border-gray-500/20 scrollbar-hide">
           <nav aria-label="Tabs" className="-mb-px flex space-x-6 sm:space-x-10 min-w-max">
             {tabs.map((tab, idx) => (
-              <button
+              <button type="button"
                 key={idx}
                 className={`whitespace-nowrap py-3 border-b-3 font-semibold text-sm transition-colors ${
                   tab.active
@@ -136,15 +133,14 @@ export default function SellerSettings() {
 
           {/* Actions */}
           <div className="flex justify-end gap-4">
-            <button className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm leading-6">
+            <button type="button" className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm leading-6">
               Cancel
             </button>
-            <button className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none bg-primary text-white hover:bg-primary-dark px-4 py-2 text-sm leading-6">
+            <button type="button" className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none bg-primary text-white hover:bg-primary-dark px-4 py-2 text-sm leading-6">
               Save Settings
             </button>
           </div>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

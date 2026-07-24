@@ -1,12 +1,9 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
+import { DashboardCard } from "@/components/dashboard/ui";
 import Link from "next/link";
 
 export default function SellerAddProduct() {
   return (
-    <SellerLayout>
-      <div className="w-full bg-white rounded-2xl mx-auto p-4 sm:p-6">
+    <DashboardCard className="w-full bg-white rounded-2xl mx-auto p-4 sm:p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -185,7 +182,6 @@ export default function SellerAddProduct() {
             Save
           </Link>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

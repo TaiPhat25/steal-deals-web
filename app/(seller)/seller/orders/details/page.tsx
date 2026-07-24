@@ -1,19 +1,16 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
 import Link from "next/link";
+import { DashboardCard, Avatar, ProductImage } from "@/components/dashboard/ui";
 
 export default function SellerOrderDetails() {
   const items = [
-    { id: "#23453", name: "Product 1", image: "/seller/images/next_assets/0494b7.png", category: "Cloth", quantity: 1, price: "$20" },
-    { id: "#23454", name: "Product 2", image: "/seller/images/next_assets/05e8f4.png", category: "Cloth", quantity: 2, price: "$40" },
-    { id: "#23455", name: "Product 3", image: "/seller/images/next_assets/068047.png", category: "Cloth", quantity: 3, price: "$60" },
-    { id: "#23456", name: "Product 4", image: "/seller/images/next_assets/0710ad.png", category: "Cloth", quantity: 1, price: "$80" },
+    { id: "#23453", name: "Product 1", image: "/dashboard/product-placeholder.png", category: "Cloth", quantity: 1, price: "$20" },
+    { id: "#23454", name: "Product 2", image: "/dashboard/product-placeholder.png", category: "Cloth", quantity: 2, price: "$40" },
+    { id: "#23455", name: "Product 3", image: "/dashboard/product-placeholder.png", category: "Cloth", quantity: 3, price: "$60" },
+    { id: "#23456", name: "Product 4", image: "/dashboard/product-placeholder.png", category: "Cloth", quantity: 1, price: "$80" },
   ];
 
   return (
-    <SellerLayout>
-      <div className="bg-white p-4 sm:p-6 rounded-2xl w-full">
+    <DashboardCard className="bg-white p-4 sm:p-6 rounded-2xl w-full">
         <div className="pb-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Link
@@ -31,7 +28,7 @@ export default function SellerOrderDetails() {
             </Link>
             <h2 className="text-lg sm:text-xl font-bold text-light-primary-text">Details</h2>
           </div>
-          <button className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-1 h-7.5 text-[13px] leading-5.5">
+          <button type="button" className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-1 h-7.5 text-[13px] leading-5.5">
             Export
           </button>
         </div>
@@ -46,10 +43,10 @@ export default function SellerOrderDetails() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg sm:text-xl font-bold text-light-primary-text">#73423</h2>
                 <div className="flex items-center gap-3">
-                  <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-transparent border border-primary text-primary">
+                  <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-transparent border border-primary text-primary">
                     paid
                   </span>
-                  <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-primary-alpha-16 text-primary-dark">
+                  <span className="px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-primary-alpha-16 text-primary-dark">
                     Delivered
                   </span>
                 </div>
@@ -90,7 +87,7 @@ export default function SellerOrderDetails() {
                             <td className="px-3 pl-6 py-2">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-lg shrink-0 relative overflow-hidden bg-gray-50 border border-gray-100">
-                                  <img alt={item.name} className="object-cover w-full h-full" src={item.image} />
+                                  <ProductImage alt={item.name} />
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-light-primary-text">{item.name}</p>
@@ -150,9 +147,7 @@ export default function SellerOrderDetails() {
           <div className="border border-gray-500/20 rounded-2xl w-full">
             <h3 className="text-lg sm:text-xl font-bold text-light-primary-text py-4 px-6 border-b border-gray-500/20">Customer Information</h3>
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-4 sm:p-6">
-              <div className="size-20 sm:size-25 rounded-lg overflow-hidden shrink-0 bg-gray-100 border border-gray-200">
-                <img alt="Customer Avatar" className="object-cover w-full h-full" src="/seller/images/next_assets/user_10ea84.png" />
-              </div>
+              <Avatar name="John Smith" size="lg" />
               <div className="flex-1">
                 <h4 className="text-xl font-bold text-light-primary-text mb-3">Jenny Wilson</h4>
                 <div className="flex flex-wrap gap-y-2 gap-x-5">
@@ -170,7 +165,6 @@ export default function SellerOrderDetails() {
             </div>
           </div>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }
