@@ -8,7 +8,7 @@ import type {
   RegisterRequest,
   ResendOtpRequest,
   VerifyEmailRequest,
-} from "@/lib/api/types";
+} from "@/lib/api/store-types";
 
 export function login(request: LoginRequest) {
   return apiRequest<AccessTokenResponse>("/api/auth/login", {
