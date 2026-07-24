@@ -1,17 +1,17 @@
 "use client";
 
-import SellerLayout from "@/components/seller/SellerLayout";
 import { useState } from "react";
+import { DashboardCard, Avatar } from "@/components/dashboard/ui";
 
 export default function SellerInbox() {
   const [activeContact, setActiveContact] = useState("Xian Zhou");
 
   const contacts = [
-    { name: "Xian Zhou", avatar: "/seller/images/next_assets/user_01814c.png", time: "4:05 PM", preview: "Perfect! Let's discuss integration...", unread: 0, online: true },
-    { name: "Sarah Smith", avatar: "/seller/images/next_assets/user_0297fd.png", time: "5 mins", preview: "Can you send the report?", unread: 1, online: false },
-    { name: "Michael Chen", avatar: "/seller/images/next_assets/user_03e63e.png", time: "1 hour", preview: "Meeting rescheduled to...", unread: 0, online: true },
-    { name: "Emily Davis", avatar: "/seller/images/next_assets/user_04d398.png", time: "2 hours", preview: "Thanks for the update!", unread: 0, online: false },
-    { name: "David Wilson", avatar: "/seller/images/next_assets/user_051ee2.png", time: "1 day", preview: "Project timeline looks...", unread: 5, online: true },
+    { name: "Xian Zhou", avatar: "/dashboard/product-placeholder.png", time: "4:05 PM", preview: "Perfect! Let's discuss integration...", unread: 0, online: true },
+    { name: "Sarah Smith", avatar: "/dashboard/product-placeholder.png", time: "5 mins", preview: "Can you send the report?", unread: 1, online: false },
+    { name: "Michael Chen", avatar: "/dashboard/product-placeholder.png", time: "1 hour", preview: "Meeting rescheduled to...", unread: 0, online: true },
+    { name: "Emily Davis", avatar: "/dashboard/product-placeholder.png", time: "2 hours", preview: "Thanks for the update!", unread: 0, online: false },
+    { name: "David Wilson", avatar: "/dashboard/product-placeholder.png", time: "1 day", preview: "Project timeline looks...", unread: 5, online: true },
   ];
 
   const messages = [
@@ -27,8 +27,7 @@ export default function SellerInbox() {
   ];
 
   return (
-    <SellerLayout>
-      <div className="h-[calc(100vh-140px)] min-h-[600px] bg-white rounded-2xl overflow-hidden flex">
+    <DashboardCard className="h-[calc(100vh-140px)] min-h-[600px] bg-white rounded-2xl overflow-hidden flex">
         {/* Left Sidebar - Contacts list */}
         <div className="w-80 lg:w-[345px] h-full shrink-0 hidden md:block border-r border-gray-500/20">
           <div className="flex flex-col h-full pb-4">
@@ -53,12 +52,7 @@ export default function SellerInbox() {
                   }`}
                   onClick={() => setActiveContact(contact.name)}
                 >
-                  <div className="relative size-10 rounded-full bg-gray-200 shrink-0 overflow-hidden">
-                    <img alt={contact.name} className="object-cover w-full h-full" src={contact.avatar} />
-                    {contact.online && (
-                      <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white bg-success"></span>
-                    )}
-                  </div>
+                  <Avatar name={contact.name} online={contact.online} />
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-1">
                       <h3 className="font-semibold text-sm text-light-primary-text truncate">{contact.name}</h3>
@@ -84,9 +78,7 @@ export default function SellerInbox() {
           {/* Header */}
           <div className="flex items-center justify-between py-4 px-5 lg:px-6 border-b border-gray-500/20">
             <div className="flex items-center gap-4">
-              <div className="relative size-12 rounded-lg shrink-0 overflow-hidden bg-gray-100">
-                <img alt={activeContact} className="object-cover w-full h-full" src="/seller/images/next_assets/user_01814c.png" />
-              </div>
+              <Avatar name={activeContact} />
               <div>
                 <h3 className="font-base font-semibold text-light-primary-text">{activeContact}</h3>
                 <p className="text-xs text-success-dark font-normal">Online</p>
@@ -103,9 +95,7 @@ export default function SellerInbox() {
               >
                 <div className="flex items-end gap-2">
                   {message.sender !== "me" && (
-                    <div className="relative size-8 rounded-full overflow-hidden bg-gray-200 shrink-0">
-                      <img alt="Avatar" className="object-cover w-full h-full" src="/seller/images/next_assets/user_01814c.png" />
-                    </div>
+                    <Avatar name={activeContact} size="sm" />
                   )}
                   <div>
                     <div
@@ -132,13 +122,12 @@ export default function SellerInbox() {
                 placeholder="Type a message..."
                 type="text"
               />
-              <button className="bg-primary text-white p-2.5 rounded-lg font-bold hover:bg-primary-dark transition-colors">
+              <button type="button" className="bg-primary text-white p-2.5 rounded-lg font-bold hover:bg-primary-dark transition-colors">
                 Send
               </button>
             </div>
           </div>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

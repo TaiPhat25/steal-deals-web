@@ -1,6 +1,4 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
+import { DashboardCard } from "@/components/dashboard/ui";
 import Link from "next/link";
 
 export default function SellerOrders() {
@@ -62,13 +60,12 @@ export default function SellerOrders() {
   ];
 
   return (
-    <SellerLayout>
-      <div className="bg-white rounded-2xl py-4 sm:py-6">
+    <DashboardCard className="bg-white rounded-2xl py-4 sm:py-6">
         <div className="px-4 sm:px-6">
           <div className="pb-4">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className="text-xl font-bold text-light-primary-text">Total Orders</h3>
-              <button className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none bg-primary text-white hover:bg-primary-dark px-4 py-1 h-7.5 text-[13px] leading-5.5">
+              <button type="button" className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none bg-primary text-white hover:bg-primary-dark px-4 py-1 h-7.5 text-[13px] leading-5.5">
                 Export
               </button>
             </div>
@@ -135,12 +132,12 @@ export default function SellerOrders() {
                     <td className="px-3 py-3.5 text-sm text-light-secondary-text">{order.items}</td>
                     <td className="px-3 py-3.5 text-sm font-semibold text-light-primary-text">{order.amount}</td>
                     <td className="px-3 py-3.5">
-                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium bg-transparent border ${order.paymentClass}`}>
+                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium bg-transparent border ${order.paymentClass}`}>
                         {order.paymentStatus}
                       </span>
                     </td>
                     <td className="px-3 py-3.5">
-                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium ${order.receivedClass}`}>
+                      <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${order.receivedClass}`}>
                         {order.receivedStatus}
                       </span>
                     </td>
@@ -164,7 +161,6 @@ export default function SellerOrders() {
             </table>
           </div>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

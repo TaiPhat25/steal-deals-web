@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import AdminLayout from "@/components/admin/AdminLayout";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserDrawer from "@/components/admin/users/UserDrawer";
 import DeleteUserDialog from "@/components/admin/users/DeleteUserDialog";
+import { Avatar, DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
 import { deleteAdminUser, listAdminUsers } from "@/lib/api/admin";
 import { ApiClientError } from "@/lib/api/client";
 import type {
@@ -26,16 +26,6 @@ function roleClass(role: string) {
   if (role === "Admin") return "bg-error-alpha-16 text-error-dark";
   if (role === "Seller") return "bg-warning-alpha-16 text-warning-dark";
   return "bg-success-alpha-16 text-success-dark";
-}
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "U";
 }
 
 function formatDate(value: string) {
@@ -258,28 +248,26 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <AdminLayout>
+    <>
       {toast && (
         <div className="fixed top-20 right-4 z-50 rounded-xl bg-primary-darker text-white px-4 py-3 shadow-lg text-sm font-semibold max-w-sm" role="status" aria-live="polite">
           {toast}
         </div>
       )}
 
-      <div className="bg-white rounded-2xl w-full overflow-hidden">
+      <DashboardCard className="w-full overflow-hidden">
         <div className="p-4 sm:p-6 pb-4">
           <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">Identity Service</p>
               <h1 className="text-xl font-bold text-light-primary-text">User accounts</h1>
             </div>
-            <button
+            <DashboardButton
               ref={createButtonRef}
-              type="button"
               onClick={openCreate}
-              className="rounded-full inline-flex items-center justify-center font-bold transition-colors bg-primary text-white hover:bg-primary-dark px-4 h-9 text-sm"
             >
               <span className="text-lg mr-1" aria-hidden="true">+</span> Create user
-            </button>
+            </DashboardButton>
           </div>
 
           <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center">
@@ -358,12 +346,7 @@ export default function AdminUsersPage() {
                       <td className="px-3 py-3.5 pl-5 whitespace-nowrap text-xs text-light-secondary-text font-mono" title={user.id}>#{user.id.slice(0, 8)}</td>
                       <td className="px-3 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          {user.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img alt="" src={user.avatarUrl} className="size-9 rounded-xl object-cover bg-gray-100" />
-                          ) : (
-                            <span className="size-9 rounded-xl bg-primary-lighter text-primary-dark flex items-center justify-center text-xs font-bold" aria-hidden="true">{initials(user.fullName)}</span>
-                          )}
+                          <Avatar name={user.fullName} />
                           <div>
                             <span className="block text-sm font-semibold text-light-primary-text">{user.fullName}</span>
                             <span className="block text-xs text-light-secondary-text mt-0.5">{user.email}</span>
@@ -377,14 +360,14 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-3 py-3.5 whitespace-nowrap text-sm text-light-primary-text">{formatDate(user.createdAt)}</td>
                       <td className="px-3 py-3.5 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex rounded-full text-xs font-medium ${user.isEmailVerified ? "bg-success-alpha-16 text-success-dark" : "bg-warning-alpha-16 text-warning-dark"}`}>
+                        <StatusBadge tone={user.isEmailVerified ? "success" : "warning"}>
                           {user.isEmailVerified ? "Verified" : "Unverified"}
-                        </span>
+                        </StatusBadge>
                       </td>
                       <td className="px-3 py-3.5 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex rounded-full text-xs font-medium ${user.isActive ? "bg-primary-lighter text-primary-dark" : "bg-error-alpha-16 text-error-dark"}`}>
+                        <StatusBadge tone={user.isActive ? "success" : "error"}>
                           {user.isActive ? "Active" : "Inactive"}
-                        </span>
+                        </StatusBadge>
                       </td>
                       <td className="px-3 py-3.5 pr-5 whitespace-nowrap text-right">
                         <div className="inline-flex items-center gap-1">
@@ -427,7 +410,7 @@ export default function AdminUsersPage() {
             </nav>
           </div>
         )}
-      </div>
+      </DashboardCard>
 
       {drawer && accessToken && (
         <UserDrawer
@@ -449,6 +432,6 @@ export default function AdminUsersPage() {
           onConfirm={() => void confirmDelete()}
         />
       )}
-    </AdminLayout>
+    </>
   );
 }

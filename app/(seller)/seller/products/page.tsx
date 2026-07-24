@@ -1,14 +1,12 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
 import Link from "next/link";
+import { DashboardCard, PageHeader, ProductImage } from "@/components/dashboard/ui";
 
 export default function SellerProducts() {
   const products = [
     {
       id: "#73420",
       name: "Lumberjack Jacket",
-      avatar: "/seller/images/next_assets/01a793.png",
+      avatar: "/dashboard/product-placeholder.png",
       category: "Cloth",
       price: "$25",
       seller: "Alex",
@@ -18,7 +16,7 @@ export default function SellerProducts() {
     {
       id: "#73421",
       name: "Denim Jeans",
-      avatar: "/seller/images/next_assets/023d38.png",
+      avatar: "/dashboard/product-placeholder.png",
       category: "Fashion",
       price: "$45",
       seller: "Jerome Bell",
@@ -28,7 +26,7 @@ export default function SellerProducts() {
     {
       id: "#73422",
       name: "Running Shoes",
-      avatar: "/seller/images/next_assets/034b1d.png",
+      avatar: "/dashboard/product-placeholder.png",
       category: "Footwear",
       price: "$65",
       seller: "Arlene McCoy",
@@ -38,7 +36,7 @@ export default function SellerProducts() {
     {
       id: "#73423",
       name: "Leather Belt",
-      avatar: "/seller/images/next_assets/04ba25.png",
+      avatar: "/dashboard/product-placeholder.png",
       category: "Accessories",
       price: "$85",
       seller: "Jane Cooper",
@@ -48,7 +46,7 @@ export default function SellerProducts() {
     {
       id: "#73424",
       name: "Cotton T-Shirt",
-      avatar: "/seller/images/next_assets/05be1c.png",
+      avatar: "/dashboard/product-placeholder.png",
       category: "Cloth",
       price: "$105",
       seller: "Guy Hawkins",
@@ -58,18 +56,20 @@ export default function SellerProducts() {
   ];
 
   return (
-    <SellerLayout>
-      <div className="bg-white rounded-2xl w-full">
+    <DashboardCard className="bg-white rounded-2xl w-full">
         <div className="p-4 sm:p-6 pb-4">
-          <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
-            <h3 className="text-xl font-bold text-light-primary-text leading-7">Product List</h3>
-            <Link
-              className="rounded-full inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none bg-primary text-white hover:bg-primary-dark px-4 py-1 h-9 text-sm leading-6"
-              href="/seller/products/add"
-            >
-              Create Product
-            </Link>
-          </div>
+          <PageHeader
+            action={
+              <Link
+                className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary-dark focus-visible:ring-2 focus-visible:ring-primary"
+                href="/seller/products/add"
+              >
+                Create product
+              </Link>
+            }
+            className="mb-4 sm:mb-6"
+            title="Products"
+          />
           <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center">
             <div className="relative sm:w-[300px] w-full">
               <svg
@@ -198,7 +198,7 @@ export default function SellerProducts() {
                   <td className="px-3 py-3.5 align-middle">
                     <div className="flex items-center gap-3">
                       <div className="size-8 rounded-lg relative overflow-hidden bg-gray-100 shrink-0">
-                        <img alt={product.name} className="object-cover w-full h-full" src={product.avatar} />
+                        <ProductImage alt={product.name} />
                       </div>
                       <span className="text-sm font-semibold text-light-primary-text">{product.name}</span>
                     </div>
@@ -207,7 +207,7 @@ export default function SellerProducts() {
                   <td className="px-3 py-3.5 align-middle font-semibold text-sm text-primary">{product.price}</td>
                   <td className="px-3 py-3.5 align-middle text-sm text-light-secondary-text">{product.seller}</td>
                   <td className="px-3 py-3.5 align-middle">
-                    <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium ${product.statusClass}`}>
+                    <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${product.statusClass}`}>
                       {product.status}
                     </span>
                   </td>
@@ -237,7 +237,7 @@ export default function SellerProducts() {
                           ></path>
                         </svg>
                       </Link>
-                      <button className="inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-error">
+                      <button type="button" className="inline-flex items-center justify-center cursor-pointer font-bold transition-colors focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-error">
                         <svg className="size-4" fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
                           <path
                             d="M8.023.586c.333 0 .632 0 .882.021.265.024.53.077.791.213q.15.078.286.179c.237.176.401.392.538.62.129.215.258.484.404.784l.25.516H14a.75.75 0 0 1 0 1.5h-.295l-.37 5.98c-.052.84-.093 1.523-.18 2.07-.088.559-.235 1.05-.54 1.488-.27.389-.62.717-1.024.964-.455.277-.956.393-1.52.447-.551.053-1.235.052-2.076.052-.842 0-1.527.001-2.079-.052-.564-.054-1.065-.17-1.52-.448a3.4 3.4 0 0 1-1.026-.965c-.305-.438-.45-.931-.538-1.491-.086-.548-.127-1.232-.178-2.072l-.36-5.973H2a.75.75 0 0 1 0-1.5h2.887l.203-.446c.142-.311.268-.59.395-.814a2.1 2.1 0 0 1 .536-.642 2 2 0 0 1 .29-.187 2.1 2.1 0 0 1 .808-.222c.256-.023.563-.022.904-.022M3.797 4.419l.354 5.883c.053.869.09 1.468.162 1.928.071.449.166.691.289.868.152.218.348.403.575.542.183.112.43.192.883.235.464.044 1.064.045 1.935.045.87 0 1.47 0 1.933-.045.451-.043.699-.123.882-.235.227-.139.424-.322.576-.54.123-.177.217-.42.288-.867.073-.46.11-1.058.164-1.926l.364-5.888zm4.226-2.333c-.368 0-.596 0-.768.017a.6.6 0 0 0-.24.051 1 1 0 0 0-.08.052c-.025.019-.068.058-.147.196-.07.122-.144.282-.252.517h2.97a7 7 0 0 0-.273-.528.6.6 0 0 0-.147-.189 1 1 0 0 0-.08-.05.6.6 0 0 0-.234-.05 10 10 0 0 0-.749-.016"
@@ -254,7 +254,7 @@ export default function SellerProducts() {
         </div>
         <div className="p-4 sm:p-6 flex justify-end border-t border-[rgba(145,158,171,0.20)]">
           <div className="flex items-center gap-2">
-            <button className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600" disabled>
+            <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600" disabled>
               <svg className="size-5" fill="none" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fill="currentColor"
@@ -263,11 +263,11 @@ export default function SellerProducts() {
               </svg>
             </button>
             <div className="flex items-center gap-1">
-              <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">1</button>
-              <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">2</button>
-              <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">3</button>
+              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">1</button>
+              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">2</button>
+              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">3</button>
             </div>
-            <button className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
+            <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
               <svg className="size-5" fill="none" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                 <path
                   fill="currentColor"
@@ -277,7 +277,6 @@ export default function SellerProducts() {
             </button>
           </div>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

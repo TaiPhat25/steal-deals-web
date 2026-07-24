@@ -1,6 +1,5 @@
-"use client";
-
-import SellerLayout from "@/components/seller/SellerLayout";
+import { DashboardCard } from "@/components/dashboard/ui";
+import Link from "next/link";
 
 export default function SellerDashboard() {
   const cards = [
@@ -23,15 +22,14 @@ export default function SellerDashboard() {
   ];
 
   return (
-    <SellerLayout>
-      <div className="space-y-6 bg-white p-4 sm:p-6 rounded-2xl">
+    <DashboardCard className="space-y-6 bg-white p-4 sm:p-6 rounded-2xl">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {cards.map((card, i) => (
             <div key={i} className={`${card.color} p-6 rounded-2xl flex flex-col justify-between relative`}>
               <div>
                 <p className="text-sm font-semibold text-light-secondary-text mb-2">{card.title}</p>
-                <h3 className="text-2xl font-dm-sans font-bold text-light-primary-text">{card.value}</h3>
+                <h3 className="text-2xl font-sans font-bold text-light-primary-text">{card.value}</h3>
               </div>
               <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-white px-2 py-1 font-normal text-xs rounded-full">
                 <span className={`text-xs font-bold ${card.isPositive ? "text-primary" : "text-error"}`}>
@@ -102,12 +100,12 @@ export default function SellerDashboard() {
                   Add newly created bags, set discount prices, pick-up times, and manage available items dynamically.
                 </p>
               </div>
-              <button
-                onClick={() => (window.location.href = "/seller/products/add")}
+              <Link
+                href="/seller/products/add"
                 className="bg-white text-primary font-bold text-sm px-4 py-2.5 rounded-full hover:bg-gray-100 transition-colors w-full text-center"
               >
                 + Create Surplus Bag
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -142,7 +140,7 @@ export default function SellerDashboard() {
                       <td className="px-3 py-4 text-sm text-light-secondary-text">{order.items}</td>
                       <td className="px-3 py-4 text-sm text-light-secondary-text">{order.price}</td>
                       <td className="px-3 pr-5 py-4">
-                        <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium ${order.bg}`}>
+                        <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${order.bg}`}>
                           {order.status}
                         </span>
                       </td>
@@ -153,7 +151,7 @@ export default function SellerDashboard() {
             </div>
             <div className="p-4 sm:p-6 flex justify-end border-t border-[rgba(145,158,171,0.20)]">
               <div className="flex items-center gap-2">
-                <button className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600" disabled>
+                <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600" disabled>
                   <svg className="size-5" fill="none" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path
                       d="M12.056 4.396a.75.75 0 1 1 .888 1.207v.001l-.002.002-.01.007-.04.03-.155.116a46 46 0 0 0-2.246 1.813c-.615.534-1.21 1.093-1.647 1.587a4.6 4.6 0 0 0-.487.635 1 1 0 0 0-.102.206c.009.027.035.093.102.206q.158.261.487.635c.436.493 1.033 1.052 1.648 1.587a43 43 0 0 0 2.4 1.93l.04.028.01.007.002.002v.001a.75.75 0 1 1-.888 1.207h-.002l-.003-.003-.055-.04-.163-.123a47 47 0 0 1-2.325-1.877c-.634-.55-1.288-1.16-1.79-1.726a6 6 0 0 1-.646-.854c-.157-.26-.322-.607-.322-.98 0-.374.165-.72.322-.98.17-.281.397-.572.647-.854.5-.567 1.155-1.176 1.789-1.727a44 44 0 0 1 2.325-1.877l.163-.122.055-.04q0-.002.003-.003h.002z"
@@ -162,11 +160,11 @@ export default function SellerDashboard() {
                   </svg>
                 </button>
                 <div className="flex items-center gap-1">
-                  <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">1</button>
-                  <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">2</button>
-                  <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">3</button>
+                  <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">1</button>
+                  <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">2</button>
+                  <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">3</button>
                 </div>
-                <button className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
+                <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
                   <svg className="size-5" fill="none" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path
                       d="M6.897 4.555a.75.75 0 0 1 1.048-.159l.002.001.003.002.054.041.164.122a46 46 0 0 1 2.325 1.877c.634.55 1.288 1.16 1.789 1.727.25.282.477.572.646.853.157.26.322.607.323.98 0 .374-.166.72-.323.981a6 6 0 0 1-.646.854c-.501.566-1.155 1.175-1.79 1.726a44 44 0 0 1-2.324 1.877l-.164.122-.054.041-.003.002-.001.001h-.001a.75.75 0 1 1-.889-1.207l.002-.003.01-.007.041-.029.154-.116a46 46 0 0 0 2.245-1.814c.616-.534 1.212-1.093 1.649-1.587a4.6 4.6 0 0 0 .486-.634c.068-.113.094-.18.103-.206a1 1 0 0 0-.103-.206 4.6 4.6 0 0 0-.486-.635c-.437-.494-1.032-1.053-1.648-1.587a43 43 0 0 0-2.246-1.814l-.154-.116-.04-.03q-.008-.003-.01-.006-.002-.001-.003-.002a.75.75 0 0 1-.159-1.049"
@@ -178,7 +176,6 @@ export default function SellerDashboard() {
             </div>
           </div>
         </div>
-      </div>
-    </SellerLayout>
+      </DashboardCard>
   );
 }

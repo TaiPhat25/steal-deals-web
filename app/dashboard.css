@@ -1,0 +1,72 @@
+@import "tailwindcss" source(none);
+
+@source "./(admin)";
+@source "./(seller)";
+@source "../components/admin";
+@source "../components/seller";
+@source "../components/dashboard";
+
+@theme {
+  --color-accent-1: #a0e2e0;
+  --color-accent-2: #ffeb69;
+  --color-accent-3: #ffc091;
+  --color-accent-4: #ffd6ef;
+  --color-accent-5: #92bdf5;
+  --color-accent-6: #fab851;
+  --color-accent-7: #9ee872;
+  --color-light-primary-text: #212529;
+  --color-light-secondary-text: #495057;
+  --color-light-disabled-text: #919eab;
+  --color-primary-lighter: #caf8e4;
+  --color-primary-light: #5ed9ba;
+  --color-primary: #088178;
+  --color-primary-dark: #056d6e;
+  --color-primary-darker: #04535c;
+  --color-primary-alpha-16: #00ab5529;
+  --color-secondary-lighter: #d6e4ff;
+  --color-secondary: #3366ff;
+  --color-secondary-dark: #1939b7;
+  --color-info-lighter: #d0f2ff;
+  --color-info: #1890ff;
+  --color-info-dark: #0c53b7;
+  --color-success-lighter: #e9fcd4;
+  --color-success-light: #aaf27f;
+  --color-success: #54d62c;
+  --color-success-dark: #229a16;
+  --color-success-alpha-16: #54d62c29;
+  --color-warning-lighter: #fff7cd;
+  --color-warning-light: #ffe16a;
+  --color-warning: #ffc107;
+  --color-warning-dark: #b78103;
+  --color-warning-alpha-16: #ffc10729;
+  --color-error-lighter: #fcd1ca;
+  --color-error-light: #ef6168;
+  --color-error: #cb0233;
+  --color-error-dark: #ae013c;
+  --color-error-alpha-16: #ff484229;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: #effaf5;
+  color: var(--color-light-primary-text);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: var(--color-primary);
+}
+
+.dashboard-scrollbar {
+  scrollbar-color: rgb(255 255 255 / 35%) transparent;
+  scrollbar-width: thin;
+}
+

@@ -1,14 +1,12 @@
-"use client";
-
-import AdminLayout from "@/components/admin/AdminLayout";
 import Link from "next/link";
+import { DashboardCard, Avatar } from "@/components/dashboard/ui";
 
 export default function AdminCustomers() {
   const customers = [
     {
       id: "#73423",
       name: "James Smith",
-      avatar: "/admin/images/user/manface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "james0@gmail.com",
       phone: "+1 (555) 000-1000",
       status: "Inactive",
@@ -18,7 +16,7 @@ export default function AdminCustomers() {
     {
       id: "#73424",
       name: "Mary Johnson",
-      avatar: "/admin/images/user/womanface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "mary1@gmail.com",
       phone: "+1 (555) 000-1001",
       status: "Active",
@@ -28,7 +26,7 @@ export default function AdminCustomers() {
     {
       id: "#73425",
       name: "John Williams",
-      avatar: "/admin/images/user/manface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "john2@gmail.com",
       phone: "+1 (555) 000-1002",
       status: "Active",
@@ -38,7 +36,7 @@ export default function AdminCustomers() {
     {
       id: "#73426",
       name: "Patricia Brown",
-      avatar: "/admin/images/user/womanface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "patricia3@gmail.com",
       phone: "+1 (555) 000-1003",
       status: "Active",
@@ -48,7 +46,7 @@ export default function AdminCustomers() {
     {
       id: "#73427",
       name: "Jennifer Jones",
-      avatar: "/admin/images/user/womanface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "jennifer4@gmail.com",
       phone: "+1 (555) 000-1004",
       status: "Inactive",
@@ -58,7 +56,7 @@ export default function AdminCustomers() {
     {
       id: "#73428",
       name: "Michael Miller",
-      avatar: "/admin/images/user/manface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "michael5@gmail.com",
       phone: "+1 (555) 000-1005",
       status: "Active",
@@ -68,7 +66,7 @@ export default function AdminCustomers() {
     {
       id: "#73429",
       name: "Elizabeth Davis",
-      avatar: "/admin/images/user/womanface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "elizabeth6@gmail.com",
       phone: "+1 (555) 000-1006",
       status: "Active",
@@ -78,7 +76,7 @@ export default function AdminCustomers() {
     {
       id: "#73432",
       name: "William Garcia",
-      avatar: "/admin/images/user/manface.avif",
+      avatar: "/dashboard/product-placeholder.png",
       email: "william9@gmail.com",
       phone: "+1 (555) 000-1009",
       status: "Inactive",
@@ -88,8 +86,7 @@ export default function AdminCustomers() {
   ];
 
   return (
-    <AdminLayout>
-      <div className="bg-white rounded-2xl w-full">
+    <DashboardCard className="bg-white rounded-2xl w-full">
         <div className="p-4 sm:p-6 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6">
             <h3 className="text-xl font-bold text-light-primary-text leading-7">Customer</h3>
@@ -245,13 +242,7 @@ export default function AdminCustomers() {
                   </td>
                   <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <div className="size-8 relative rounded-lg shrink-0 overflow-hidden">
-                        <img
-                          alt="avatar"
-                          className="object-cover w-full h-full"
-                          src={customer.avatar}
-                        />
-                      </div>
+                      <Avatar name={customer.name} size="sm" />
                       <span className="text-sm text-light-secondary-text">{customer.name}</span>
                     </div>
                   </td>
@@ -262,7 +253,7 @@ export default function AdminCustomers() {
                     {customer.phone}
                   </td>
                   <td className="px-3 py-3.5 first:pl-5 last:pr-5 align-middle">
-                    <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-public-sans rounded-full text-xs font-medium ${customer.statusClass}`}>
+                    <span className={`px-2 py-1 h-5.5 inline-flex items-center justify-center font-sans rounded-full text-xs font-medium ${customer.statusClass}`}>
                       {customer.status}
                     </span>
                   </td>
@@ -295,7 +286,7 @@ export default function AdminCustomers() {
                           ></path>
                         </svg>
                       </Link>
-                      <button className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-red-500 transition-colors">
+                      <button type="button" className="inline-flex items-center justify-center cursor-pointer font-bold focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg hover:bg-gray-100 border-none shadow-none bg-transparent h-8 w-8 p-0 text-light-primary-text hover:text-red-500 transition-colors">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           width="24"
@@ -325,7 +316,7 @@ export default function AdminCustomers() {
         </div>
         <div className="p-4 sm:p-6 border-t border-gray-500/20 flex justify-end">
           <div className="flex items-center gap-2">
-            <button
+            <button type="button"
               disabled
               className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600"
             >
@@ -334,21 +325,20 @@ export default function AdminCustomers() {
               </svg>
             </button>
             <div className="flex items-center gap-1">
-              <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">
+              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors bg-primary-lighter text-primary-dark font-semibold">
                 1
               </button>
-              <button className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
+              <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full text-sm transition-colors text-gray-600 hover:bg-gray-50 font-medium">
                 2
               </button>
             </div>
-            <button className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
+            <button type="button" className="w-10 h-7.5 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" className="size-5">
                 <path fill="currentColor" d="M6.897 4.555a.75.75 0 0 1 1.048-.159l.002.001.003.002.054.041.164.122a46 46 0 0 1 2.325 1.877c.634.55 1.288 1.16 1.789 1.727.25.282.477.572.646.853.157.26.322.607.323.98 0 .374-.166.72-.323.981a6 6 0 0 1-.646.854c-.501.566-1.155 1.175-1.79 1.726a44 44 0 0 1-2.324 1.877l-.164.122-.054.041-.003.002-.001.001h-.001a.75.75 0 1 1-.889-1.207l.002-.003.01-.007.041-.029.154-.116a46 46 0 0 0 2.245-1.814c.616-.534 1.212-1.093 1.649-1.587a4.6 4.6 0 0 0 .486-.634c.068-.113.094-.18.103-.206a1 1 0 0 0-.103-.206 4.6 4.6 0 0 0-.486-.635c-.437-.494-1.032-1.053-1.648-1.587a43 43 0 0 0-2.246-1.814l-.154-.116-.04-.03q-.008-.003-.01-.006-.002-.001-.003-.002a.75.75 0 0 1-.159-1.049"></path>
               </svg>
             </button>
           </div>
         </div>
-      </div>
-    </AdminLayout>
+      </DashboardCard>
   );
 }
