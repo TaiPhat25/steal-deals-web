@@ -52,6 +52,42 @@ endpoints arrive, replace each page's local filtering/slicing and mutation
 handlers with API calls while retaining its controls, dialogs, validation, and
 feedback.
 
+## Seller functionality
+
+The seller backend does not expose seller-domain endpoints yet. Seller routes
+therefore use `components/seller/SellerDemoProvider.tsx`, a small in-memory
+React provider mounted inside the seller layout. Product, order, and store
+changes survive client-side navigation between seller routes but reset on
+refresh. There is no seller API client, browser storage, fake latency, or
+speculative request/response layer.
+
+- `/seller` derives its metrics, pickup queue, and recent orders from the shared
+  demo state. Pickup orders can be marked ready or completed directly from the
+  overview.
+- `/seller/products` manages surplus bags rather than generic ecommerce
+  products. It provides local search/filter/pagination, selection and bulk
+  status changes, quantity updates, deletion, and links to record-specific
+  create/edit/details routes.
+- `/seller/products/add`, `/seller/products/edit`, and
+  `/seller/products/details` share the surplus-bag data model. Forms validate
+  pricing and pickup windows; created and edited bags immediately appear across
+  seller routes. Image inputs retain only the selected filename.
+- `/seller/orders` provides local search/filter/pagination, derived status
+  counts, and CSV export. Order details enforce the demo transition sequence:
+  New -> Confirmed -> Ready for pickup -> Completed, with cancellation available
+  before completion.
+- `/seller/settings` provides controlled store-profile and pickup-hour forms.
+  Save updates the shared demo state, Cancel restores the last saved values, and
+  active days require a closing time after their opening time.
+- `/seller/inbox` provides customer/order search, local messages, emoji and
+  attachment placeholders, contact details, and conversation clearing. Voice
+  and video controls remain disabled until a calling service exists.
+
+When seller endpoints arrive, replace provider reads and state setters at each
+page boundary with backend queries and mutations, then remove the provider.
+Keep the current controls, validation, order transition feedback, dialogs, and
+empty/error presentation.
+
 ## Styling conventions
 
 - Prefer a named component when the same visual structure occurs on at least
@@ -89,7 +125,7 @@ when those APIs are ready.
 Run these after dashboard changes:
 
 ```powershell
-npx.cmd eslint "app/(admin)" "app/(seller)" components/admin components/dashboard
+npx.cmd eslint "app/(admin)" "app/(seller)" components/admin components/dashboard components/seller
 npm.cmd run build
 ```
 
@@ -115,8 +151,6 @@ from two copied 100 KB stylesheets, and dashboard public assets total about
   inbox, product forms, and user dialogs.
 
 ## Out of scope
-
-The seller route group was not changed during the admin functionality pass.
 
 The `(store)` routes still use the crawled Bootstrap/store theme and the
 `public/assets` tree. Existing storefront lint warnings and asset cleanup must

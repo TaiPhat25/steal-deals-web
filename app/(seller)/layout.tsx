@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import SellerDemoProvider from "@/components/seller/SellerDemoProvider";
 import "../dashboard.css";
 
 export const metadata: Metadata = {
@@ -23,7 +24,9 @@ export default function SellerRootLayout({
         />
       </head>
       <body className="min-h-screen antialiased">
-        <DashboardShell role="seller">{children}</DashboardShell>
+        <SellerDemoProvider>
+          <DashboardShell role="seller">{children}</DashboardShell>
+        </SellerDemoProvider>
       </body>
     </html>
   );
