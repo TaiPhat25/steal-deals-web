@@ -12,6 +12,22 @@ body {
   font-family: var(--font-poppins), sans-serif;
 }
 
+.page-wrapper--home .page-content {
+  padding-top: 0;
+}
+
+.page-wrapper--home .header-top {
+  padding-top: 1rem;
+}
+
+.page-wrapper--inner .header-top {
+  padding-top: 1rem;
+}
+
+.page-wrapper--home .intro-section {
+  padding-top: 110px;
+}
+
 img {
   max-width: 100%;
   height: auto;
@@ -130,6 +146,53 @@ img {
 .profile-action-link:hover,
 .profile-action-link:focus {
   color: #3f7800 !important;
+}
+
+.otp-inputs {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.otp-input {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 4.5rem;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.verification-form-footer > .d-flex {
+  order: 1 !important;
+}
+
+.verification-form-footer > .btn-link {
+  order: 2 !important;
+}
+
+.verification-form-footer > .d-flex,
+.verification-form-footer .resend-otp-control {
+  align-items: center;
+}
+
+.verification-form-footer .resend-otp-control {
+  display: flex;
+}
+
+.verification-form-footer .resend-otp-control .btn {
+  margin-top: 0;
+}
+
+@media (max-width: 575px) {
+  .otp-inputs {
+    gap: 0.4rem;
+  }
+
+  .otp-input {
+    height: 3.5rem;
+    font-size: 1.4rem;
+  }
 }
 
 @media (min-width: 768px) {

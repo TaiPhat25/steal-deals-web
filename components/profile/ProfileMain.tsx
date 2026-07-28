@@ -7,6 +7,8 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { ApiClientError } from "@/lib/api/client";
 import { getProfile } from "@/lib/api/account";
 import { verifyEmail } from "@/lib/api/auth";
+import OtpInput from "@/components/auth/OtpInput";
+import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import type { UserProfile } from "@/lib/api/store-types";
 
 function formatDate(value: string) {
@@ -61,7 +63,7 @@ export default function ProfileMain() {
     event.preventDefault();
     setVerificationError(null);
 
-    const normalizedOtp = verificationOtp.trim();
+    const normalizedOtp = verificationOtp.replace(/\D/g, "");
     if (!/^\d{6}$/.test(normalizedOtp)) {
       setVerificationError("Please enter the 6-digit verification code.");
       return;
@@ -284,16 +286,11 @@ export default function ProfileMain() {
 
                         <div className="form-group">
                           <label htmlFor="profile-verification-otp">Verification code *</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="profile-verification-otp"
+                          <OtpInput
                             value={verificationOtp}
-                            onChange={(event) => setVerificationOtp(event.target.value)}
-                            inputMode="numeric"
-                            pattern="[0-9]{6}"
-                            maxLength={6}
-                            required
+                            onChange={setVerificationOtp}
+                            disabled={isVerifying}
+                            idPrefix="profile-verification-otp"
                           />
                         </div>
 
@@ -303,15 +300,25 @@ export default function ProfileMain() {
                           </div>
                         )}
 
-                        <div className="form-footer d-flex align-items-center justify-content-between">
-                          <button
-                            type="submit"
-                            className="btn btn-outline-primary-2"
-                            disabled={isVerifying}
-                          >
-                            <span>{isVerifying ? "VERIFYING..." : "ENTER"}</span>
-                            <i className="icon-long-arrow-right"></i>
-                          </button>
+                        <div className="verification-form-footer form-footer d-flex flex-row align-items-center justify-content-between">
+                          <div className="d-flex align-items-center">
+                            <button
+                              type="submit"
+                              className="btn btn-outline-primary-2"
+                              disabled={isVerifying}
+                            >
+                              <span>{isVerifying ? "VERIFYING..." : "ENTER"}</span>
+                              <i className="icon-long-arrow-right"></i>
+                            </button>
+                            <ResendOtpButton
+                              email={profile?.email ?? ""}
+                              disabled={isVerifying}
+                              onResent={() => {
+                                setVerificationOtp("");
+                                setVerificationError(null);
+                              }}
+                            />
+                          </div>
                           <button
                             type="button"
                             className="btn btn-link"
