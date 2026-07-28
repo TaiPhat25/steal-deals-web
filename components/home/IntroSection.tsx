@@ -1,4 +1,58 @@
+"use client";
+
+import { useEffect } from "react";
+
+type CarouselElement = {
+  hasClass: (className: string) => boolean;
+  owlCarousel: (options: Record<string, unknown>) => void;
+};
+
+type JQueryLike = ((selector: string) => CarouselElement) & {
+  fn?: {
+    owlCarousel?: unknown;
+  };
+};
+
 export default function IntroSection() {
+  useEffect(() => {
+    let retryTimer: number | undefined;
+    let attempts = 0;
+
+    const initializeCarousel = () => {
+      const jquery = (window as Window & { jQuery?: JQueryLike }).jQuery;
+
+      if (jquery?.fn?.owlCarousel) {
+        const carousel = jquery(".inner-carousel");
+
+        if (!carousel.hasClass("owl-loaded")) {
+          carousel.owlCarousel({
+            items: 1,
+            loop: true,
+            margin: 0,
+            nav: false,
+            dots: true,
+            smartSpeed: 400,
+          });
+        }
+
+        return;
+      }
+
+      if (attempts < 20) {
+        attempts += 1;
+        retryTimer = window.setTimeout(initializeCarousel, 100);
+      }
+    };
+
+    initializeCarousel();
+
+    return () => {
+      if (retryTimer !== undefined) {
+        window.clearTimeout(retryTimer);
+      }
+    };
+  }, []);
+
   return (
     <div
       className="intro-section bg-image"
@@ -40,7 +94,7 @@ export default function IntroSection() {
               backgroundColor: "#dd6584",
             }}
           >
-            {/* <div className="intro-content intro-content-right">
+            <div className="intro-content intro-content-right">
               <h6 className="font-weight-normal text-white my-2 mt-0">
                 100% Recyclable Packaging
               </h6>
@@ -54,7 +108,7 @@ export default function IntroSection() {
               <a href="#" className="btn btn-primary text-uppercase">
                 Shop now
               </a>
-            </div> */}
+            </div>
           </div>
         </div>
       </div>

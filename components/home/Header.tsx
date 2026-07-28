@@ -16,7 +16,7 @@ export default function Header() {
 
   return (
     <header className="header header-28 bg-transparent">
-      <div
+      {/* <div
         className="promo-top w-100 h-auto text-center"
         style={{
           backgroundImage: "url(/assets/images/demos/demo-28/promo.jpg)",
@@ -26,10 +26,10 @@ export default function Header() {
         <h4 className="font-weight-normal text-uppercase text-white m-0">
           Free Shipping For All Orders Over $50
         </h4>
-      </div>
+      </div> */}
       <div className="header-top font-weight-normal text-light">
         <div className="container">
-          <div className="header-left">
+          {/* <div className="header-left">
             <div className="header-dropdown">
               <a href="#">Usd</a>
               <div className="header-menu">
@@ -59,7 +59,7 @@ export default function Header() {
                 </ul>
               </div>
             </div>
-          </div>
+          </div> */}
           <div className="header-right">
             <ul className="top-menu">
               <li>
@@ -72,11 +72,11 @@ export default function Header() {
                       <i className="icon-phone"></i>Call: +0123 456 789
                     </a>
                   </li>
-                  <li>
+                  {/* <li>
                     <a href="#">
                       <i className="icon-random"></i>Compare<span>(3)</span>
                     </a>
-                  </li>
+                  </li> */}
                   <li>
                     <a href="/about">About Us</a>
                   </li>
@@ -154,10 +154,10 @@ export default function Header() {
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
                   <li className="megamenu-container active megamenu-list">
-                    <a href="#" className="sf-with-ul active">
+                    <a href="/" className="active">
                       Home
                     </a>
-                    <div className="megamenu demo">
+                    {/* <div className="megamenu demo">
                       <div className="menu-col">
                         <div className="menu-title">Choose your demo</div>
                         <div className="demo-list">
@@ -598,7 +598,7 @@ export default function Header() {
                           </a>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </li>
                   <li className="megamenu-list">
                     <a href="#" className="sf-with-ul">
@@ -812,7 +812,7 @@ export default function Header() {
                       </li>
                     </ul>
                   </li>
-                  <li className="megamenu-list">
+                  {/* <li className="megamenu-list">
                     <a href="#" className="sf-with-ul">
                       Blog
                     </a>
@@ -883,8 +883,8 @@ export default function Header() {
                         </ul>
                       </li>
                     </ul>
-                  </li>
-                  <li className="megamenu-list">
+                  </li> */}
+                  {/* <li className="megamenu-list">
                     <a href="#" className="sf-with-ul">
                       Elements
                     </a>
@@ -932,7 +932,7 @@ export default function Header() {
                         <a href="elements-icon-boxes.html">Icon Boxes</a>
                       </li>
                     </ul>
-                  </li>
+                  </li> */}
                 </ul>
               </nav>
             </div>

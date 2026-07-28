@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ApiClientError } from "@/lib/api/client";
 import { verifyEmail } from "@/lib/api/auth";
 import { useAuth } from "@/components/auth/AuthProvider";
+import OtpInput from "@/components/auth/OtpInput";
+import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import LoginTabHashHandler from './LoginTabHashHandler';
 
 type LoginTab = "signin" | "register";
@@ -84,7 +86,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
     event.preventDefault();
     setVerificationError(null);
 
-    const normalizedOtp = verificationOtp.trim();
+    const normalizedOtp = verificationOtp.replace(/\D/g, "");
     if (!/^\d{6}$/.test(normalizedOtp)) {
       setVerificationError("Please enter the 6-digit verification code.");
       return;
@@ -173,7 +175,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       											<a href="#" className="forgot-link">Forgot Your Password?</a>
       							    		</div>
       							    	</form>
-      							    	<div className="form-choice">
+                                    {/* <div className="form-choice">
       								    	<p className="text-center">or sign in with</p>
       								    	<div className="row">
       								    		<div className="col-sm-6">
@@ -189,7 +191,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       								    			</a>
       								    		</div>
       								    	</div>
-      							    	</div>
+                                    </div> */}
       							    </div>
       							    <div className={`tab-pane fade${isSignIn ? "" : " show active"}`} id="register-2" role="tabpanel" aria-labelledby="register-tab-2">
       							    	<form onSubmit={handleRegisterSubmit}>
@@ -240,7 +242,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       											</div>
       							    		</div>
       							    	</form>
-      							    	<div className="form-choice">
+                                    {/* <div className="form-choice">
       								    	<p className="text-center">or sign in with</p>
       								    	<div className="row">
       								    		<div className="col-sm-6">
@@ -256,7 +258,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       								    			</a>
       								    		</div>
       								    	</div>
-      							    	</div>
+                                    </div> */}
       							    </div>
       							</div>
       						</div>
@@ -303,16 +305,11 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
 
                         <div className="form-group">
                           <label htmlFor="verification-otp">Verification code *</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            id="verification-otp"
+                          <OtpInput
                             value={verificationOtp}
-                            onChange={(event) => setVerificationOtp(event.target.value)}
-                            inputMode="numeric"
-                            pattern="[0-9]{6}"
-                            maxLength={6}
-                            required
+                            onChange={setVerificationOtp}
+                            disabled={isVerifying}
+                            idPrefix="verification-otp"
                           />
                         </div>
 
@@ -322,15 +319,26 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
                           </div>
                         )}
 
-                        <div className="form-footer d-flex align-items-center justify-content-between">
-                          <button
-                            type="submit"
-                            className="btn btn-outline-primary-2"
-                            disabled={isVerifying || isLoading}
-                          >
-                            <span>{isVerifying ? "VERIFYING..." : "ENTER"}</span>
-                            <i className="icon-long-arrow-right"></i>
-                          </button>
+                        <div className="verification-form-footer form-footer d-flex flex-row align-items-center justify-content-between">
+                          <div className="d-flex align-items-center">
+                            <button
+                              type="submit"
+                              className="btn btn-outline-primary-2"
+                              disabled={isVerifying || isLoading}
+                            >
+                              <span>{isVerifying ? "VERIFYING..." : "ENTER"}</span>
+                              <i className="icon-long-arrow-right"></i>
+                            </button>
+                            <ResendOtpButton
+                              email={verificationEmail}
+                              initialCooldownSeconds={30}
+                              disabled={isVerifying}
+                              onResent={() => {
+                                setVerificationOtp("");
+                                setVerificationError(null);
+                              }}
+                            />
+                          </div>
                           <button
                             type="button"
                             className="btn btn-link"

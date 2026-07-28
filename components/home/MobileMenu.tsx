@@ -101,8 +101,8 @@ export default function MobileMenu() {
                   <li>
                     <a href="index-23.html">23 - fashion left navigation store</a>
                   </li>
-                  <li>
-                    <a href="index-24.html">24 - extreme sport store</a>
+              <li>
+                <a href="index-24.html">24 - extreme sport store</a>
                   </li>
                 </ul>
               </li>
@@ -231,7 +231,7 @@ export default function MobileMenu() {
                   </li>
                 </ul>
               </li>
-              <li>
+              {/* <li>
                 <a href="blog.html">Blog</a>
 
                 <ul>
@@ -301,8 +301,8 @@ export default function MobileMenu() {
                     </ul>
                   </li>
                 </ul>
-              </li>
-              <li>
+              </li> */}
+              {/* <li>
                 <a href="elements-list.html">Elements</a>
                 <ul>
                   <li>
@@ -348,7 +348,7 @@ export default function MobileMenu() {
                     <a href="elements-icon-boxes.html">Icon Boxes</a>
                   </li>
                 </ul>
-              </li>
+              </li> */}
             </ul>
           </nav>
 
