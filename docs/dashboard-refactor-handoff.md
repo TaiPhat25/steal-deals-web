@@ -26,31 +26,31 @@ foundation. The storefront was deliberately left untouched.
 The admin routes now behave as a usable prototype instead of a static theme:
 
 - `/admin/users` remains the existing Identity Service CRUD screen.
-- `/admin/customers` reuses the completed admin Users API with a locked
-  `Customer` role filter. It provides backend search, account-status filtering,
-  pagination, trust activity, addresses, and links back to User Accounts for
-  identity changes. It is intentionally not a second user CRUD screen.
 - `/admin/categories` provides in-memory search, creator/date filtering,
   pagination, selection, create/edit, duplicate-name validation, and confirmed
   deletion.
-- `/admin/sellers` models seller onboarding rather than identity management.
-  Applications can be searched, filtered, reviewed, approved, rejected with a
-  reason, and exported as CSV.
-- `/admin/support` provides in-memory ticket search/filter/pagination,
-  conversation replies, and resolve/reopen actions.
-- `/admin/inbox` provides contact search, conversation switching, text
-  messages, emoji insertion, local file/image attachment placeholders, contact
-  details, and conversation clearing. Voice and video buttons are explicitly
-  disabled until a calling service exists.
+- `/admin/sellers` is the Seller Accounts workspace. Its Stores tab provides
+  in-memory search, status filtering, store details, report counts, warnings,
+  suspension with a required reason, and reinstatement. Suspension represents
+  hiding listings and blocking new orders while keeping the seller login
+  available for existing obligations. Its Applications tab retains the
+  searchable seller onboarding review, approval, and reasoned rejection flow.
+- `/admin/support` separates Support tickets and Reports in tabs. Support
+  tickets retain search/filter/pagination, conversation replies, and
+  resolve/reopen actions. Reports cover food listings, stores, and users with
+  target details and Open, Reviewing, Actioned, and Dismissed transitions.
+- The former `/admin/customers` and `/admin/inbox` routes were removed.
+  Customer identities remain available through `/admin/users`; support
+  conversations now stay attached to their tickets instead of a separate admin
+  chat inbox.
 - `/admin` retains presentational metrics and adds working recent-order
   pagination and order details.
 
-Except for Customer Operations and User Accounts, admin data is deliberately
-page-local mock state and resets on refresh. There is no mock repository,
-local-storage persistence, fake latency, or invented API layer. When backend
-endpoints arrive, replace each page's local filtering/slicing and mutation
-handlers with API calls while retaining its controls, dialogs, validation, and
-feedback.
+Except for User Accounts, admin data is deliberately page-local mock state and
+resets on refresh. There is no mock repository, local-storage persistence, fake
+latency, or invented API layer. When backend endpoints arrive, replace each
+page's local filtering/slicing and mutation handlers with API calls while
+retaining its controls, dialogs, validation, and feedback.
 
 ## Seller functionality
 
@@ -129,10 +129,10 @@ npx.cmd eslint "app/(admin)" "app/(seller)" components/admin components/dashboar
 npm.cmd run build
 ```
 
-At this handoff both commands pass. All 29 application routes build, including
-the 16 admin/seller routes. The generated dashboard CSS is about 46 KB, down
-from two copied 100 KB stylesheets, and dashboard public assets total about
-4 KB instead of 1.96 MB across 370 files.
+At this handoff both commands pass. All application routes build, including the
+14 admin/seller routes. The generated dashboard CSS is about 46 KB, down from
+two copied 100 KB stylesheets, and dashboard public assets total about 4 KB
+instead of 1.96 MB across 370 files.
 
 ## Safe continuation points
 
@@ -143,9 +143,10 @@ from two copied 100 KB stylesheets, and dashboard public assets total about
   host and Next image policy are known.
 - Keep search/filter state page-specific until three pages share the same real
   backend query contract; the current controls have different domain behavior.
-- Connect seller approval, category, support, inbox, and recent-order handlers
-  at their existing local mutation boundaries. Do not preserve the disposable
-  in-memory transformation code after an endpoint replaces it.
+- Connect seller accounts/applications, categories, support/reports, and
+  recent-order handlers at their existing local mutation boundaries. Do not
+  preserve the disposable in-memory transformation code after an endpoint
+  replaces it.
 - Browser-level visual regression coverage is not present. Before a design
   overhaul, capture desktop and mobile baselines for the dashboard, tables,
   inbox, product forms, and user dialogs.
