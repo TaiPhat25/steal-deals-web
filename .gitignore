@@ -45,6 +45,7 @@ yarn-error.log*
 # local tooling
 .turbo
 .eslintcache
+.codex-runtime/
 
 # typescript
 *.tsbuildinfo
