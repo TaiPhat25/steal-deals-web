@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://localhost:7282";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class ApiClientError extends Error {
   readonly status: number;

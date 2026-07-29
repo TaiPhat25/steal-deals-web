@@ -154,9 +154,9 @@ export default function Header() {
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
                   <li className="megamenu-container active megamenu-list">
-                    <a href="/" className="active">
+                    <Link href="/" className="active">
                       Home
-                    </a>
+                    </Link>
                     {/* <div className="megamenu demo">
                       <div className="menu-col">
                         <div className="menu-title">Choose your demo</div>
@@ -601,9 +601,9 @@ export default function Header() {
                     </div> */}
                   </li>
                   <li className="megamenu-list">
-                    <a href="#" className="sf-with-ul">
+                    <Link href="/category" className="sf-with-ul">
                       Shop
-                    </a>
+                    </Link>
                     <div className="megamenu megamenu-md">
                       <div className="row no-gutters">
                         <div className="col-md-8">
@@ -622,7 +622,7 @@ export default function Header() {
                                     <a href="category.html">Shop Grid 3 Columns</a>
                                   </li>
                                   <li>
-                                    <a href="category-4cols.html">Shop Grid 4 Columns</a>
+                                    <Link href="/category">Shop Grid 4 Columns</Link>
                                   </li>
                                   <li>
                                     <a href="category-market.html">

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function MobileMenu() {
   return (
     <>
@@ -107,7 +109,7 @@ export default function MobileMenu() {
                 </ul>
               </li>
               <li>
-                <a href="category.html">Shop</a>
+                <Link href="/category">Shop</Link>
                 <ul>
                   <li>
                     <a href="category-list.html">Shop List</a>
@@ -119,7 +121,7 @@ export default function MobileMenu() {
                     <a href="category.html">Shop Grid 3 Columns</a>
                   </li>
                   <li>
-                    <a href="category-4cols.html">Shop Grid 4 Columns</a>
+                    <Link href="/category">Shop Grid 4 Columns</Link>
                   </li>
                   <li>
                     <a href="category-boxed.html">
