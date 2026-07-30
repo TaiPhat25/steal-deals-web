@@ -10,7 +10,6 @@ export type DashboardRole = "admin" | "seller";
 type IconName =
   | "dashboard"
   | "users"
-  | "customers"
   | "sellers"
   | "categories"
   | "support"
@@ -34,14 +33,11 @@ const navigation: Record<
     items: [
       { label: "Dashboard", href: "/admin", icon: "dashboard" },
       { label: "User Accounts", href: "/admin/users", icon: "users" },
-      { label: "Customer Accounts", href: "/admin/customers", icon: "customers" },
-      { label: "Seller Approvals", href: "/admin/sellers", icon: "sellers" },
+      { label: "Seller Accounts", href: "/admin/sellers", icon: "sellers" },
       { label: "Food Categories", href: "/admin/categories", icon: "categories" },
-      { label: "Support Tickets", href: "/admin/support", icon: "support" },
+      { label: "Support & Reports", href: "/admin/support", icon: "support" },
     ],
-    communications: [
-      { label: "Inbox & Chats", href: "/admin/inbox", icon: "inbox" },
-    ],
+    communications: [],
   },
   seller: {
     brand: "StealDeal Seller",
@@ -61,8 +57,6 @@ const iconPaths: Record<IconName, string> = {
   dashboard: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
   users:
     "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
-  customers:
-    "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
   sellers:
     "M3 10h18M5 6h14l1 4H4zM5 10v10h14V10M9 20v-6h6v6",
   categories: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
@@ -159,10 +153,14 @@ function Sidebar({
           className="dashboard-scrollbar flex-1 space-y-1.5 overflow-y-auto p-4 pb-10"
         >
           {config.items.map(renderItem)}
-          <p className="px-4 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-warning-light">
-            Communications
-          </p>
-          {config.communications.map(renderItem)}
+          {config.communications.length > 0 && (
+            <>
+              <p className="px-4 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-warning-light">
+                Communications
+              </p>
+              {config.communications.map(renderItem)}
+            </>
+          )}
         </nav>
       </aside>
     </>
@@ -196,23 +194,6 @@ function Header({
             ☰
           </span>
         </button>
-        {seller && (
-          <label className="relative hidden md:block">
-            <span className="sr-only">Search surplus bags</span>
-            <span
-              aria-hidden="true"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"
-            >
-              ⌕
-            </span>
-            <input
-              className="h-10 w-[344px] rounded-full bg-gray-100 py-2 pl-10 pr-4 text-sm ring-1 ring-gray-500/20 focus:ring-primary"
-              placeholder="Search surplus bags..."
-              readOnly
-              type="search"
-            />
-          </label>
-        )}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
@@ -240,16 +221,18 @@ function Header({
           )}
         </div>
 
-        <Link
-          aria-label="Open inbox, 5 unread messages"
-          className="relative flex size-9 items-center justify-center rounded-full hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-primary"
-          href={`/${role}/inbox`}
-        >
-          <Icon className="size-5" name="inbox" />
-          <span className="absolute right-0 top-0 flex size-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold">
-            5
-          </span>
-        </Link>
+        {seller && (
+          <Link
+            aria-label="Open inbox, 5 unread messages"
+            className="relative flex size-9 items-center justify-center rounded-full hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-primary"
+            href="/seller/inbox"
+          >
+            <Icon className="size-5" name="inbox" />
+            <span className="absolute right-0 top-0 flex size-4 items-center justify-center rounded-full bg-warning text-[10px] font-bold">
+              5
+            </span>
+          </Link>
+        )}
 
         <div className="relative">
           <button

@@ -8,7 +8,7 @@ export type RegisterRequest = {
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string;
+  phone?: string | null;
 };
 
 export type AccessTokenResponse = {
@@ -22,18 +22,18 @@ export type RegistrationResponse = {
 };
 
 export type CurrentUser = {
-  userId: string;
-  email: string;
-  name: string;
+  userId: string | null;
+  email: string | null;
+  name: string | null;
   roles: string[];
 };
 
 export type UserAddress = {
   id: string;
-  label: string | null;
-  address: string | null;
-  district: string | null;
-  city: string | null;
+  label: string;
+  address: string;
+  district: string;
+  city: string;
   isDefault: boolean;
 };
 

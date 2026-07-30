@@ -12,7 +12,11 @@ import {
   getAdminUser,
   updateAdminUser,
 } from "@/lib/api/admin";
-import { ApiClientError } from "@/lib/api/client";
+import {
+  createDemoAdminUser,
+  getDemoAdminUser,
+  updateDemoAdminUser,
+} from "@/lib/api/admin-demo";
 
 const ROLES: AdminRole[] = ["Customer", "Seller", "Admin"];
 
@@ -20,21 +24,21 @@ type UserDrawerProps = {
   mode: "create" | "edit";
   userId?: string;
   accessToken: string;
+  demoMode: boolean;
   currentAdminId: string;
   onClose: () => void;
   onSaved: (message: string) => void;
 };
 
 function messageFor(error: unknown) {
-  return error instanceof ApiClientError
-    ? error.message
-    : "Unable to save this user. Please try again.";
+  return error instanceof Error ? error.message : "Unable to save this user. Please try again.";
 }
 
 export default function UserDrawer({
   mode,
   userId,
   accessToken,
+  demoMode,
   currentAdminId,
   onClose,
   onSaved,
@@ -72,7 +76,9 @@ export default function UserDrawer({
     const timeout = window.setTimeout(() => {
       setLoading(true);
       setError(null);
-      void getAdminUser(accessToken, userId)
+      void (demoMode
+        ? Promise.resolve().then(() => getDemoAdminUser(userId))
+        : getAdminUser(accessToken, userId))
       .then((user) => {
         if (!active) return;
         setDetail(user);
@@ -93,7 +99,7 @@ export default function UserDrawer({
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [accessToken, mode, userId]);
+  }, [accessToken, demoMode, mode, userId]);
 
   function toggleRole(role: AdminRole) {
     if (isSelf && role === "Admin") return;
@@ -132,7 +138,11 @@ export default function UserDrawer({
           roles,
           ...(normalizedPhone ? { phone: normalizedPhone } : {}),
         };
-        await createAdminUser(accessToken, request);
+        if (demoMode) {
+          createDemoAdminUser(request);
+        } else {
+          await createAdminUser(accessToken, request);
+        }
         onSaved(`${normalizedName} was created successfully.`);
       } else if (userId && detail) {
         const request: AdminUpdateUserRequest = {
@@ -141,7 +151,11 @@ export default function UserDrawer({
           roles: isSelf && !roles.includes("Admin") ? [...roles, "Admin"] : roles,
         };
         if (normalizedPhone) request.phone = normalizedPhone;
-        await updateAdminUser(accessToken, userId, request);
+        if (demoMode) {
+          updateDemoAdminUser(userId, request);
+        } else {
+          await updateAdminUser(accessToken, userId, request);
+        }
         onSaved(`${normalizedName} was updated successfully.`);
       }
     } catch (caught) {

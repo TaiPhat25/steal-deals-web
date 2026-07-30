@@ -7,6 +7,12 @@ import UserDrawer from "@/components/admin/users/UserDrawer";
 import DeleteUserDialog from "@/components/admin/users/DeleteUserDialog";
 import { Avatar, DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
 import { deleteAdminUser, listAdminUsers } from "@/lib/api/admin";
+import {
+  deleteDemoAdminUser,
+  DEMO_CURRENT_ADMIN_ID,
+  isApiUnavailable,
+  listDemoAdminUsers,
+} from "@/lib/api/admin-demo";
 import { ApiClientError } from "@/lib/api/client";
 import type {
   AdminRole,
@@ -65,6 +71,8 @@ export default function AdminUsersPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [currentAdminId, setCurrentAdminId] = useState("");
+  const [demoMode, setDemoMode] = useState(false);
+  const effectiveCurrentAdminId = demoMode ? DEMO_CURRENT_ADMIN_ID : currentAdminId;
 
   const search = searchParams.get("search")?.trim() ?? "";
   const rawRole = searchParams.get("role");
@@ -109,12 +117,13 @@ export default function AdminUsersPage() {
   }, [search, searchInput, updateQuery]);
 
   useEffect(() => {
-    if (!isInitialized || !accessToken) return;
+    if (!isInitialized) return;
+    if (demoMode || !accessToken) return;
     let active = true;
     const timeout = window.setTimeout(() => {
       void getCurrentUser()
         .then((user) => {
-          if (active) setCurrentAdminId(user.userId);
+          if (active) setCurrentAdminId(user.userId ?? "");
         })
         .catch(() => {
           if (active) setCurrentAdminId("");
@@ -124,7 +133,7 @@ export default function AdminUsersPage() {
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [accessToken, getCurrentUser, isInitialized]);
+  }, [accessToken, demoMode, getCurrentUser, isInitialized]);
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -140,23 +149,31 @@ export default function AdminUsersPage() {
     const timeout = window.setTimeout(() => {
       setLoading(true);
       setLoadError(null);
-      if (!accessToken) {
-        setLoading(false);
-        setLoadError("Sign in from the normal login page before opening the admin user panel.");
-        return;
-      }
-      void listAdminUsers(accessToken, apiQuery)
-      .then((data) => {
-        if (!active) return;
+      const acceptResult = (data: PagedResult<UserSummary>) => {
         if (data.totalPages > 0 && page > data.totalPages) {
           updateQuery({ page: data.totalPages });
           return;
         }
         setResult(data);
+      };
+      if (demoMode) {
+        acceptResult(listDemoAdminUsers(apiQuery));
+        setLoading(false);
+        return;
+      }
+      void listAdminUsers(accessToken ?? "", apiQuery)
+      .then((data) => {
+        if (!active) return;
+        acceptResult(data);
       })
       .catch((error) => {
         if (!active) return;
-        setLoadError(loadErrorMessage(error));
+        if (isApiUnavailable(error)) {
+          setDemoMode(true);
+          acceptResult(listDemoAdminUsers(apiQuery));
+        } else {
+          setLoadError(loadErrorMessage(error));
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -167,7 +184,7 @@ export default function AdminUsersPage() {
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [accessToken, isInitialized, page, pageSize, reloadVersion, role, search, status, updateQuery]);
+  }, [accessToken, demoMode, isInitialized, page, pageSize, reloadVersion, role, search, status, updateQuery]);
 
   useEffect(() => {
     if (!toast) return;
@@ -225,11 +242,15 @@ export default function AdminUsersPage() {
   }, [deleting]);
 
   async function confirmDelete() {
-    if (!accessToken || !deleteTarget || deleteTarget.id === currentAdminId) return;
+    if (!deleteTarget || deleteTarget.id === effectiveCurrentAdminId || !demoMode && !accessToken) return;
     setDeleting(true);
     setDeleteError(null);
     try {
-      await deleteAdminUser(accessToken, deleteTarget.id);
+      if (demoMode) {
+        deleteDemoAdminUser(deleteTarget.id);
+      } else {
+        await deleteAdminUser(accessToken!, deleteTarget.id);
+      }
       setToast(`${deleteTarget.fullName} was deleted.`);
       setDeleteTarget(null);
       if ((result?.items.length ?? 0) === 1 && page > 1) {
@@ -240,7 +261,7 @@ export default function AdminUsersPage() {
       restoreActionFocus();
     } catch (error) {
       setDeleteError(
-        error instanceof ApiClientError ? error.message : "Unable to delete this user.",
+        error instanceof Error ? error.message : "Unable to delete this user.",
       );
     } finally {
       setDeleting(false);
@@ -306,6 +327,13 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
+        {demoMode && (
+          <div className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6" role="status">
+            <p><strong>Demo data active.</strong> Identity Service is unreachable; changes stay in memory and reset on refresh.</p>
+            <button type="button" onClick={() => { setDemoMode(false); setResult(null); setReloadVersion((version) => version + 1); }} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button>
+          </div>
+        )}
+
         {loadError ? (
           <div className="border-t border-gray-500/20 px-4 py-14 text-center">
             <div className="mx-auto size-11 rounded-full bg-error-alpha-16 text-error-dark flex items-center justify-center font-bold" aria-hidden="true">!</div>
@@ -340,7 +368,7 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {result?.items.map((user) => {
-                  const isCurrentAdmin = user.id === currentAdminId;
+                  const isCurrentAdmin = user.id === effectiveCurrentAdminId;
                   return (
                     <tr key={user.id} className="border-b last:border-0 border-gray-500/20 hover:bg-gray-50/50">
                       <td className="px-3 py-3.5 pl-5 whitespace-nowrap text-xs text-light-secondary-text font-mono" title={user.id}>#{user.id.slice(0, 8)}</td>
@@ -412,12 +440,13 @@ export default function AdminUsersPage() {
         )}
       </DashboardCard>
 
-      {drawer && accessToken && (
+      {drawer && (accessToken || demoMode) && (
         <UserDrawer
           mode={drawer.mode}
           userId={drawer.userId}
-          accessToken={accessToken}
-          currentAdminId={currentAdminId}
+          accessToken={accessToken ?? ""}
+          demoMode={demoMode}
+          currentAdminId={effectiveCurrentAdminId}
           onClose={closeDrawer}
           onSaved={handleSaved}
         />
