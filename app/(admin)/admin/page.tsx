@@ -2,46 +2,35 @@ import RecentOrders from "@/components/admin/dashboard/RecentOrders";
 import { DashboardCard } from "@/components/dashboard/ui";
 
 const metrics = [
-  ["Total Sales", "$4,876", "+0.1%", "bg-[rgba(160,226,224,0.60)]", "text-primary"],
-  ["Total Orders", "4,876", "+0.1%", "bg-[rgba(158,232,114,0.60)]", "text-primary"],
-  ["Order Count", "1M", "-0.1%", "bg-[rgba(255,235,105,0.60)]", "text-error"],
-  ["Total Customers", "50,000", "+0.1%", "bg-[rgba(255,192,145,0.60)]", "text-primary"],
-  ["Newly Registered Users", "500", "-0.1%", "bg-[rgba(255,214,239,0.60)]", "text-error"],
-  ["Item Sold Today", "4,876", "+0.1%", "bg-[rgba(146,189,245,0.60)]", "text-primary"],
-  ["Total Revenue", "$12,876", "-0.1%", "bg-[rgba(116,202,255,0.60)]", "text-error"],
-  ["Today Revenue", "$4,876", "-0.1%", "bg-[rgba(250,184,81,0.60)]", "text-error"],
+  ["Confirmed order value", "₫128.6M", "Across confirmed orders", "bg-accent-1/60"],
+  ["Orders", "1,248", "All current statuses", "bg-accent-2/60"],
+  ["Active customers", "9,420", "Identity accounts", "bg-accent-3/60"],
+  ["Active stores", "186", "Verified and unverified", "bg-accent-5/60"],
 ] as const;
 
 const orderStatuses = [
-  ["Pending", 14, "bg-warning"],
-  ["Confirmed", 60, "bg-primary"],
-  ["Cancelled", 5, "bg-error"],
-  ["Waiting for pick up", 6, "bg-info"],
-  ["Completed", 24, "bg-success"],
+  ["Pending", 18, "bg-warning"],
+  ["Confirmed", 72, "bg-success"],
+  ["Inventory reservation failed", 4, "bg-error"],
+  ["Payment failed", 7, "bg-error"],
+  ["Cancelled", 8, "bg-gray-400"],
 ] as const;
 
 export default function AdminDashboard() {
   return (
-    <DashboardCard className="space-y-6 p-4 sm:p-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-        {metrics.map(([label, value, change, background, changeColor]) => (
-          <div key={label} className={`${background} relative min-h-32 rounded-2xl p-6`}>
-            <p className="mb-2 text-sm font-semibold text-light-secondary-text">{label}</p>
-            <h2 className="text-2xl font-bold">{value}</h2>
-            <span className={`absolute bottom-6 right-6 rounded-full bg-white px-2 py-1 text-xs font-bold ${changeColor}`}>{change}</span>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Marketplace snapshot</p>
+        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
       </div>
-
-      <div className="rounded-2xl border border-gray-500/20">
-        <div className="border-b border-gray-500/20 px-4 py-4 sm:px-6"><h2 className="text-lg font-bold">Order Status</h2></div>
-        <div className="grid gap-8 p-4 sm:p-6 md:grid-cols-2">
-          <div className="space-y-3">{orderStatuses.map(([label, count, color]) => <div key={label} className="flex items-center justify-between text-sm"><div className="flex items-center gap-3"><span className={`size-3 rounded-full ${color}`} /><span>{label}</span></div><strong>{count}</strong></div>)}</div>
-          <div className="flex items-center justify-center"><div className="flex size-36 items-center justify-center rounded-full border-8 border-gray-100 shadow-[inset_0_0_0_8px_rgba(0,167,111,0.22)]"><span className="text-lg font-bold">109 Total</span></div></div>
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(([label, value, note, background]) => <DashboardCard key={label} className={`${background} p-5`}><p className="text-sm font-semibold text-light-secondary-text">{label}</p><p className="mt-2 text-2xl font-bold">{value}</p><p className="mt-2 text-xs text-light-secondary-text">{note}</p></DashboardCard>)}
       </div>
-
+      <DashboardCard className="overflow-hidden">
+        <div className="border-b border-gray-500/20 px-4 py-4 sm:px-6"><h2 className="text-lg font-bold">Order status</h2><p className="mt-1 text-sm text-light-secondary-text">Current backend-created and handled status spellings.</p></div>
+        <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-5">{orderStatuses.map(([label, count, color]) => <div key={label} className="rounded-xl bg-gray-50 p-4"><div className="flex items-center gap-2"><span className={`size-2.5 rounded-full ${color}`} /><span className="text-sm text-light-secondary-text">{label}</span></div><strong className="mt-2 block text-2xl">{count}</strong></div>)}</div>
+      </DashboardCard>
       <RecentOrders />
-    </DashboardCard>
+    </div>
   );
 }

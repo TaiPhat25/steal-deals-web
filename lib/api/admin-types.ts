@@ -1,9 +1,9 @@
 export type AdminRole = "Customer" | "Seller" | "Admin";
 
 export type CurrentAdmin = {
-  userId: string;
-  email: string;
-  name: string;
+  userId: string | null;
+  email: string | null;
+  name: string | null;
   roles: string[];
 };
 
@@ -55,21 +55,22 @@ export type AdminUserQuery = {
   searchTerm?: string;
   role?: AdminRole;
   accountStatus?: "active" | "inactive";
-  page: number;
-  pageSize: 10 | 20 | 50;
+  page?: number;
+  pageSize?: number;
 };
 
 export type AdminCreateUserRequest = {
   email: string;
   password: string;
   fullName: string;
-  phone?: string;
+  phone?: string | null;
   roles: AdminRole[];
 };
 
 export type AdminUpdateUserRequest = {
-  fullName?: string;
-  phone?: string;
-  isActive?: boolean;
-  roles?: AdminRole[];
+  fullName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive?: boolean | null;
+  roles?: AdminRole[] | null;
 };

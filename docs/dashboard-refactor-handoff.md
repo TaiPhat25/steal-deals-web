@@ -12,6 +12,8 @@ foundation. The storefront was deliberately left untouched.
   `DashboardShell`.
 - `components/dashboard/DashboardShell.tsx` owns the responsive shell, header,
   sidebar, role-specific navigation, menus, and profile presentation.
+  The seller header intentionally has no global surplus-bag search; bag and
+  order filters stay on their relevant pages.
 - `components/dashboard/ui.tsx` contains the small set of repeated primitives:
   cards, page headers, buttons, badges, avatars, and product placeholders.
 - `components/dashboard/Dialog.tsx` contains the shared native dialog, action
@@ -25,16 +27,21 @@ foundation. The storefront was deliberately left untouched.
 
 The admin routes now behave as a usable prototype instead of a static theme:
 
-- `/admin/users` remains the existing Identity Service CRUD screen.
-- `/admin/categories` provides in-memory search, creator/date filtering,
-  pagination, selection, create/edit, duplicate-name validation, and confirmed
-  deletion.
-- `/admin/sellers` is the Seller Accounts workspace. Its Stores tab provides
-  in-memory search, status filtering, store details, report counts, warnings,
-  suspension with a required reason, and reinstatement. Suspension represents
-  hiding listings and blocking new orders while keeping the seller login
-  available for existing obligations. Its Applications tab retains the
-  searchable seller onboarding review, approval, and reasoned rejection flow.
+- `/admin/users` remains the Identity Service CRUD screen when the API is
+  reachable. A network-level fetch failure activates an in-memory fallback with
+  backend-shaped user fields, filtering, pagination, details, create/edit, and
+  delete behavior. The page displays a Demo data banner and API retry action.
+  Authentication, authorization, validation, and other HTTP errors never
+  activate fallback mode.
+- `/admin/categories` provides in-memory search, active-state filtering,
+  pagination, selection, create/edit, unique name/slug validation, and
+  confirmed deletion. Its dummy records now use the backend
+  category fields: `id`, `name`, `slug`, `iconUrl`, and `isActive`.
+- `/admin/sellers` is the Seller Accounts workspace. Its Stores tab uses the
+  backend store-profile fields and provides local search, details, verification,
+  and active-state toggling. Its Applications tab retains the searchable seller
+  onboarding review, approval, and reasoned rejection flow, but is visibly
+  labeled as a future-only contract because seller onboarding has no backend DTO.
 - `/admin/support` separates Support tickets and Reports in tabs. Support
   tickets retain search/filter/pagination, conversation replies, and
   resolve/reopen actions. Reports cover food listings, stores, and users with
@@ -43,50 +50,98 @@ The admin routes now behave as a usable prototype instead of a static theme:
   Customer identities remain available through `/admin/users`; support
   conversations now stay attached to their tickets instead of a separate admin
   chat inbox.
-- `/admin` retains presentational metrics and adds working recent-order
-  pagination and order details.
+- `/admin` now uses four useful summary blocks instead of eight repetitive
+  counters. Order status and recent-order dummy data use backend field names,
+  snapshot fields, UUID-shaped IDs, ISO timestamps, VND amounts, and current
+  backend-created/handled status spellings.
 
-Except for User Accounts, admin data is deliberately page-local mock state and
-resets on refresh. There is no mock repository, local-storage persistence, fake
-latency, or invented API layer. When backend endpoints arrive, replace each
-page's local filtering/slicing and mutation handlers with API calls while
-retaining its controls, dialogs, validation, and feedback.
+Admin prototype data resets on refresh. Categories, sellers, support, and
+overview records remain page-local. User Accounts prefer the real API and use
+`lib/api/admin-demo.ts` only while Identity Service is unreachable. There is no
+browser storage or fake latency. When backend endpoints are stable, remove the
+fallback and replace the remaining page-local mutation handlers with API calls
+while retaining controls, dialogs, validation, and feedback.
 
 ## Seller functionality
 
-The seller backend does not expose seller-domain endpoints yet. Seller routes
-therefore use `components/seller/SellerDemoProvider.tsx`, a small in-memory
-React provider mounted inside the seller layout. Product, order, and store
-changes survive client-side navigation between seller routes but reset on
-refresh. There is no seller API client, browser storage, fake latency, or
-speculative request/response layer.
+Seller-domain endpoints are documented by the backend, but this dashboard does
+not call them yet. Seller routes still use
+`components/seller/SellerDemoProvider.tsx`, a small in-memory React provider
+mounted inside the seller layout. Product, order, and store changes survive
+client-side navigation between seller routes but reset on refresh. There is no
+seller API client, browser storage, fake latency, or speculative
+request/response layer.
 
-- `/seller` derives its metrics, pickup queue, and recent orders from the shared
-  demo state. Pickup orders can be marked ready or completed directly from the
-  overview.
+- `/seller` derives four metrics, confirmed pickups, and recent orders from the
+  shared demo state. Pending orders can be confirmed from the overview.
 - `/seller/products` manages surplus bags rather than generic ecommerce
   products. It provides local search/filter/pagination, selection and bulk
   status changes, quantity updates, deletion, and links to record-specific
   create/edit/details routes.
 - `/seller/products/add`, `/seller/products/edit`, and
-  `/seller/products/details` share the surplus-bag data model. Forms validate
-  pricing and pickup windows; created and edited bags immediately appear across
-  seller routes. Image inputs retain only the selected filename.
+  `/seller/products/details` share the backend-shaped surprise-bag model:
+  `salePrice`, `quantityTotal`, `quantityRemaining`, category objects, ISO pickup
+  timestamps, `expiryDate`, store snapshots, and `createdAt`. Forms validate
+  pricing, pickup windows, and expiry; created and edited bags immediately
+  appear across seller routes. Image inputs retain only the selected filename
+  as an explicitly future UI field because the current bag DTO has no media.
+  Both price inputs accept any positive number, matching backend `decimal`
+  values without an accidental HTML step grid.
 - `/seller/orders` provides local search/filter/pagination, derived status
-  counts, and CSV export. Order details enforce the demo transition sequence:
-  New -> Confirmed -> Ready for pickup -> Completed, with cancellation available
-  before completion.
-- `/seller/settings` provides controlled store-profile and pickup-hour forms.
-  Save updates the shared demo state, Cancel restores the last saved values, and
-  active days require a closing time after their opening time.
+  counts, and CSV export over backend-shaped order and item snapshots. Dummy
+  statuses are limited to `Pending`, `Confirmed`,
+  `InventoryReservationFailed`, `PaymentFailed`, and `Cancelled`. Order details
+  allow the locally simulated `Pending` -> `Confirmed` transition or
+  cancellation.
+- `/seller/settings` uses the current store profile/create/update fields,
+  including address, phone, bank account, and license URL. Latitude and
+  longitude remain in the demo record because the current backend request
+  requires them, but they are hidden from sellers. The backend does not
+  currently document geocoding, so integration must preserve stored
+  coordinates or add address-to-coordinate handling.
+  Operating hours, cover images, and request-side avatar selection remain
+  visibly marked future UI fields. Save updates the shared demo state, Cancel
+  restores the last saved values, and active days require a closing time after
+  their opening time.
 - `/seller/inbox` provides customer/order search, local messages, emoji and
   attachment placeholders, contact details, and conversation clearing. Voice
   and video controls remain disabled until a calling service exists.
+  For capstone scope, prefer order-linked asynchronous text messages only; do
+  not add realtime presence, typing indicators, calls, or attachment storage
+  unless messaging becomes a graded core requirement.
 
 When seller endpoints arrive, replace provider reads and state setters at each
 page boundary with backend queries and mutations, then remove the provider.
 Keep the current controls, validation, order transition feedback, dialogs, and
 empty/error presentation.
+
+## Backend-aligned mock contracts
+
+`lib/api/dashboard-types.ts` contains the small set of response shapes used by
+dashboard dummy data: categories, store profiles, surprise bags, orders, and
+order items. These types mirror the 2026-07-30 backend reference but do not add
+fetch functions or map endpoints into pages.
+
+Identity request/response types in `lib/api/admin-types.ts` and
+`lib/api/store-types.ts` were also corrected for nullable current-user fields,
+nullable request values, address fields, update email support, and optional
+pagination.
+
+`lib/api/admin-demo.ts` is the only API-unavailable fallback. It deliberately
+mirrors the existing admin user functions instead of introducing a fake server
+or general mock repository.
+
+Backend status fields remain `string` in response types. The demo uses a narrow
+UI-only list of current spellings; do not treat it as a final backend enum.
+Future-only dashboard data remains local and explicit:
+
+- bag image filename;
+- store cover/avatar filename and operating hours;
+- seller applications;
+- support tickets, reports, and seller inbox conversations.
+
+The first two preserve likely product needs without claiming current DTO
+support. The last three remain prototypes until backend contracts exist.
 
 ## Styling conventions
 
@@ -126,6 +181,7 @@ Run these after dashboard changes:
 
 ```powershell
 npx.cmd eslint "app/(admin)" "app/(seller)" components/admin components/dashboard components/seller
+node --experimental-strip-types lib/api/admin-demo.test.mjs
 npm.cmd run build
 ```
 

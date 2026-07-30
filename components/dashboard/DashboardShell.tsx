@@ -194,23 +194,6 @@ function Header({
             ☰
           </span>
         </button>
-        {seller && (
-          <label className="relative hidden md:block">
-            <span className="sr-only">Search surplus bags</span>
-            <span
-              aria-hidden="true"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"
-            >
-              ⌕
-            </span>
-            <input
-              className="h-10 w-[344px] rounded-full bg-gray-100 py-2 pl-10 pr-4 text-sm ring-1 ring-gray-500/20 focus:ring-primary"
-              placeholder="Search surplus bags..."
-              readOnly
-              type="search"
-            />
-          </label>
-        )}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
