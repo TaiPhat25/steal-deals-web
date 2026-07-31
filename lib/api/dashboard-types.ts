@@ -67,6 +67,19 @@ export type OrderResponse = {
   items: OrderItemResponse[];
 };
 
+export type StoreReviewResponse = {
+  id: string;
+  orderId: string;
+  buyerId: string;
+  storeId: string;
+  bagId: string;
+  ratingScore: number;
+  comment: string;
+  storeReply: string | null;
+  isReported: boolean;
+  createdAt: string;
+};
+
 export const CURRENT_ORDER_STATUSES = [
   "Pending",
   "InventoryReservationFailed",
