@@ -15,6 +15,7 @@ type IconName =
   | "support"
   | "products"
   | "orders"
+  | "reviews"
   | "settings"
   | "inbox";
 
@@ -45,6 +46,7 @@ const navigation: Record<
       { label: "Dashboard", href: "/seller", icon: "dashboard" },
       { label: "Surplus Bags", href: "/seller/products", icon: "products" },
       { label: "Orders", href: "/seller/orders", icon: "orders" },
+      { label: "Store Reviews", href: "/seller/store-reviews", icon: "reviews" },
       { label: "Store Profile", href: "/seller/settings", icon: "settings" },
     ],
     communications: [
@@ -64,6 +66,8 @@ const iconPaths: Record<IconName, string> = {
     "M4 13a8 8 0 0 1 16 0M4 13v4a2 2 0 0 0 2 2h1v-6H4zM20 13v4a2 2 0 0 1-2 2h-1v-6h3z",
   products: "M4 7h16l-1 13H5zM8 7a4 4 0 0 1 8 0",
   orders: "M6 3h12v18H6zM9 8h6M9 12h6M9 16h4",
+  reviews:
+    "M4 5h16v11H8l-4 4V5zM12 8l1.1 2.3 2.5.3-1.8 1.7.4 2.5L12 13.6l-2.2 1.2.4-2.5-1.8-1.7 2.5-.3L12 8z",
   settings:
     "M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 8.97 4.6 1.7 1.7 0 0 0 10 3.08V3h4v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9 1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15",
   inbox: "M4 5h16v12H8l-4 4zM8 9h8M8 13h5",
