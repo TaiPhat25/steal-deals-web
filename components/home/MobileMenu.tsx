@@ -31,9 +31,9 @@ export default function MobileMenu() {
           <nav className="mobile-nav">
             <ul className="mobile-menu">
               <li className="active">
-                <a href="index.html">Home</a>
+                <Link href="/">Home</Link>
 
-                <ul>
+                {/* <ul>
                   <li>
                     <a href="index-1.html">01 - furniture store</a>
                   </li>
@@ -106,11 +106,11 @@ export default function MobileMenu() {
               <li>
                 <a href="index-24.html">24 - extreme sport store</a>
                   </li>
-                </ul>
+                </ul> */}
               </li>
               <li>
-                <Link href="/category">Shop</Link>
-                <ul>
+                <Link href="/category">Product</Link>
+                {/* <ul>
                   <li>
                     <a href="category-list.html">Shop List</a>
                   </li>
@@ -155,13 +155,11 @@ export default function MobileMenu() {
                   <li>
                     <a href="#">Lookbook</a>
                   </li>
-                </ul>
+                </ul> */}
               </li>
               <li>
-                <a href="product.html" className="sf-with-ul">
-                  Product
-                </a>
-                <ul>
+                <a href="#">Shop</a>
+                {/* <ul>
                   <li>
                     <a href="product.html">Default</a>
                   </li>
@@ -190,9 +188,15 @@ export default function MobileMenu() {
                   <li>
                     <a href="product-masonry.html">Masonry Sticky Info</a>
                   </li>
-                </ul>
+                </ul> */}
               </li>
               <li>
+                <Link href="/about">About Us</Link>
+              </li>
+              <li>
+                <Link href="/contact">Contact Us</Link>
+              </li>
+              {/* <li>
                 <a href="#">Pages</a>
                 <ul>
                   <li>
@@ -232,7 +236,7 @@ export default function MobileMenu() {
                     <a href="coming-soon.html">Coming Soon</a>
                   </li>
                 </ul>
-              </li>
+              </li> */}
               {/* <li>
                 <a href="blog.html">Blog</a>
 

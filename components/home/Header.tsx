@@ -60,6 +60,9 @@ export default function Header() {
               </div>
             </div>
           </div> */}
+          <div className="header-left">
+            <span className="header-site-label">Steal Deals E-commerce Website</span>
+          </div>
           <div className="header-right">
             <ul className="top-menu">
               <li>
@@ -67,51 +70,38 @@ export default function Header() {
                   Links
                 </a>
                 <ul>
-                  <li>
+                  {/* <li>
                     <a href="#" className="ff">
                       <i className="icon-phone"></i>Call: +0123 456 789
                     </a>
-                  </li>
+                  </li> */}
                   {/* <li>
                     <a href="#">
                       <i className="icon-random"></i>Compare<span>(3)</span>
                     </a>
                   </li> */}
-                  <li>
-                    <a href="/about">About Us</a>
-                  </li>
-                  <li>
-                    <a href="/contact">Contact Us</a>
-                  </li>
                   {isAuthenticated && currentUser ? (
-                    <li className="account-menu-trigger">
-                      <button type="button" className="account-link">
-                        <i className="icon-user"></i>
+                    <li className="account-inline">
+                      <Link href="/profile" className="account-link">
                         Welcome, {currentUser.name}
+                      </Link>
+                      <span className="account-separator" aria-hidden="true">
+                        |
+                      </span>
+                      <button type="button" className="account-logout" onClick={handleLogout}>
+                        Logout
                       </button>
-                      <ul className="account-menu">
-                        <li>
-                          <Link href="/profile">
-                            <i className="icon-user" aria-hidden="true"></i>
-                            Profile
-                          </Link>
-                        </li>
-                        <li>
-                          <button
-                            type="button"
-                            className="account-menu-action"
-                            onClick={handleLogout}
-                          >
-                            <i className="icon-arrow-right" aria-hidden="true"></i>
-                            Logout
-                          </button>
-                        </li>
-                      </ul>
                     </li>
                   ) : (
-                    <li>
-                      <Link href="/login">
-                        <i className="icon-user"></i>Login
+                    <li className="account-inline">
+                      <Link href="/register" className="account-link">
+                        Register
+                      </Link>
+                      <span className="account-separator" aria-hidden="true">
+                        |
+                      </span>
+                      <Link href="/login" className="account-link">
+                        Login
                       </Link>
                     </li>
                   )}
@@ -144,12 +134,12 @@ export default function Header() {
                 {/*
                 <img
                   src="/assets/images/demos/demo-28/logo.png"
-                  alt="Steal Deal Logo"
+                  alt="Steal Deals Logo"
                   width="105"
                   height="25"
                 />
                 */}
-                Steal Deal
+                Steal Deals
               </Link>
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
@@ -600,11 +590,11 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
-                  <li className="megamenu-list">
-                    <Link href="/category" className="sf-with-ul">
-                      Shop
+                  <li>
+                    <Link href="/category">
+                      Product
                     </Link>
-                    <div className="megamenu megamenu-md">
+                    {/* <div className="megamenu megamenu-md">
                       <div className="row no-gutters">
                         <div className="col-md-8">
                           <div className="menu-col">
@@ -704,13 +694,11 @@ export default function Header() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </li>
-                  <li className="megamenu-list">
-                    <a href="#" className="sf-with-ul">
-                      Product
-                    </a>
-                    <div className="megamenu megamenu-sm">
+                  <li>
+                    <a href="#">Shop</a>
+                    {/* <div className="megamenu megamenu-sm">
                       <div className="row no-gutters">
                         <div className="col-md-6">
                           <div className="menu-col">
@@ -764,9 +752,15 @@ export default function Header() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
                   </li>
-                  <li className="megamenu-list">
+                  <li>
+                    <Link href="/about">About Us</Link>
+                  </li>
+                  <li>
+                    <Link href="/contact">Contact Us</Link>
+                  </li>
+                  {/* <li className="megamenu-list">
                     <a href="#" className="sf-with-ul">
                       Pages
                     </a>
@@ -811,7 +805,7 @@ export default function Header() {
                         <a href="coming-soon.html">Coming Soon</a>
                       </li>
                     </ul>
-                  </li>
+                  </li> */}
                   {/* <li className="megamenu-list">
                     <a href="#" className="sf-with-ul">
                       Blog

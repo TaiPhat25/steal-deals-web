@@ -33,7 +33,7 @@ export default function Footer() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  Steal Deal
+                  Steal Deals
                 </Link>
                 <p className="font-weight-light second-primary-color text-light">
                   Praesent dapibus, neque id cursus ucibus, tortor neque egestas augue,
@@ -75,10 +75,10 @@ export default function Footer() {
 
                 <ul className="widget-list">
                   <li>
-                    <a href="/about">About Steal Deal</a>
+                    <a href="/about">About Steal Deals</a>
                   </li>
                   <li>
-                    <a href="#">How to shop on Steal Deal</a>
+                    <a href="#">How to shop on Steal Deals</a>
                   </li>
                   <li>
                     <a href="/faq">FAQ</a>
@@ -150,7 +150,7 @@ export default function Footer() {
       <div className="footer-bottom font-weight-normal">
         <div className="container">
           <p className="footer-copyright font-weight-light text-light">
-            Copyright © 2020 Steal Deal Store. All Rights Reserved.
+                Copyright © 2020 Steal Deals Store. All Rights Reserved.
           </p>
           <ul className="footer-menu justify-content-center">
             <li>
