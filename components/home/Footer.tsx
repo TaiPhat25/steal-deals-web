@@ -36,24 +36,23 @@ export default function Footer() {
                   Steal Deals
                 </Link>
                 <p className="font-weight-light second-primary-color text-light">
-                  Praesent dapibus, neque id cursus ucibus, tortor neque egestas augue,
-                  eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi,
-                  tincidunt quis, accumsan porttitor, facilisis luctus, metus.
+                  StealDeals connects local stores with buyers who want affordable food
+                  while helping good surplus food stay in the community.
                 </p>
 
                 <div className="widget-about-info">
                   <div className="row">
                     <div className="col-sm-6 col-md-4">
                       <span className="widget-about-title text-white">
-                        Got Question? Call us 24/7
+                        Pickup support
                       </span>
-                      <a href="tel:123456789" className="text-primary">
-                        +0123 456 789
-                      </a>
+                      <span className="text-primary">
+                        Check pickup details on each bag
+                      </span>
                     </div>
                     <div className="col-sm-6 col-md-8">
                       <span className="pl-3 widget-about-title text-white">
-                        Payment Method
+                        Checkout options
                       </span>
                       <figure className="pl-3 mb-0 footer-payments">
                         <img
@@ -78,7 +77,7 @@ export default function Footer() {
                     <a href="/about">About Steal Deals</a>
                   </li>
                   <li>
-                    <a href="#">How to shop on Steal Deals</a>
+                    <a href="/faq">How to rescue a bag</a>
                   </li>
                   <li>
                     <a href="/faq">FAQ</a>
@@ -87,7 +86,7 @@ export default function Footer() {
                     <a href="/contact">Contact us</a>
                   </li>
                   <li>
-                    <a href="/login">Log in</a>
+                    <a href="/register">Join StealDeals</a>
                   </li>
                 </ul>
               </div>
@@ -99,22 +98,22 @@ export default function Footer() {
 
                 <ul className="widget-list">
                   <li>
-                    <a href="#">Payment Methods</a>
+                    <a href="/checkout">Payment methods</a>
                   </li>
                   <li>
-                    <a href="#">Money-back guarantee!</a>
+                    <a href="/faq">Pickup and order help</a>
                   </li>
                   <li>
-                    <a href="#">Returns</a>
+                    <a href="/faq">Food rescue guide</a>
                   </li>
                   <li>
-                    <a href="#">Shipping</a>
+                    <a href="/faq">Delivery information</a>
                   </li>
                   <li>
-                    <a href="#">Terms and conditions</a>
+                    <a href="/about">Terms and conditions</a>
                   </li>
                   <li>
-                    <a href="#">Privacy Policy</a>
+                    <a href="/about">Privacy policy</a>
                   </li>
                 </ul>
               </div>
@@ -135,10 +134,10 @@ export default function Footer() {
                     <a href="/wishlist">My Wishlist</a>
                   </li>
                   <li>
-                    <a href="#">Track My Order</a>
+                    <a href="/checkout">Track my pickup</a>
                   </li>
                   <li>
-                    <a href="#">Help</a>
+                    <a href="/contact">Help and contact</a>
                   </li>
                 </ul>
               </div>
@@ -150,17 +149,18 @@ export default function Footer() {
       <div className="footer-bottom font-weight-normal">
         <div className="container">
           <p className="footer-copyright font-weight-light text-light">
-                Copyright © 2020 Steal Deals Store. All Rights Reserved.
+                Copyright (c) 2026 StealDeals. All Rights Reserved.
           </p>
           <ul className="footer-menu justify-content-center">
             <li>
-              <a href="#">Terms Of Use</a>
+              <a href="/about">About StealDeals</a>
             </li>
             <li>
-              <a href="#">Privacy Policy</a>
+              <a href="/contact">Contact us</a>
             </li>
           </ul>
 
+          {/* Social links will be enabled when official StealDeals accounts are available.
           <div className="social-icons social-icons-color justify-content-center">
             <span className="social-label">Social Media</span>
             <a href="#" className="social-icon social-facebook" title="Facebook" target="_blank">
@@ -178,7 +178,7 @@ export default function Footer() {
             <a href="#" className="social-icon social-pinterest" title="Pinterest" target="_blank">
               <i className="icon-pinterest"></i>
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>

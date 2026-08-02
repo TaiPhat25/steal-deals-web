@@ -1,14 +1,14 @@
-import BannerGroupOne from "@/components/home/BannerGroupOne";
-import BannerGroupTwo from "@/components/home/BannerGroupTwo";
-import BlogSection from "@/components/home/BlogSection";
-import BrandSection from "@/components/home/BrandSection";
-import CategorySection from "@/components/home/CategorySection";
-import FlashSection from "@/components/home/FlashSection";
-import IconBoxesGroup from "@/components/home/IconBoxesGroup";
+import FoodCategorySection from "@/components/home/FoodCategorySection";
 import IntroSection from "@/components/home/IntroSection";
-import NewsletterSection from "@/components/home/NewsletterSection";
-import RecommendSection from "@/components/home/RecommendSection";
-import ServiceSection from "@/components/home/ServiceSection";
+import NearExpirySection from "@/components/home/NearExpirySection";
+import NewStoresSection from "@/components/home/NewStoresSection";
+import NearbySection from "@/components/home/NearbySection";
+import StealDealsBannerGroupOne from "@/components/home/StealDealsBannerGroupOne";
+import StealDealsBannerGroupTwo from "@/components/home/StealDealsBannerGroupTwo";
+import StealDealsBenefits from "@/components/home/StealDealsBenefits";
+import StealDealsNewsletterSection from "@/components/home/StealDealsNewsletterSection";
+import SustainabilityNewsSection from "@/components/home/SustainabilityNewsSection";
+import TrendingSection from "@/components/home/TrendingSection";
 // import NewsletterPopup from "@/components/home/NewsletterPopup";
 
 export default function Home() {
@@ -17,16 +17,16 @@ export default function Home() {
       <main className="main">
         <div className="page-content">
           <IntroSection />
-          <BannerGroupOne />
-          <IconBoxesGroup />
-          <CategorySection />
-          <FlashSection />
-          <BrandSection />
-          <NewsletterSection />
-          <BannerGroupTwo />
-          <RecommendSection />
-          <ServiceSection />
-          <BlogSection />
+          <StealDealsBannerGroupOne />
+          <StealDealsBenefits />
+          <FoodCategorySection />
+          <NearExpirySection />
+          <NearbySection />
+          <TrendingSection />
+          <NewStoresSection />
+          <StealDealsNewsletterSection />
+          <StealDealsBannerGroupTwo />
+          <SustainabilityNewsSection />
         </div>
       </main>
       {/* <NewsletterPopup /> */}

@@ -5,9 +5,10 @@ import { Children, useEffect, useMemo, useRef } from "react";
 type DragScrollRowProps = {
   className?: string;
   children: React.ReactNode;
+  visibleItems?: number;
 };
 
-export default function DragScrollRow({ className, children }: DragScrollRowProps) {
+export default function DragScrollRow({ className, children, visibleItems }: DragScrollRowProps) {
   const rowRef = useRef<HTMLDivElement | null>(null);
   const childNodes = useMemo(() => Children.toArray(children), [children]);
 
@@ -31,6 +32,20 @@ export default function DragScrollRow({ className, children }: DragScrollRowProp
     };
 
     const measureTrack = () => {
+      const rowStyles = window.getComputedStyle(row);
+      const cssVisibleItems = Number.parseFloat(
+        rowStyles.getPropertyValue("--drag-visible-items")
+      );
+      const itemCount = cssVisibleItems || visibleItems;
+
+      if (itemCount) {
+        const track = row.querySelector<HTMLElement>(".drag-scroll-row__track");
+        const trackStyles = track ? window.getComputedStyle(track) : null;
+        const gap = trackStyles ? Number.parseFloat(trackStyles.columnGap) || 0 : 0;
+        const itemWidth = (row.clientWidth - gap * (itemCount - 1)) / itemCount;
+        row.style.setProperty("--drag-item-width", `${Math.max(itemWidth, 0)}px`);
+      }
+
       singleTrackWidth = row.scrollWidth / 3;
       if (singleTrackWidth) {
         row.scrollLeft = singleTrackWidth;
@@ -81,7 +96,7 @@ export default function DragScrollRow({ className, children }: DragScrollRowProp
       row.removeEventListener("pointercancel", onPointerUp);
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [visibleItems]);
 
   return (
     <div ref={rowRef} className={className}>
