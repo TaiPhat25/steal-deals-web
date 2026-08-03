@@ -16,7 +16,9 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
     const row = rowRef.current;
     if (!row) return;
 
+    const dragThreshold = 6;
     let isDragging = false;
+    let shouldSuppressClick = false;
     let startX = 0;
     let startScrollLeft = 0;
     let singleTrackWidth = 0;
@@ -55,15 +57,21 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
       isDragging = true;
+      shouldSuppressClick = false;
       startX = event.clientX;
       startScrollLeft = row.scrollLeft;
-      row.classList.add("is-dragging");
-      row.setPointerCapture(event.pointerId);
     };
 
     const onPointerMove = (event: PointerEvent) => {
       if (!isDragging) return;
       const distance = event.clientX - startX;
+      if (!shouldSuppressClick && Math.abs(distance) < dragThreshold) return;
+
+      shouldSuppressClick = true;
+      row.classList.add("is-dragging");
+      if (!row.hasPointerCapture(event.pointerId)) {
+        row.setPointerCapture(event.pointerId);
+      }
       row.scrollLeft = startScrollLeft - distance;
       syncLoopPosition();
     };
@@ -78,6 +86,13 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
       syncLoopPosition();
     };
 
+    const onClick = (event: MouseEvent) => {
+      if (!shouldSuppressClick) return;
+      event.preventDefault();
+      event.stopPropagation();
+      shouldSuppressClick = false;
+    };
+
     measureTrack();
     const resizeObserver = new ResizeObserver(() => {
       measureTrack();
@@ -88,12 +103,14 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
     row.addEventListener("pointermove", onPointerMove);
     row.addEventListener("pointerup", onPointerUp);
     row.addEventListener("pointercancel", onPointerUp);
+    row.addEventListener("click", onClick, true);
 
     return () => {
       row.removeEventListener("pointerdown", onPointerDown);
       row.removeEventListener("pointermove", onPointerMove);
       row.removeEventListener("pointerup", onPointerUp);
       row.removeEventListener("pointercancel", onPointerUp);
+      row.removeEventListener("click", onClick, true);
       resizeObserver.disconnect();
     };
   }, [visibleItems]);

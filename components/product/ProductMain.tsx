@@ -1,95 +1,324 @@
 import Link from "next/link";
 
-const galleryImages = [
-  {
-    image: "/assets/images/products/single/1.jpg",
-    zoom: "/assets/images/products/single/1-big.jpg",
-    thumb: "/assets/images/products/single/1-small.jpg",
-    alt: "product side",
-  },
-  {
-    image: "/assets/images/products/single/2.jpg",
-    zoom: "/assets/images/products/single/2-big.jpg",
-    thumb: "/assets/images/products/single/2-small.jpg",
-    alt: "product cross",
-  },
-  {
-    image: "/assets/images/products/single/3.jpg",
-    zoom: "/assets/images/products/single/3-big.jpg",
-    thumb: "/assets/images/products/single/3-small.jpg",
-    alt: "product with model",
-  },
-  {
-    image: "/assets/images/products/single/4.jpg",
-    zoom: "/assets/images/products/single/4-big.jpg",
-    thumb: "/assets/images/products/single/4-small.jpg",
-    alt: "product back",
-  },
-];
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  iconUrl: string | null;
+  isActive: boolean;
+};
 
-const relatedProducts = [
+type StoreProfile = {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  avatarUrl: string | null;
+  phone: string | null;
+  bankAccount: string | null;
+  ratingScore: number;
+  licenseUrl: string | null;
+  isVerify: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+};
+
+type StoreReview = {
+  id: string;
+  orderId: string;
+  buyerId: string;
+  storeId: string;
+  bagId: string;
+  ratingScore: number;
+  comment: string | null;
+  storeReply: string | null;
+  isReported: boolean;
+  createdAt: string;
+};
+
+type SurpriseBagDetail = {
+  id: string;
+  storeId: string;
+  name: string;
+  description: string | null;
+  originalPrice: number;
+  salePrice: number;
+  quantityTotal: number;
+  quantityRemaining: number;
+  pickupStartTime: string;
+  pickupEndTime: string;
+  expiryDate: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string | null;
+  store: StoreProfile;
+  categories: Category[];
+  storeReviews: StoreReview[];
+  imageSrc: string;
+  gallery: string[];
+};
+
+const categories = {
+  bakery: {
+    id: "10000000-0000-0000-0000-000000000001",
+    name: "Bakery",
+    slug: "bakery",
+    iconUrl: null,
+    isActive: true,
+  },
+  produce: {
+    id: "10000000-0000-0000-0000-000000000002",
+    name: "Produce",
+    slug: "produce",
+    iconUrl: null,
+    isActive: true,
+  },
+  seafood: {
+    id: "10000000-0000-0000-0000-000000000003",
+    name: "Seafood",
+    slug: "seafood",
+    iconUrl: null,
+    isActive: true,
+  },
+} satisfies Record<string, Category>;
+
+const stores = {
+  morningOven: {
+    id: "8f3522c1-7d86-4b25-b8fe-5cbf8a101001",
+    ownerId: "45a26c2e-19f0-4c73-88d4-3fb5b8d21001",
+    name: "Morning Oven Bakery",
+    description: "Fresh bread and pastries rescued at the end of each day.",
+    address: "12 Nguyen Trai Street, District 1, Ho Chi Minh City",
+    latitude: 10.7715,
+    longitude: 106.701,
+    avatarUrl: "/assets/images/demos/demo-28/banners/banner-1.jpg",
+    phone: "+84 28 3822 1001",
+    bankAccount: null,
+    ratingScore: 4.8,
+    licenseUrl: null,
+    isVerify: true,
+    isActive: true,
+    createdAt: "2026-07-02T08:30:00.000Z",
+    updatedAt: null,
+  },
+  greenBasket: {
+    id: "8f3522c1-7d86-4b25-b8fe-5cbf8a101002",
+    ownerId: "45a26c2e-19f0-4c73-88d4-3fb5b8d21002",
+    name: "Green Basket Market",
+    description: "Seasonal fruits and vegetables available for local pickup.",
+    address: "24 Le Loi Street, District 3, Ho Chi Minh City",
+    latitude: 10.7791,
+    longitude: 106.6922,
+    avatarUrl: "/assets/images/demos/demo-28/banners/banner-3.jpg",
+    phone: "+84 28 3822 1002",
+    bankAccount: null,
+    ratingScore: 4.7,
+    licenseUrl: null,
+    isVerify: true,
+    isActive: true,
+    createdAt: "2026-07-04T09:15:00.000Z",
+    updatedAt: null,
+  },
+  harborFresh: {
+    id: "8f3522c1-7d86-4b25-b8fe-5cbf8a101003",
+    ownerId: "45a26c2e-19f0-4c73-88d4-3fb5b8d21003",
+    name: "Harbor Fresh Foods",
+    description: "Quality meals and seafood boxes prepared for same-day pickup.",
+    address: "8 Ton Duc Thang Street, District 1, Ho Chi Minh City",
+    latitude: 10.7828,
+    longitude: 106.7067,
+    avatarUrl: "/assets/images/demos/demo-28/banners/5.jpg",
+    phone: "+84 28 3822 1003",
+    bankAccount: null,
+    ratingScore: 4.6,
+    licenseUrl: null,
+    isVerify: true,
+    isActive: true,
+    createdAt: "2026-07-08T07:45:00.000Z",
+    updatedAt: null,
+  },
+} satisfies Record<string, StoreProfile>;
+
+const surpriseBags: SurpriseBagDetail[] = [
   {
-    label: "New",
-    labelClass: "label-new",
-    image: "/assets/images/products/product-4.jpg",
-    category: "Women",
-    title: "Brown paperbag waist pencil skirt",
-    price: "$60.00",
-    rating: "20%",
-    reviews: "( 2 Reviews )",
-    thumbs: [
-      "/assets/images/products/product-4-thumb.jpg",
-      "/assets/images/products/product-4-2-thumb.jpg",
-      "/assets/images/products/product-4-3-thumb.jpg",
+    id: "137b2d0d-0c73-4fe2-9e23-100000000001",
+    storeId: stores.morningOven.id,
+    name: "Bakery Breakfast Surprise Bag",
+    description: "A mixed selection of breads and pastries left at closing. Contents vary by day.",
+    originalPrice: 95000,
+    salePrice: 45000,
+    quantityTotal: 8,
+    quantityRemaining: 4,
+    pickupStartTime: "2026-08-03T17:00:00+07:00",
+    pickupEndTime: "2026-08-03T19:00:00+07:00",
+    expiryDate: "2026-08-03T23:59:00+07:00",
+    status: "Active",
+    createdAt: "2026-07-29T09:00:00.000Z",
+    updatedAt: null,
+    store: stores.morningOven,
+    categories: [categories.bakery],
+    storeReviews: [
+      {
+        id: "7cc92a4d-7d12-4833-a246-4c76e8f21001",
+        orderId: "40000000-0000-0000-0000-000000001001",
+        buyerId: "50000000-0000-0000-0000-000000001001",
+        storeId: stores.morningOven.id,
+        bagId: "137b2d0d-0c73-4fe2-9e23-100000000001",
+        ratingScore: 5,
+        comment: "The bakery bag had a generous mix and pickup was quick.",
+        storeReply: null,
+        isReported: false,
+        createdAt: "2026-07-30T10:00:00.000Z",
+      },
+    ],
+    imageSrc: "/assets/images/demos/demo-28/flash/1.jpg",
+    gallery: [
+      "/assets/images/demos/demo-28/flash/1.jpg",
+      "/assets/images/demos/demo-28/flash/7.jpg",
+      "/assets/images/demos/demo-28/banners/banner-1.jpg",
     ],
   },
   {
-    label: "Out of Stock",
-    labelClass: "label-out",
-    image: "/assets/images/products/product-6.jpg",
-    category: "Jackets",
-    title: "Khaki utility boiler jumpsuit",
-    price: "$120.00",
-    priceClass: "out-price",
-    rating: "80%",
-    reviews: "( 6 Reviews )",
-  },
-  {
-    label: "Top",
-    labelClass: "label-top",
-    image: "/assets/images/products/product-11.jpg",
-    category: "Shoes",
-    title: "Light brown studded Wide fit wedges",
-    price: "$110.00",
-    rating: "80%",
-    reviews: "( 1 Reviews )",
-    thumbs: [
-      "/assets/images/products/product-11-thumb.jpg",
-      "/assets/images/products/product-11-2-thumb.jpg",
-      "/assets/images/products/product-11-3-thumb.jpg",
+    id: "137b2d0d-0c73-4fe2-9e23-100000000003",
+    storeId: stores.greenBasket.id,
+    name: "Market Fresh Vegetable Bag",
+    description: "Seasonal vegetables packed from daily surplus and ready for same-day pickup.",
+    originalPrice: 120000,
+    salePrice: 59000,
+    quantityTotal: 8,
+    quantityRemaining: 6,
+    pickupStartTime: "2026-08-03T18:00:00+07:00",
+    pickupEndTime: "2026-08-03T20:00:00+07:00",
+    expiryDate: "2026-08-04T08:00:00+07:00",
+    status: "Active",
+    createdAt: "2026-07-30T08:20:00.000Z",
+    updatedAt: null,
+    store: stores.greenBasket,
+    categories: [categories.produce],
+    storeReviews: [
+      {
+        id: "7cc92a4d-7d12-4833-a246-4c76e8f21002",
+        orderId: "40000000-0000-0000-0000-000000001002",
+        buyerId: "50000000-0000-0000-0000-000000001002",
+        storeId: stores.greenBasket.id,
+        bagId: "137b2d0d-0c73-4fe2-9e23-100000000003",
+        ratingScore: 5,
+        comment: "Fresh vegetables with clear pickup instructions.",
+        storeReply: null,
+        isReported: false,
+        createdAt: "2026-07-28T16:00:00.000Z",
+      },
+    ],
+    imageSrc: "/assets/images/demos/demo-28/flash/2.jpg",
+    gallery: [
+      "/assets/images/demos/demo-28/flash/2.jpg",
+      "/assets/images/demos/demo-28/flash/10.jpg",
+      "/assets/images/demos/demo-28/banners/banner-3.jpg",
     ],
   },
   {
-    image: "/assets/images/products/product-10.jpg",
-    category: "Jumpers",
-    title: "Yellow button front tea top",
-    price: "$56.00",
-    rating: "0%",
-    reviews: "( 0 Reviews )",
-  },
-  {
-    image: "/assets/images/products/product-7.jpg",
-    category: "Jeans",
-    title: "Blue utility pinafore denim dress",
-    price: "$76.00",
-    rating: "20%",
-    reviews: "( 2 Reviews )",
+    id: "137b2d0d-0c73-4fe2-9e23-100000000004",
+    storeId: stores.harborFresh.id,
+    name: "Seafood Family Surprise Bag",
+    description: "A same-day seafood dinner box selected by the store. Best collected during the pickup window.",
+    originalPrice: 360000,
+    salePrice: 189000,
+    quantityTotal: 4,
+    quantityRemaining: 2,
+    pickupStartTime: "2026-08-03T16:30:00+07:00",
+    pickupEndTime: "2026-08-03T18:30:00+07:00",
+    expiryDate: "2026-08-03T22:00:00+07:00",
+    status: "Active",
+    createdAt: "2026-07-31T09:30:00.000Z",
+    updatedAt: null,
+    store: stores.harborFresh,
+    categories: [categories.seafood],
+    storeReviews: [
+      {
+        id: "7cc92a4d-7d12-4833-a246-4c76e8f21003",
+        orderId: "40000000-0000-0000-0000-000000001003",
+        buyerId: "50000000-0000-0000-0000-000000001003",
+        storeId: stores.harborFresh.id,
+        bagId: "137b2d0d-0c73-4fe2-9e23-100000000004",
+        ratingScore: 4,
+        comment: "Great value for seafood. The pickup window was accurate.",
+        storeReply: null,
+        isReported: false,
+        createdAt: "2026-07-29T13:30:00.000Z",
+      },
+    ],
+    imageSrc: "/assets/images/demos/demo-28/flash/3.jpg",
+    gallery: [
+      "/assets/images/demos/demo-28/flash/3.jpg",
+      "/assets/images/demos/demo-28/flash/8.jpg",
+      "/assets/images/demos/demo-28/banners/5.jpg",
+    ],
   },
 ];
 
-export default function ProductMain() {
+const routeAliases: Record<string, string> = {
+  "bakery-breakfast-box": "137b2d0d-0c73-4fe2-9e23-100000000001",
+  "fresh-produce-box": "137b2d0d-0c73-4fe2-9e23-100000000003",
+  "seafood-family-box": "137b2d0d-0c73-4fe2-9e23-100000000004",
+};
+
+function formatPrice(value: number) {
+  return `${value.toLocaleString("en-US")} VND`;
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getDiscountPercent(product: SurpriseBagDetail) {
+  if (!product.originalPrice) return 0;
+  return Math.round(((product.originalPrice - product.salePrice) / product.originalPrice) * 100);
+}
+
+function getRatingPercent(score: number) {
+  return `${Math.min(Math.max(score, 0), 5) * 20}%`;
+}
+
+function getAverageRating(reviews: StoreReview[]) {
+  if (!reviews.length) return 0;
+  return reviews.reduce((sum, review) => sum + review.ratingScore, 0) / reviews.length;
+}
+
+function findProduct(bagId?: string) {
+  if (!bagId) return surpriseBags[0];
+  const normalized = decodeURIComponent(bagId).trim().toLowerCase();
+  const productId = routeAliases[normalized] ?? normalized;
+
+  return surpriseBags.find((product) => product.id.toLowerCase() === productId) ?? surpriseBags[0];
+}
+
+export default function ProductMain({ bagId }: { bagId?: string }) {
+  const product = findProduct(bagId);
+  const averageRating = getAverageRating(product.storeReviews);
+  const discountPercent = getDiscountPercent(product);
+  const isAvailable = product.status === "Active" && product.quantityRemaining > 0;
+  const relatedProducts = surpriseBags.filter((item) => item.id !== product.id);
+
   return (
-    <main className="main">
+    <main className="main product-detail-page">
       <nav aria-label="breadcrumb" className="breadcrumb-nav border-0 mb-0">
         <div className="container d-flex align-items-center">
           <ol className="breadcrumb">
@@ -97,23 +326,12 @@ export default function ProductMain() {
               <Link href="/">Home</Link>
             </li>
             <li className="breadcrumb-item">
-              <a href="#">Products</a>
+              <Link href="/products">Surprise Bags</Link>
             </li>
             <li className="breadcrumb-item active" aria-current="page">
-              Default
+              {product.name}
             </li>
           </ol>
-
-          <nav className="product-pager ml-auto" aria-label="Product">
-            <a className="product-pager-link product-pager-prev" href="#" aria-label="Previous" tabIndex={-1}>
-              <i className="icon-angle-left"></i>
-              <span>Prev</span>
-            </a>
-            <a className="product-pager-link product-pager-next" href="#" aria-label="Next" tabIndex={-1}>
-              <span>Next</span>
-              <i className="icon-angle-right"></i>
-            </a>
-          </nav>
         </div>
       </nav>
 
@@ -124,28 +342,19 @@ export default function ProductMain() {
               <div className="col-md-6">
                 <div className="product-gallery product-gallery-vertical">
                   <div className="row">
-                    <figure className="product-main-image">
-                      <img
-                        id="product-zoom"
-                        src={galleryImages[0].image}
-                        data-zoom-image={galleryImages[0].zoom}
-                        alt="product image"
-                      />
-                      <a href="#" id="btn-product-gallery" className="btn-product-gallery">
-                        <i className="icon-arrows"></i>
-                      </a>
+                    <figure className="product-main-image product-detail-page__main-image">
+                      <img id="product-zoom" src={product.imageSrc} alt={product.name} />
+                      <span className="product-detail-page__discount-badge">Save {discountPercent}%</span>
                     </figure>
 
                     <div id="product-zoom-gallery" className="product-image-gallery">
-                      {galleryImages.map((item, index) => (
+                      {product.gallery.map((image, index) => (
                         <a
-                          key={item.image}
+                          key={image}
                           className={`product-gallery-item${index === 0 ? " active" : ""}`}
-                          href="#"
-                          data-image={item.image}
-                          data-zoom-image={item.zoom}
+                          href={image}
                         >
-                          <img src={item.thumb} alt={item.alt} />
+                          <img src={image} alt={`${product.name} preview ${index + 1}`} />
                         </a>
                       ))}
                     </div>
@@ -155,52 +364,65 @@ export default function ProductMain() {
 
               <div className="col-md-6">
                 <div className="product-details">
-                  <h1 className="product-title">Dark yellow lace cut out swing dress</h1>
+                  <p className="product-detail-page__eyebrow">Surprise bag</p>
+                  <h1 className="product-title">{product.name}</h1>
 
                   <div className="ratings-container">
                     <div className="ratings">
-                      <div className="ratings-val" style={{ width: "80%" }}></div>
+                      <div className="ratings-val" style={{ width: getRatingPercent(averageRating) }}></div>
                     </div>
                     <a className="ratings-text" href="#product-review-link" id="review-link">
-                      ( 2 Reviews )
+                      ( {product.storeReviews.length} Reviews )
                     </a>
                   </div>
 
-                  <div className="product-price">$84.00</div>
+                  <div className="product-price product-detail-page__price">
+                    <span>{formatPrice(product.salePrice)}</span>
+                    <del>{formatPrice(product.originalPrice)}</del>
+                  </div>
 
                   <div className="product-content">
-                    <p>
-                      Sed egestas, ante et vulputate volutpat, eros pede semper est, vitae luctus metus
-                      libero eu augue. Morbi purus libero, faucibus adipiscing. Sed lectus.
-                    </p>
+                    <p>{product.description}</p>
                   </div>
 
-                  <div className="details-filter-row details-row-size">
-                    <label>Color:</label>
-                    <div className="product-nav product-nav-thumbs">
-                      <a href="#" className="active">
-                        <img src="/assets/images/products/single/1-thumb.jpg" alt="product desc" />
-                      </a>
-                      <a href="#">
-                        <img src="/assets/images/products/single/2-thumb.jpg" alt="product desc" />
-                      </a>
+                  <dl className="product-detail-page__summary">
+                    <div>
+                      <dt>Store</dt>
+                      <dd>
+                        <Link href={`/stores/${encodeURIComponent(product.store.id)}`}>{product.store.name}</Link>
+                      </dd>
                     </div>
-                  </div>
+                    <div>
+                      <dt>Pickup</dt>
+                      <dd>
+                        {formatDateTime(product.pickupStartTime)} - {formatDateTime(product.pickupEndTime)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Expiry</dt>
+                      <dd>{formatDateTime(product.expiryDate)}</dd>
+                    </div>
+                    <div>
+                      <dt>Available</dt>
+                      <dd>
+                        {product.quantityRemaining} of {product.quantityTotal} bags left
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Status</dt>
+                      <dd>{product.status}</dd>
+                    </div>
+                  </dl>
 
                   <div className="details-filter-row details-row-size">
-                    <label htmlFor="size">Size:</label>
-                    <div className="select-custom">
-                      <select name="size" id="size" className="form-control" defaultValue="#">
-                        <option value="#">Select a size</option>
-                        <option value="s">Small</option>
-                        <option value="m">Medium</option>
-                        <option value="l">Large</option>
-                        <option value="xl">Extra Large</option>
-                      </select>
+                    <label>Categories:</label>
+                    <div className="product-detail-page__categories">
+                      {product.categories.map((category) => (
+                        <Link href={`/products?category=${encodeURIComponent(category.name)}`} key={category.id}>
+                          {category.name}
+                        </Link>
+                      ))}
                     </div>
-                    <a href="#" className="size-guide">
-                      <i className="icon-th-list"></i>size guide
-                    </a>
                   </div>
 
                   <div className="details-filter-row details-row-size">
@@ -212,48 +434,35 @@ export default function ProductMain() {
                         className="form-control"
                         defaultValue="1"
                         min="1"
-                        max="10"
+                        max={product.quantityRemaining}
                         step="1"
                         data-decimals="0"
-                        required
+                        disabled={!isAvailable}
                       />
                     </div>
                   </div>
 
                   <div className="product-details-action">
-                    <a href="#" className="btn-product btn-cart">
-                      <span>add to cart</span>
-                    </a>
+                    <Link
+                      href={isAvailable ? `/cart?bag=${encodeURIComponent(product.id)}` : "#"}
+                      className={`btn-product btn-cart${!isAvailable ? " disabled" : ""}`}
+                    >
+                      <span>{isAvailable ? "add to cart" : "sold out"}</span>
+                    </Link>
                     <div className="details-action-wrapper">
-                      <a href="#" className="btn-product btn-wishlist" title="Wishlist">
+                      <Link href={`/wishlist?bag=${encodeURIComponent(product.id)}`} className="btn-product btn-wishlist">
                         <span>Add to Wishlist</span>
-                      </a>
-                      <a href="#" className="btn-product btn-compare" title="Compare">
-                        <span>Add to Compare</span>
-                      </a>
+                      </Link>
                     </div>
                   </div>
 
                   <div className="product-details-footer">
                     <div className="product-cat">
-                      <span>Category:</span> <a href="#">Women</a>, <a href="#">Dresses</a>,{" "}
-                      <a href="#">Yellow</a>
+                      <span>Store:</span>{" "}
+                      <Link href={`/stores/${encodeURIComponent(product.store.id)}`}>{product.store.name}</Link>
                     </div>
-
-                    <div className="social-icons social-icons-sm">
-                      <span className="social-label">Share:</span>
-                      <a href="#" className="social-icon" title="Facebook" target="_blank">
-                        <i className="icon-facebook-f"></i>
-                      </a>
-                      <a href="#" className="social-icon" title="Twitter" target="_blank">
-                        <i className="icon-twitter"></i>
-                      </a>
-                      <a href="#" className="social-icon" title="Instagram" target="_blank">
-                        <i className="icon-instagram"></i>
-                      </a>
-                      <a href="#" className="social-icon" title="Pinterest" target="_blank">
-                        <i className="icon-pinterest"></i>
-                      </a>
+                    <div className="product-cat">
+                      <span>Created:</span> {formatDate(product.createdAt)}
                     </div>
                   </div>
                 </div>
@@ -286,20 +495,7 @@ export default function ProductMain() {
                   aria-controls="product-info-tab"
                   aria-selected="false"
                 >
-                  Additional information
-                </a>
-              </li>
-              <li className="nav-item">
-                <a
-                  className="nav-link"
-                  id="product-shipping-link"
-                  data-toggle="tab"
-                  href="#product-shipping-tab"
-                  role="tab"
-                  aria-controls="product-shipping-tab"
-                  aria-selected="false"
-                >
-                  Shipping &amp; Returns
+                  Pickup information
                 </a>
               </li>
               <li className="nav-item">
@@ -312,7 +508,7 @@ export default function ProductMain() {
                   aria-controls="product-review-tab"
                   aria-selected="false"
                 >
-                  Reviews (2)
+                  Reviews ({product.storeReviews.length})
                 </a>
               </li>
             </ul>
@@ -320,204 +516,98 @@ export default function ProductMain() {
             <div className="tab-content">
               <div className="tab-pane fade show active" id="product-desc-tab" role="tabpanel" aria-labelledby="product-desc-link">
                 <div className="product-desc-content">
-                  <h3>Product Information</h3>
-                  <p>
-                    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque
-                    volutpat mattis eros. Nullam malesuada erat ut turpis. Suspendisse urna viverra
-                    non, semper suscipit, posuere a, pede. Donec nec justo eget felis facilisis
-                    fermentum.
-                  </p>
+                  <h3>Bag Information</h3>
+                  <p>{product.description}</p>
                   <ul>
-                    <li>Nunc nec porttitor turpis. In eu risus enim. In vitae mollis elit.</li>
-                    <li>Vivamus finibus vel mauris ut vehicula.</li>
-                    <li>Nullam a magna porttitor, dictum risus nec, faucibus sapien.</li>
+                    <li>Discount: {discountPercent}% off the original value.</li>
+                    <li>Quantity: {product.quantityRemaining} bags remaining.</li>
+                    <li>Categories: {product.categories.map((category) => category.name).join(", ")}.</li>
                   </ul>
-                  <p>
-                    Aliquam porttitor mauris sit amet orci. Aenean dignissim pellentesque felis.
-                    Phasellus ultrices nulla quis nibh. Quisque a lectus. Donec consectetuer ligula
-                    vulputate sem tristique cursus.
-                  </p>
                 </div>
               </div>
 
               <div className="tab-pane fade" id="product-info-tab" role="tabpanel" aria-labelledby="product-info-link">
                 <div className="product-desc-content">
-                  <h3>Information</h3>
+                  <h3>Pickup Details</h3>
                   <p>
-                    Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Donec odio. Quisque
-                    volutpat mattis eros. Nullam malesuada erat ut turpis.
+                    Please collect this surprise bag at {product.store.name} during the pickup window.
                   </p>
-                  <h3>Fabric &amp; care</h3>
-                  <ul>
-                    <li>Faux suede fabric</li>
-                    <li>Gold tone metal hoop handles.</li>
-                    <li>RI branding</li>
-                    <li>Snake print trim interior</li>
-                    <li>Adjustable cross body strap</li>
-                    <li>Height: 31cm; Width: 32cm; Depth: 12cm; Handle Drop: 61cm</li>
-                  </ul>
-                  <h3>Size</h3>
-                  <p>one size</p>
-                </div>
-              </div>
-
-              <div className="tab-pane fade" id="product-shipping-tab" role="tabpanel" aria-labelledby="product-shipping-link">
-                <div className="product-desc-content">
-                  <h3>Delivery &amp; returns</h3>
-                  <p>
-                    We deliver to over 100 countries around the world. For full details of the
-                    delivery options we offer, please view our <a href="#">Delivery information</a>
-                    <br />
-                    We hope you&apos;ll love every purchase, but if you ever need to return an item you
-                    can do so within a month of receipt. For full details of how to make a return,
-                    please view our <a href="#">Returns information</a>
-                  </p>
+                  <dl className="product-detail-page__tab-details">
+                    <div>
+                      <dt>Pickup start</dt>
+                      <dd>{formatDateTime(product.pickupStartTime)}</dd>
+                    </div>
+                    <div>
+                      <dt>Pickup end</dt>
+                      <dd>{formatDateTime(product.pickupEndTime)}</dd>
+                    </div>
+                    <div>
+                      <dt>Expiry date</dt>
+                      <dd>{formatDateTime(product.expiryDate)}</dd>
+                    </div>
+                    <div>
+                      <dt>Store address</dt>
+                      <dd>{product.store.address}</dd>
+                    </div>
+                  </dl>
                 </div>
               </div>
 
               <div className="tab-pane fade" id="product-review-tab" role="tabpanel" aria-labelledby="product-review-link">
                 <div className="reviews">
-                  <h3>Reviews (2)</h3>
-                  <div className="review">
-                    <div className="row no-gutters">
-                      <div className="col-auto">
-                        <h4>
-                          <a href="#">Samanta J.</a>
-                        </h4>
-                        <div className="ratings-container">
-                          <div className="ratings">
-                            <div className="ratings-val" style={{ width: "80%" }}></div>
+                  <h3>Reviews ({product.storeReviews.length})</h3>
+                  {product.storeReviews.length ? (
+                    product.storeReviews.map((review) => (
+                      <div className="review" key={review.id}>
+                        <div className="row no-gutters">
+                          <div className="col-auto">
+                            <h4>Buyer {review.buyerId.slice(0, 8)}</h4>
+                            <div className="ratings-container">
+                              <div className="ratings">
+                                <div className="ratings-val" style={{ width: getRatingPercent(review.ratingScore) }}></div>
+                              </div>
+                            </div>
+                            <span className="review-date">{formatDate(review.createdAt)}</span>
+                          </div>
+                          <div className="col">
+                            <h4>{review.ratingScore}/5 rating</h4>
+                            <div className="review-content">
+                              <p>{review.comment ?? "No comment provided."}</p>
+                              {review.storeReply ? <p>Store reply: {review.storeReply}</p> : null}
+                            </div>
                           </div>
                         </div>
-                        <span className="review-date">6 days ago</span>
                       </div>
-                      <div className="col">
-                        <h4>Good, perfect size</h4>
-                        <div className="review-content">
-                          <p>
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ducimus cum
-                            dolores assumenda asperiores facilis porro reprehenderit animi culpa.
-                          </p>
-                        </div>
-                        <div className="review-action">
-                          <a href="#">
-                            <i className="icon-thumbs-up"></i>Helpful (2)
-                          </a>
-                          <a href="#">
-                            <i className="icon-thumbs-down"></i>Unhelpful (0)
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="review">
-                    <div className="row no-gutters">
-                      <div className="col-auto">
-                        <h4>
-                          <a href="#">John Doe</a>
-                        </h4>
-                        <div className="ratings-container">
-                          <div className="ratings">
-                            <div className="ratings-val" style={{ width: "100%" }}></div>
-                          </div>
-                        </div>
-                        <span className="review-date">5 days ago</span>
-                      </div>
-                      <div className="col">
-                        <h4>Very good</h4>
-                        <div className="review-content">
-                          <p>
-                            Sed, molestias, tempore? Ex dolor esse iure hic veniam laborum blanditiis
-                            laudantium iste amet. Cum non voluptate eos enim.
-                          </p>
-                        </div>
-                        <div className="review-action">
-                          <a href="#">
-                            <i className="icon-thumbs-up"></i>Helpful (0)
-                          </a>
-                          <a href="#">
-                            <i className="icon-thumbs-down"></i>Unhelpful (0)
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    ))
+                  ) : (
+                    <p>No reviews yet.</p>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          <h2 className="title text-center mb-4">You May Also Like</h2>
-
-          <div
-            className="owl-carousel owl-simple carousel-equal-height carousel-with-shadow"
-            data-toggle="owl"
-            data-owl-options='{"nav":false,"dots":true,"margin":20,"loop":false,"responsive":{"0":{"items":1},"480":{"items":2},"768":{"items":3},"992":{"items":4},"1200":{"items":4,"nav":true,"dots":false}}}'
-          >
-            {relatedProducts.map((product) => (
-              <div className="product product-7 text-center" key={product.title}>
-                <figure className="product-media">
-                  {product.label ? (
-                    <span className={`product-label ${product.labelClass}`}>{product.label}</span>
-                  ) : null}
-                  <a href="/product">
-                    <img src={product.image} alt="Product image" className="product-image" />
-                  </a>
-
-                  <div className="product-action-vertical">
-                    <a href="#" className="btn-product-icon btn-wishlist btn-expandable">
-                      <span>add to wishlist</span>
-                    </a>
-                    <a href="#" className="btn-product-icon btn-quickview" title="Quick view">
-                      <span>Quick view</span>
-                    </a>
-                    <a href="#" className="btn-product-icon btn-compare" title="Compare">
-                      <span>Compare</span>
-                    </a>
-                  </div>
-
-                  <div className="product-action">
-                    <a href="#" className="btn-product btn-cart">
-                      <span>add to cart</span>
-                    </a>
-                  </div>
-                </figure>
-
-                <div className="product-body">
-                  <div className="product-cat">
-                    <a href="#">{product.category}</a>
-                  </div>
-                  <h3 className="product-title">
-                    <a href="/product">{product.title}</a>
-                  </h3>
-                  <div className="product-price">
-                    {product.priceClass ? (
-                      <span className={product.priceClass}>{product.price}</span>
-                    ) : (
-                      product.price
-                    )}
-                  </div>
-                  <div className="ratings-container">
-                    <div className="ratings">
-                      <div className="ratings-val" style={{ width: product.rating }}></div>
+          {relatedProducts.length ? (
+            <>
+              <h2 className="title text-center mb-4">More Surprise Bags</h2>
+              <div className="product-detail-page__related">
+                {relatedProducts.map((item) => (
+                  <article className="product-detail-page__related-item" key={item.id}>
+                    <Link href={`/product?bag=${encodeURIComponent(item.id)}`}>
+                      <img src={item.imageSrc} alt={item.name} />
+                    </Link>
+                    <div>
+                      <p>{item.categories[0]?.name}</p>
+                      <h3>
+                        <Link href={`/product?bag=${encodeURIComponent(item.id)}`}>{item.name}</Link>
+                      </h3>
+                      <strong>{formatPrice(item.salePrice)}</strong>
                     </div>
-                    <span className="ratings-text">{product.reviews}</span>
-                  </div>
-
-                  {product.thumbs ? (
-                    <div className="product-nav product-nav-thumbs">
-                      {product.thumbs.map((thumb, index) => (
-                        <a href="#" className={index === 0 ? "active" : ""} key={thumb}>
-                          <img src={thumb} alt="product desc" />
-                        </a>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
+                  </article>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : null}
         </div>
       </div>
     </main>
