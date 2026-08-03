@@ -74,8 +74,8 @@ export default function NewStoresSection() {
               Meet new stores joining the food rescue community in your area.
             </p>
           </div>
-          <Link href="/category?sort=new-stores" className="new-stores-section__view-all">
-            View all stores
+          <Link href="/products?sort=newest" className="new-stores-section__view-all">
+            Browse new bags
             <i className="icon-angle-right" aria-hidden="true"></i>
           </Link>
         </div>

@@ -23,7 +23,7 @@ function formatPrice(value: number) {
 
 export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
   const productHref = `/product?bag=${encodeURIComponent(bag.slug)}`;
-  const categoryHref = `/category?category=${encodeURIComponent(bag.category)}`;
+  const categoryHref = `/products?category=${encodeURIComponent(bag.category)}`;
 
   return (
     <article className="surprise-bag-card">
@@ -46,7 +46,7 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
           <p className="surprise-bag-card__store">{bag.storeName}</p>
           {bag.storeSlug ? (
             <Link
-              href={`/category?store=${encodeURIComponent(bag.storeSlug)}`}
+              href={`/stores/${encodeURIComponent(bag.storeSlug)}`}
               className="surprise-bag-card__store-link"
             >
               View Store

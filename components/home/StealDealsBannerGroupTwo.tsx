@@ -10,7 +10,7 @@ export default function StealDealsBannerGroupTwo() {
               <div className="banner-content">
                 <h4 className="banner-subtitle mb-1 mt-0 text-light font-weight-normal">Simple pickup</h4>
                 <h3 className="banner-title font-weight-bold">Choose a nearby bag<br />and collect it today</h3>
-                <Link href="/category?sort=distance" className="banner-link text-decoration-none">
+                <Link href="/products?sort=distance" className="banner-link text-decoration-none">
                   Find nearby bags<i className="icon-angle-right"></i>
                 </Link>
               </div>
@@ -21,7 +21,7 @@ export default function StealDealsBannerGroupTwo() {
               <div className="banner-content">
                 <h4 className="banner-subtitle mb-1 mt-0 text-light font-weight-normal">Support local stores</h4>
                 <h3 className="banner-title font-weight-bold">Discover new sellers<br />joining StealDeals</h3>
-                <Link href="/category?sort=new-stores" className="banner-link text-decoration-none">
+                <Link href="/products?sort=newest" className="banner-link text-decoration-none">
                   Meet new stores<i className="icon-angle-right"></i>
                 </Link>
               </div>

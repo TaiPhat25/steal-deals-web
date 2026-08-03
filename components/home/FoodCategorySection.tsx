@@ -8,7 +8,7 @@ const categories = [
   { name: "Seafood", count: "6 bags", image: "5.jpg" },
   { name: "Drinks", count: "7 bags", image: "6.jpg" },
   { name: "Dairy & Cheese", count: "5 bags", image: "7.jpg" },
-  { name: "Vegetarian", count: "10 bags", image: "8.jpg" },
+  { name: "Grocery", count: "10 bags", image: "8.jpg" },
 ];
 
 export default function FoodCategorySection() {
@@ -23,15 +23,15 @@ export default function FoodCategorySection() {
             Explore surprise bags from the food categories you enjoy most.
           </p>
         </div>
-        <Link href="/category?sort=random" className="home-category-heading__link">
-          Explore random picks
+        <Link href="/products" className="home-category-heading__link">
+          Explore all bags
           <i className="icon-angle-right" aria-hidden="true"></i>
         </Link>
       </div>
       <div className="cat-section mt-4 mb-3">
         <div className="row">
           {categories.map((category) => {
-            const categoryHref = `/category?category=${encodeURIComponent(category.name)}`;
+            const categoryHref = `/products?category=${encodeURIComponent(category.name)}`;
 
             return (
               <div key={category.name} className="col-6 col-sm-4 col-md-3 col-xl-8col">
