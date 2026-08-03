@@ -1,5 +1,12 @@
 # Storefront implementation handoff
 
+## Maintenance rule
+
+Treat this file as a living handoff for the storefront. Every storefront
+change should update the relevant sections in this document in the same work:
+routes, components, behavior, API contracts, authentication, styling, assets,
+configuration, validation results, known gaps, and continuation points.
+
 ## Current state
 
 The `(store)` route group is a Next.js App Router conversion of the Molla
@@ -206,21 +213,58 @@ implemented yet.
 
 ### Home
 
-The home page is based on Molla demo 28. It currently renders:
+The home page uses retained Molla imagery and carousel runtime, but its visible
+content has been adapted to the StealDeals buyer experience. It currently
+renders:
 
-- two-slide hero carousel;
-- promotional banner groups;
-- icon/service groups;
-- category section;
-- flash deals;
-- brand logos;
-- newsletter section;
-- recommendations; and
-- blog preview.
+- two-slide StealDeals hero carousel;
+- StealDeals rescue campaign banners;
+- StealDeals benefit/value blocks;
+- food category section;
+- near-expiry surprise bags;
+- nearby surprise bags with store and distance information;
+- trending surprise bags;
+- new-store promotions;
+- StealDeals account CTA;
+- pickup and new-store campaign banners; and
+- food rescue and sustainability news.
 
 `IntroSection` initializes Owl Carousel after jQuery and the plugin become
-available. `DragScrollRow` implements pointer-driven looping rows, and
-`CountdownTimer` owns client countdown state.
+available. `DragScrollRow` implements pointer-driven looping rows. The
+near-expiry section uses typed static FE data through `SurpriseBagCard`; it
+shows five bags in a five-column desktop draggable row with sale price,
+original price, discount, pickup window, distance, and remaining quantity. Its
+product, cart, wishlist, and category links are scaffolding until commerce APIs
+are connected.
+
+The former template flash-sale countdown and static flash-product markup were
+removed. The near-expiry section does not use a client-only countdown because
+actual pickup/expiry times must eventually come from Store Service data.
+
+`NearbySection` is FE-only static scaffolding for nearby surprise bags. It uses
+the same draggable five-card desktop row and adds store names, distances, and
+future store links. It does not request browser location or call Store Service
+yet.
+
+`TrendingSection` is FE-only static scaffolding for popular surprise bags. It
+uses the same draggable five-card desktop row and marks each card as popular
+this week. Popularity is not calculated yet, and the category query link is
+awaiting real catalog data.
+
+`NewStoresSection` is FE-only static scaffolding for newly registered store
+promotions. It uses reusable `NewStoreCard` components with store category,
+description, location, pickup information, and future store links. The store
+cards currently use retained demo food imagery until Store Service media is
+available.
+
+The rendered Home route no longer includes the duplicate template brand-logo,
+recommendation, generic service, or generic blog sections. Their original
+source files remain available while the replacement sections are finalized.
+`StealDealsNewsletterSection` is currently an account CTA rather than a
+newsletter submission because no notification subscription endpoint exists.
+
+Surprise-bag action labels (`View Details`, `Add to Cart`, and `Add to
+wishlist`) use `1.5rem` text for stronger visibility.
 
 The newsletter popup remains in source but is commented out. The promo strip,
 currency selector, language selector, Compare item, demo chooser, Blog
@@ -240,8 +284,8 @@ navigation, and Elements navigation are retained as commented template code.
 This is currently presentation-only. Sorting, filtering, pagination,
 thumbnail switching, wishlist, compare, and add-to-cart do not mutate state or
 call an API. Only the four-column layout is enabled. The desktop and mobile
-Shop navigation links point to `/category`; many unconverted alternatives in
-the dropdown still point to original `.html` files.
+The Product navigation link points to `/category`; the commented legacy
+submenus still contain original `.html` references for future review.
 
 ### Product, cart, wishlist, and checkout
 
@@ -297,12 +341,35 @@ letting both systems own the same interaction.
 The shared header currently provides:
 
 - Home;
-- Shop, with `/category` as the converted destination;
-- Product template links;
-- Pages links;
+- Product, linking to `/category`;
+- Shop as a blank placeholder;
+- About Us, linking to `/about`;
+- Contact Us, linking to `/contact`;
 - search, wishlist, and cart presentation;
-- Login for visitors; and
-- Welcome/Profile/Logout for authenticated users.
+- Inline `Register | Login` links for visitors, using the same bold, slightly
+  larger style and right-aligned account area as the authenticated Welcome
+  link; and
+- Clickable `Welcome, <name>` profile link followed by `| Logout` for
+  authenticated users; the full account row is bold and slightly larger, and
+  both interactive items use pointer cursors.
+
+The utility bar now shows `Steal Deals E-commerce Website` on the far left
+using the same bold, slightly larger uppercase styling as the Welcome text.
+The template phone-number entry is commented out.
+The storefront overrides the template account-menu minimum width so the
+`Register | Login` and authenticated account rows do not retain empty space.
+
+The storefront brand is `Steal Deals` across the shared logo, footer, metadata,
+and newsletter copy.
+
+The top-level storefront navigation currently has no rendered submenus:
+
+- Home links directly to `/`.
+- Product links directly to `/category`.
+- Shop is retained as a blank placeholder.
+- About Us and Contact Us are direct navigation links instead of utility-bar links.
+- Pages is commented out until its navigation destinations are finalized.
+- The same structure is used by the mobile menu.
 
 Several dropdown and footer links still reference original `.html` pages or
 use `href="#"`. Replace or remove these as routes are converted. Avoid hash

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 type CarouselElement = {
   hasClass: (className: string) => boolean;
@@ -73,18 +74,19 @@ export default function IntroSection() {
           >
             <div className="intro-content intro-content-left">
               <h6 className="font-weight-normal text-primary my-2 mt-0">
-                Clearout Sale
+                Rescue surplus food
               </h6>
               <h3 className="intro-title font-weight-bold text-white mb-0">
-                Only Organic<br />
-                Large Box
+                Good food
+                <br />
+                at a better price
               </h3>
               <h3 className="intro-desc mb-2 font-weight-light text-secondary">
-                Sale 30% off
+                Surprise bags from local stores
               </h3>
-              <a href="#" className="btn btn-primary text-uppercase">
-                Shop now
-              </a>
+              <Link href="/category?sort=near-expiry" className="btn btn-primary text-uppercase">
+                Browse surprise bags
+              </Link>
             </div>
           </div>
           <div
@@ -96,18 +98,19 @@ export default function IntroSection() {
           >
             <div className="intro-content intro-content-right">
               <h6 className="font-weight-normal text-white my-2 mt-0">
-                100% Recyclable Packaging
+                Make every meal count
               </h6>
               <h3 className="intro-title font-weight-bold text-white mb-0">
-                Good For You<br />
-                And The Planet
+                Save food.
+                <br />
+                Support local stores.
               </h3>
               <h3 className="intro-desc mb-2 font-weight-light text-secondary">
-                Fast Shipping
+                Pick up quality food before the day ends
               </h3>
-              <a href="#" className="btn btn-primary text-uppercase">
-                Shop now
-              </a>
+              <Link href="/category?sort=distance" className="btn btn-primary text-uppercase">
+                Find bags near you
+              </Link>
             </div>
           </div>
         </div>
