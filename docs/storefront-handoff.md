@@ -28,14 +28,13 @@ admin and seller dashboards.
   data. Product-listing filters work against local data, but those screens do
   not yet use commerce backend services.
 
-The storefront currently exposes 14 routes or route patterns:
+The storefront currently exposes 13 routes or route patterns:
 
 | Route | Main component | Current data/behavior |
 | --- | --- | --- |
 | `/` | Home sections under `components/home` | Static demo-28 content with client-side carousel, countdown, and drag scrolling |
 | `/about` | `components/about/AboutMain.tsx` | Static template content |
 | `/cart` | `components/cart/CartMain.tsx` | Static cart markup; no cart state or API |
-| `/category` | Redirect | Compatibility redirect to `/products` |
 | `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected, but checkout form/order submission is static |
 | `/contact` | `components/contact/ContactMain.tsx` | Static template content |
 | `/faq` | `components/faq/FaqMain.tsx` | Static template content |
@@ -264,8 +263,8 @@ are commented out on Home because those banners are not currently needed.
 Sustainability section headings and article cards use larger type for readability.
 
 The rendered Home route no longer includes the duplicate template brand-logo,
-recommendation, generic service, or generic blog sections. Their original
-source files remain available while the replacement sections are finalized.
+recommendation, generic service, or generic blog sections. Their legacy source
+files were moved to `components/home/remove-later` for manual cleanup.
 The retained `StealDealsNewsletterSection` source is an account CTA rather than a
 newsletter submission because no notification subscription endpoint exists.
 
@@ -289,9 +288,10 @@ pagination were removed.
 keeps search, category, pickup, price, and sorting controls while omitting the
 marketplace distance filter. Unknown static store slugs return `404`.
 
-`/category` remains only as a compatibility redirect to `/products`. Product
-and store links now use `/products`, `/stores/[storeSlug]`, and `/product?bag=`.
-Filters are not written back to the URL and no catalog API is connected yet.
+Product and store links now use `/products`, `/stores/[storeSlug]`, and
+`/product?bag=`. The old `/category` route was removed because `/products` is
+now the single marketplace listing route. Filters are not
+written back to the URL and no catalog API is connected yet.
 
 ### Product, cart, wishlist, and checkout
 
@@ -454,8 +454,7 @@ At this handoff:
 - The production build passes and includes dynamic `/products` and
   `/stores/[storeSlug]` routes.
 - Local HTTP checks return `200` for `/products`, category-filtered products,
-  a known store, and all 12 listing images; unknown stores return `404`, and
-  `/category` returns a `307` redirect to `/products`.
+  a known store, and all 12 listing images; unknown stores return `404`.
 - The new listings were not visually checked through an automated browser in
   this environment; review desktop and mobile presentation before merging.
 
