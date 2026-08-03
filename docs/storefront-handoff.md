@@ -225,8 +225,6 @@ renders:
 - nearby surprise bags with store and distance information;
 - trending surprise bags;
 - new-store promotions;
-- StealDeals account CTA;
-- pickup and new-store campaign banners; and
 - food rescue and sustainability news.
 
 `IntroSection` initializes Owl Carousel after jQuery and the plugin become
@@ -257,10 +255,14 @@ description, location, pickup information, and future store links. The store
 cards currently use retained demo food imagery until Store Service media is
 available.
 
+`StealDealsNewsletterSection` and `StealDealsBannerGroupTwo` remain in source but
+are commented out on Home because those banners are not currently needed.
+Sustainability section headings and article cards use larger type for readability.
+
 The rendered Home route no longer includes the duplicate template brand-logo,
 recommendation, generic service, or generic blog sections. Their original
 source files remain available while the replacement sections are finalized.
-`StealDealsNewsletterSection` is currently an account CTA rather than a
+The retained `StealDealsNewsletterSection` source is an account CTA rather than a
 newsletter submission because no notification subscription endpoint exists.
 
 Surprise-bag action labels (`View Details`, `Add to Cart`, and `Add to

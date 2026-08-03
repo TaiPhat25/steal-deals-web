@@ -24,8 +24,8 @@ export default function Home() {
           <NearbySection />
           <TrendingSection />
           <NewStoresSection />
-          <StealDealsNewsletterSection />
-          <StealDealsBannerGroupTwo />
+          {/* <StealDealsNewsletterSection />
+          <StealDealsBannerGroupTwo /> */}
           <SustainabilityNewsSection />
         </div>
       </main>
