@@ -1,5 +1,5 @@
-import CategoryMain from "@/components/category/CategoryMain";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <CategoryMain />;
+  redirect("/products");
 }

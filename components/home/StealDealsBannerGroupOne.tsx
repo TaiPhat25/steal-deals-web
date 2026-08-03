@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const campaigns = [
-  { image: "banner-1.jpg", imageAlt: "Bakery food rescue deals", eyebrow: "Daily rescue deals", title: "Save up to 60% on bags near you", href: "/category?sort=near-expiry" },
-  { image: "banner-2.jpg", imageAlt: "Surprise bags from local stores", eyebrow: "Local pickup", title: "Good food, lower prices, less waste", href: "/category?sort=distance" },
-  { image: "banner-3.jpg", imageAlt: "New food rescue categories", eyebrow: "Explore more", title: "Find a surprise bag for every taste", href: "/category?sort=random" },
+  { image: "banner-1.jpg", imageAlt: "Bakery food rescue deals", eyebrow: "Daily rescue deals", title: "Save up to 60% on bags near you", href: "/products?sort=near-expiry" },
+  { image: "banner-2.jpg", imageAlt: "Surprise bags from local stores", eyebrow: "Local pickup", title: "Good food, lower prices, less waste", href: "/products?sort=distance" },
+  { image: "banner-3.jpg", imageAlt: "New food rescue categories", eyebrow: "Explore more", title: "Find a surprise bag for every taste", href: "/products" },
 ];
 
 export default function StealDealsBannerGroupOne() {

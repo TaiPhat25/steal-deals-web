@@ -84,7 +84,7 @@ export default function IntroSection() {
               <h3 className="intro-desc mb-2 font-weight-light text-secondary">
                 Surprise bags from local stores
               </h3>
-              <Link href="/category?sort=near-expiry" className="btn btn-primary text-uppercase">
+              <Link href="/products?sort=near-expiry" className="btn btn-primary text-uppercase">
                 Browse surprise bags
               </Link>
             </div>
@@ -108,7 +108,7 @@ export default function IntroSection() {
               <h3 className="intro-desc mb-2 font-weight-light text-secondary">
                 Pick up quality food before the day ends
               </h3>
-              <Link href="/category?sort=distance" className="btn btn-primary text-uppercase">
+              <Link href="/products?sort=distance" className="btn btn-primary text-uppercase">
                 Find bags near you
               </Link>
             </div>

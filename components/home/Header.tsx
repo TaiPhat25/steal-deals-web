@@ -591,8 +591,8 @@ export default function Header() {
                     </div> */}
                   </li>
                   <li>
-                    <Link href="/category">
-                      Product
+                    <Link href="/products">
+                      Surprise Bags
                     </Link>
                     {/* <div className="megamenu megamenu-md">
                       <div className="row no-gutters">
@@ -612,7 +612,7 @@ export default function Header() {
                                     <a href="category.html">Shop Grid 3 Columns</a>
                                   </li>
                                   <li>
-                                    <Link href="/category">Shop Grid 4 Columns</Link>
+                                    <Link href="/products">Surprise Bags</Link>
                                   </li>
                                   <li>
                                     <a href="category-market.html">
@@ -697,7 +697,7 @@ export default function Header() {
                     </div> */}
                   </li>
                   <li>
-                    <a href="#">Shop</a>
+                    <Link href="/stores/morning-oven-bakery">Shop</Link>
                     {/* <div className="megamenu megamenu-sm">
                       <div className="row no-gutters">
                         <div className="col-md-6">

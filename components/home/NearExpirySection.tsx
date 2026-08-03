@@ -94,7 +94,7 @@ export default function NearExpirySection() {
               Save money and help reduce food waste with discounted bags available for pickup today.
             </p>
           </div>
-          <Link href="/category?sort=near-expiry" className="near-expiry-section__view-all">
+          <Link href="/products?sort=near-expiry" className="near-expiry-section__view-all">
             View all surprise bags
             <i className="icon-angle-right" aria-hidden="true"></i>
           </Link>

@@ -13,7 +13,7 @@ export type NewStore = {
 };
 
 export default function NewStoreCard({ store }: { store: NewStore }) {
-  const storeHref = `/category?store=${encodeURIComponent(store.slug)}`;
+  const storeHref = `/stores/${encodeURIComponent(store.slug)}`;
 
   return (
     <article className="new-store-card">

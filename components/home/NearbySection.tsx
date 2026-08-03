@@ -99,7 +99,7 @@ export default function NearbySection() {
               Discover surprise bags from nearby stores and pick them up before they are gone.
             </p>
           </div>
-          <Link href="/category?sort=distance" className="nearby-section__view-all">
+          <Link href="/products?sort=distance" className="nearby-section__view-all">
             View all nearby
             <i className="icon-angle-right" aria-hidden="true"></i>
           </Link>

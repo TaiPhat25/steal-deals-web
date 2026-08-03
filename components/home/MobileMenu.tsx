@@ -109,7 +109,7 @@ export default function MobileMenu() {
                 </ul> */}
               </li>
               <li>
-                <Link href="/category">Product</Link>
+                <Link href="/products">Surprise Bags</Link>
                 {/* <ul>
                   <li>
                     <a href="category-list.html">Shop List</a>
@@ -121,7 +121,7 @@ export default function MobileMenu() {
                     <a href="category.html">Shop Grid 3 Columns</a>
                   </li>
                   <li>
-                    <Link href="/category">Shop Grid 4 Columns</Link>
+                    <Link href="/products">Surprise Bags</Link>
                   </li>
                   <li>
                     <a href="category-boxed.html">
@@ -158,7 +158,7 @@ export default function MobileMenu() {
                 </ul> */}
               </li>
               <li>
-                <a href="#">Shop</a>
+                <Link href="/stores/morning-oven-bakery">Shop</Link>
                 {/* <ul>
                   <li>
                     <a href="product.html">Default</a>

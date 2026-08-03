@@ -99,7 +99,7 @@ export default function TrendingSection() {
               See the surprise bags buyers are discovering and sharing this week.
             </p>
           </div>
-          <Link href="/category?sort=trending" className="trending-section__view-all">
+          <Link href="/products?sort=trending" className="trending-section__view-all">
             View all trending
             <i className="icon-angle-right" aria-hidden="true"></i>
           </Link>
