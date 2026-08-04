@@ -971,12 +971,15 @@ export default function Header() {
                 </form>
               </div>
 
+              {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
+              {/*
               <a href="/wishlist" className="wishlist-link">
                 <div className="icon position-relative">
                   <i className="icon-heart-o"></i>
                   <span className="wishlist-count">3</span>
                 </div>
               </a>
+              */}
 
               <div className="dropdown cart-dropdown">
                 <a

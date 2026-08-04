@@ -150,7 +150,7 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
       .map((item) => item.imageSrc),
   ].slice(0, 3);
   const cartHref = `/cart?bag=${encodeURIComponent(bag.slug)}&quantity=${quantity}`;
-  const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
+  // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
 
   const selectedImage = selectedImageState.bagSlug === bag.slug ? selectedImageState.imageSrc : bag.imageSrc;
 
@@ -291,9 +291,12 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                     ) : (
                       <span className="btn-product btn-cart disabled" aria-disabled="true"><span>Sold out</span></span>
                     )}
+                    {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
+                    {/*
                     <div className="details-action-wrapper">
                       <Link href={wishlistHref} className="btn-product btn-wishlist"><span>Add to Wishlist</span></Link>
                     </div>
+                    */}
                   </div>
 
                 </div>

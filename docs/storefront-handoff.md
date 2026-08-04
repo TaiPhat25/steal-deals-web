@@ -47,7 +47,7 @@ The storefront currently exposes 16 routes or route patterns:
 | `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable store directory using local store profiles |
 | `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store profile, active surprise bags, and reviews |
 | `/shipping` | `components/shipping/ShippingMain.tsx` | Authenticated order progress, pickup/delivery details, and order summary |
-| `/wishlist` | `components/wishlist/WishlistMain.tsx` | Converted wishlist with static items |
+| `/wishlist` | `components/wishlist/WishlistMain.tsx` | Temporarily disabled; previous static template retained in comments |
 
 ## Storefront structure
 
@@ -345,7 +345,10 @@ a second layer of vertical padding.
 
 These screens still retain static storefront data and do not call commerce APIs:
 
-- Wishlist actions are not connected to an account or backend.
+- Wishlist controls and the wishlist route are intentionally disabled because
+  short-lived near-expiry surprise bags are not suitable for long-term saving.
+  The previous implementation is retained in comments for possible future
+  saved-store or notification functionality.
 - Checkout is authentication-gated and now uses Order/Payment-aligned FE fields,
   but does not yet create an order or process payment.
 
@@ -565,8 +568,9 @@ At this handoff:
 5. Add catalog API modules under `lib/api`, replace static product-listing data,
    and move filtering/pagination to request parameters without putting fetch
    logic into visual components.
-6. Add cart and wishlist state only after their ownership is decided
-   (backend-backed account data versus temporary guest state).
+6. Decide whether to add saved-store or availability-notification state; do not
+   restore wishlist state for short-lived surprise bags without a clear product
+   requirement.
 7. Connect checkout to real cart/order/payment contracts while retaining both
    frontend route protection and backend authorization.
 8. Replace obsolete `.html`/hash links as each destination becomes available.

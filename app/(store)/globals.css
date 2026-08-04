@@ -487,6 +487,7 @@ img {
   font-size: 1.5rem;
 }
 
+/* Wishlist styles retained for possible future saved-store functionality.
 .surprise-bag-card__wishlist {
   align-self: center;
   margin-top: 0.8rem;
@@ -497,6 +498,7 @@ img {
 .surprise-bag-card__wishlist i {
   margin-right: 0.35rem;
 }
+*/
 
 .home-category-heading,
 .sustainability-news-section__heading {
@@ -896,8 +898,7 @@ img {
   font-size: 1.4rem;
 }
 
-.store-products-scroll-row .surprise-bag-card__actions .btn,
-.store-products-scroll-row .surprise-bag-card__wishlist {
+.store-products-scroll-row .surprise-bag-card__actions .btn {
   font-size: 1.3rem;
 }
 
@@ -1560,11 +1561,13 @@ img {
   min-width: 16rem;
 }
 
+/* Wishlist styles retained for possible future saved-store functionality.
 .product-detail-actions__wishlist {
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
 }
+*/
 
 .product-detail-summary__note {
   margin: 0;
