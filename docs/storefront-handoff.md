@@ -24,11 +24,11 @@ admin and seller dashboards.
 - Identity Service integration is implemented for registration, login, access
   token refresh, logout, current-user lookup, profile loading, email
   verification, and OTP resend.
-- Catalog, product, cart, wishlist, and checkout content is still static demo
-  data. Product-listing filters work against local data, but those screens do
-  not yet use commerce backend services.
+- Catalog, product, cart, wishlist, checkout, order history, and shipping content
+  is still static demo data. Product-listing filters work against local data,
+  but those screens do not yet use commerce backend services.
 
-The storefront currently exposes 13 routes or route patterns:
+The storefront currently exposes 16 routes or route patterns:
 
 | Route | Main component | Current data/behavior |
 | --- | --- | --- |
@@ -39,11 +39,14 @@ The storefront currently exposes 13 routes or route patterns:
 | `/contact` | `components/contact/ContactMain.tsx` | StealDeals support details and frontend-only contact form |
 | `/faq` | `components/faq/FaqMain.tsx` | Native accessible FAQ groups for food rescue, pickup/orders, and accounts |
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
+| `/orders` | `components/orders/OrderHistoryMain.tsx` | Authenticated order history with search and status filters |
 | `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using shared static listing data |
 | `/products` | `components/products/ProductListing.tsx` | Searchable/filterable static surprise-bag marketplace listing |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
-| `/stores/[storeSlug]` | `components/products/ProductListing.tsx` | Store-scoped listing using the shared product-listing UI |
+| `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable store directory using local store profiles |
+| `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store profile, active surprise bags, and reviews |
+| `/shipping` | `components/shipping/ShippingMain.tsx` | Authenticated order progress, pickup/delivery details, and order summary |
 | `/wishlist` | `components/wishlist/WishlistMain.tsx` | Converted wishlist with static items |
 
 ## Storefront structure
@@ -146,7 +149,8 @@ another provider inside individual pages.
 
 ### Route protection
 
-`components/auth/RequireAuth.tsx` protects `/checkout` and `/profile`.
+`components/auth/RequireAuth.tsx` protects `/checkout`, `/orders`, `/profile`,
+and `/shipping`.
 
 It waits for the initial refresh attempt, renders nothing while authentication
 is being resolved, and redirects unauthenticated visitors to `/login`. This is
@@ -290,11 +294,14 @@ distance, and sorting controls work against client-side demo data. Size, colour,
 brand, compare, thumbnails, fake layout controls, and presentation-only
 pagination were removed.
 
-`/stores/[storeSlug]` renders the same listing scoped to one known store. It
-keeps search, category, pickup, price, and sorting controls while omitting the
-marketplace distance filter. Unknown static store slugs return `404`.
+`/stores` renders the store directory with search, verified/new filters, and
+rating, bag-count, or name sorting. Store cards link to `/stores/[id]` and use
+larger listing-specific typography for scanning store details.
 
-Product and store links now use `/products`, `/stores/[storeSlug]`, and
+`/stores/[id]` renders the selected store profile, active surprise bags, and
+reviews. Unknown store IDs return `404`.
+
+Product and store links now use `/products`, `/stores`, `/stores/[id]`, and
 `/product?bag=`. The old `/category` route was removed because `/products` is
 now the single marketplace listing route. Filters are not
 written back to the URL and no catalog API is connected yet.
@@ -344,6 +351,11 @@ These screens still retain static storefront data and do not call commerce APIs:
 
 The previous Molla checkout template is archived at
 `remove-later/CheckoutMain.tsx`.
+
+`OrderHistoryMain` and `ShippingMain` share `components/orders/order-data.ts`,
+whose static records mirror the backend `OrderResponse` shape. The pages are
+ready for `/api/orders/my-orders` and order-detail integration, but currently
+use local data and do not call the Order or Payment services.
 
 Treat their current markup as UI scaffolding. Replace static arrays and submit
 handlers at page/component boundaries when commerce endpoints are available.
@@ -406,7 +418,7 @@ The shared header currently provides:
 
 - Home;
 - Surprise Bags, linking to `/products`;
-- Shop, linking to the current demo store at `/stores/morning-oven-bakery`;
+- Stores, linking to the store directory at `/stores`;
 - About Us, linking to `/about`;
 - Contact Us, linking to `/contact`;
 - search, wishlist, and cart presentation;
@@ -430,7 +442,7 @@ The top-level storefront navigation currently has no rendered submenus:
 
 - Home links directly to `/`.
 - Surprise Bags links directly to `/products`.
-- Shop links directly to the current demo store at `/stores/morning-oven-bakery`.
+- Stores links directly to the store directory at `/stores`.
 - About Us and Contact Us are direct navigation links instead of utility-bar links.
 - Pages is commented out until its navigation destinations are finalized.
 - The same structure is used by the mobile menu.
@@ -499,7 +511,7 @@ Current store-scoped checks:
 ```powershell
 npx.cmd tsc --noEmit --incremental false
 node --experimental-strip-types --test components/products/product-listing-data.test.mjs
-npx.cmd eslint "app/(store)" components/about components/auth components/cart components/checkout components/contact components/faq components/home components/layout components/login components/product components/products components/profile components/wishlist lib/api
+npx.cmd eslint "app/(store)" components/about components/auth components/cart components/checkout components/contact components/faq components/home components/layout components/login components/orders components/product components/products components/profile components/shipping components/wishlist lib/api
 npm.cmd run build
 ```
 
@@ -509,8 +521,8 @@ At this handoff:
 - The product-listing filter/sort test passes both checks.
 - Store-scoped ESLint has 0 errors and 75 warnings.
 - Most warnings are `@next/next/no-img-element` from retained template images.
-- The production build passes and includes dynamic `/products` and
-  `/stores/[storeSlug]` routes.
+- The production build passes and includes `/products`, `/stores`, and
+  `/stores/[id]` routes.
 - Local HTTP checks return `200` for `/products`, category-filtered products,
   a known store, and all 12 listing images; unknown stores return `404`.
 - The new listings were not visually checked through an automated browser in
@@ -542,7 +554,7 @@ At this handoff:
 
 ## Safe continuation points
 
-1. Visually review `/products` and `/stores/morning-oven-bakery` at desktop and
+1. Visually review `/products`, `/stores`, and a known `/stores/[id]` route at desktop and
    mobile breakpoints, then refine card density and filter placement if needed.
 2. Update `.env.example` to match the agreed local Identity Service protocol
    and port.

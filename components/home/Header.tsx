@@ -716,7 +716,7 @@ export default function Header() {
                     </div> */}
                   </li>
                   <li>
-                    <Link href="/stores/morning-oven-bakery">Shop</Link>
+                    <Link href="/stores">Stores</Link>
                     {/* <div className="megamenu megamenu-sm">
                       <div className="row no-gutters">
                         <div className="col-md-6">
