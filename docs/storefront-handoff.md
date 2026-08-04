@@ -35,7 +35,7 @@ The storefront currently exposes 13 routes or route patterns:
 | `/` | Home sections under `components/home` | Static demo-28 content with client-side carousel, countdown, and drag scrolling |
 | `/about` | `components/about/AboutMain.tsx` | StealDeals purpose, principles, and three-step food-rescue explanation using local assets |
 | `/cart` | `components/cart/CartMain.tsx` | Static cart markup; no cart state or API |
-| `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected, but checkout form/order submission is static |
+| `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected checkout UI with pickup/delivery, grouped bags, payment selection, and local summary state |
 | `/contact` | `components/contact/ContactMain.tsx` | StealDeals support details and frontend-only contact form |
 | `/faq` | `components/faq/FaqMain.tsx` | Native accessible FAQ groups for food rescue, pickup/orders, and accounts |
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
@@ -336,11 +336,14 @@ the legacy clothing demo items.
 The Cart breadcrumb uses the shared compact storefront height instead of adding
 a second layer of vertical padding.
 
-These screens still retain static Molla data and markup:
+These screens still retain static storefront data and do not call commerce APIs:
 
 - Wishlist actions are not connected to an account or backend.
-- Checkout is authentication-gated but does not create an order or process
-  payment.
+- Checkout is authentication-gated and now uses Order/Payment-aligned FE fields,
+  but does not yet create an order or process payment.
+
+The previous Molla checkout template is archived at
+`remove-later/CheckoutMain.tsx`.
 
 Treat their current markup as UI scaffolding. Replace static arrays and submit
 handlers at page/component boundaries when commerce endpoints are available.
