@@ -33,13 +33,13 @@ The storefront currently exposes 13 routes or route patterns:
 | Route | Main component | Current data/behavior |
 | --- | --- | --- |
 | `/` | Home sections under `components/home` | Static demo-28 content with client-side carousel, countdown, and drag scrolling |
-| `/about` | `components/about/AboutMain.tsx` | Static template content |
+| `/about` | `components/about/AboutMain.tsx` | StealDeals purpose, principles, and three-step food-rescue explanation using local assets |
 | `/cart` | `components/cart/CartMain.tsx` | Static cart markup; no cart state or API |
 | `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected, but checkout form/order submission is static |
-| `/contact` | `components/contact/ContactMain.tsx` | Static template content |
-| `/faq` | `components/faq/FaqMain.tsx` | Static template content |
+| `/contact` | `components/contact/ContactMain.tsx` | StealDeals support details and frontend-only contact form |
+| `/faq` | `components/faq/FaqMain.tsx` | Native accessible FAQ groups for food rescue, pickup/orders, and accounts |
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
-| `/product` | `components/product/ProductMain.tsx` | Converted product detail with static product data |
+| `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using shared static listing data |
 | `/products` | `components/products/ProductListing.tsx` | Searchable/filterable static surprise-bag marketplace listing |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
@@ -264,7 +264,7 @@ Sustainability section headings and article cards use larger type for readabilit
 
 The rendered Home route no longer includes the duplicate template brand-logo,
 recommendation, generic service, or generic blog sections. Their legacy source
-files were moved to `components/home/remove-later` for manual cleanup.
+files were moved to `remove-later` for manual cleanup.
 The retained `StealDealsNewsletterSection` source is an account CTA rather than a
 newsletter submission because no notification subscription endpoint exists.
 
@@ -274,6 +274,12 @@ wishlist`) use `1.5rem` text for stronger visibility.
 The newsletter popup remains in source but is commented out. The promo strip,
 currency selector, language selector, Compare item, demo chooser, Blog
 navigation, and Elements navigation are retained as commented template code.
+
+Files in the root `remove-later` folder are archived legacy components, not an
+active component library. If one becomes necessary again, move it into the
+corresponding active page/component directory and update its imports before
+rendering it. The folder is excluded from `tsconfig.json` so archived files do
+not affect application type-checking.
 
 ### Product listings
 
@@ -295,10 +301,43 @@ written back to the URL and no catalog API is connected yet.
 
 ### Product, cart, wishlist, and checkout
 
-These screens retain static Molla data and markup:
+The Product Detail page reads the `bag` query parameter and uses the shared
+`components/products/product-listing-data.ts` records for every listing item.
+It renders StealDeals-specific pricing, store, pickup, availability, and
+related-bag information. Missing or unknown bag slugs return `404`. Add to Cart
+passes the bag slug and selected quantity to Cart.
 
-- Product detail and related products are not loaded by product ID.
-- Cart quantities, totals, removal, and coupon behavior are not stateful.
+The Product Detail image gallery uses storefront-owned markup and avoids the
+legacy Molla ElevateZoom selectors, so hovering the image does not inject the
+old zoom container or thumbnail UI. It displays up to three existing product
+gallery assets as vertical thumbnails, and selecting a thumbnail updates the
+main image. The detail summary now shows backend-aligned pickup timestamps,
+expiry time, status, category, and `quantity remaining of quantity total`
+availability. Its quantity control uses the same minus/value/plus stepper
+pattern as the Cart page. Summary field labels use a slightly larger type size
+to improve scanning, and category links inherit the normal summary value size.
+The previous pickup-day/discount footer row was removed. Product reviews now
+show static FE review data until the Store Service review endpoint is connected.
+The related-bag section uses the saved Product Detail design: four full
+`SurpriseBagCard` cards, same-category items first, and a link to more bags in
+the current category.
+
+The Cart page now groups frontend cart lines by store and supports custom
+quantity stepper updates, quantity limits based on available bags, item removal,
+subtotal calculation, and a pickup-oriented checkout summary. Its initial data
+is still static; a real cart API or persisted cart state is not connected yet.
+Cart category labels link back to the filtered `/products?category=` listing,
+while bag names and images link to `/product?bag=`.
+
+The header cart dropdown now uses the same surprise-bag data as the Cart page,
+including the shared bag names, images, item count, and VND total instead of
+the legacy clothing demo items.
+
+The Cart breadcrumb uses the shared compact storefront height instead of adding
+a second layer of vertical padding.
+
+These screens still retain static Molla data and markup:
+
 - Wishlist actions are not connected to an account or backend.
 - Checkout is authentication-gated but does not create an order or process
   payment.
@@ -308,8 +347,23 @@ handlers at page/component boundaries when commerce endpoints are available.
 
 ### Informational pages
 
-About, Contact, and FAQ are static conversions. Contact forms and newsletter
-forms do not currently send data.
+The active informational pages use storefront-owned components and content
+instead of the original generic Molla copy:
+
+- `/faq` uses native `details` accordions grouped around rescuing food,
+  pickup/orders, and payments/accounts. Its contact CTA links to `/contact`.
+- `/about` explains the StealDeals purpose, operating principles, and the
+  three-step flow from finding a bag to local pickup. It uses food-related
+  imagery from the demo-28 food assets and links to the marketplace and Contact
+  page.
+- `/contact` provides StealDeals support hours, contact details, pickup guidance,
+  food-related hero imagery, and a responsive controlled form. The form
+  currently shows a frontend-only success state and does not send data to an
+  API.
+
+The old legacy `ProductMain.tsx`, `FaqMain.tsx`, `AboutMain.tsx`, and
+`ContactMain.tsx` files are archived in the root `remove-later` folder. The
+active page components use the project convention with `*Main.tsx` names.
 
 ## Styling and legacy runtime
 
@@ -331,6 +385,7 @@ Bootstrap/Molla stack in `app/(store)/layout.tsx`:
 Store-specific fixes and additions live in `app/(store)/globals.css`, including:
 
 - home/inner header spacing;
+- informational-page hero, FAQ, About, and Contact layouts;
 - drag-scroll product rows;
 - authenticated account dropdown alignment and hover colors;
 - profile action styling;

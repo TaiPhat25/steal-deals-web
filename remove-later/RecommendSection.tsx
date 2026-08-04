@@ -1,4 +1,4 @@
-import DragScrollRow from "./DragScrollRow";
+import DragScrollRow from "../components/home/DragScrollRow";
 import FlashStyleProductCard from "./FlashStyleProductCard";
 
 const recommendProducts = [
