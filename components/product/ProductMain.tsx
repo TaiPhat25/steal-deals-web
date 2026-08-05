@@ -1,336 +1,171 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import SurpriseBagCard from "@/components/home/SurpriseBagCard";
+import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
 
-type Category = {
-  id: string;
-  name: string;
-  slug: string;
-  iconUrl: string | null;
-  isActive: boolean;
+const galleryImagesBySlug: Record<string, string[]> = {
+  "bakery-breakfast-box": [
+    "/assets/images/demos/demo-28/flash/1.jpg",
+    "/assets/images/demos/demo-28/flash/7.jpg",
+    "/assets/images/demos/demo-28/banners/banner-1.jpg",
+  ],
+  "bakery-mix-bag": [
+    "/assets/images/demos/demo-28/flash/7.jpg",
+    "/assets/images/demos/demo-28/flash/1.jpg",
+    "/assets/images/demos/demo-28/banners/banner-1.jpg",
+  ],
+  "fresh-produce-box": [
+    "/assets/images/demos/demo-28/flash/2.jpg",
+    "/assets/images/demos/demo-28/flash/10.jpg",
+    "/assets/images/demos/demo-28/banners/banner-3.jpg",
+  ],
+  "vegetable-harvest-box": [
+    "/assets/images/demos/demo-28/flash/10.jpg",
+    "/assets/images/demos/demo-28/flash/2.jpg",
+    "/assets/images/demos/demo-28/banners/banner-3.jpg",
+  ],
+  "seafood-family-box": [
+    "/assets/images/demos/demo-28/flash/3.jpg",
+    "/assets/images/demos/demo-28/flash/8.jpg",
+    "/assets/images/demos/demo-28/banners/5.jpg",
+  ],
+  "seafood-weekend-box": [
+    "/assets/images/demos/demo-28/flash/8.jpg",
+    "/assets/images/demos/demo-28/flash/3.jpg",
+    "/assets/images/demos/demo-28/banners/5.jpg",
+  ],
 };
 
-type StoreProfile = {
-  id: string;
-  ownerId: string;
-  name: string;
-  description: string | null;
-  address: string | null;
-  latitude: number;
-  longitude: number;
-  avatarUrl: string | null;
-  phone: string | null;
-  bankAccount: string | null;
-  ratingScore: number;
-  licenseUrl: string | null;
-  isVerify: boolean;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string | null;
+type StaticReview = {
+  author: string;
+  rating: number;
+  comment: string;
+  date: string;
 };
 
-type StoreReview = {
-  id: string;
-  orderId: string;
-  buyerId: string;
-  storeId: string;
-  bagId: string;
-  ratingScore: number;
-  comment: string | null;
-  storeReply: string | null;
-  isReported: boolean;
-  createdAt: string;
-};
-
-type SurpriseBagDetail = {
-  id: string;
-  storeId: string;
-  name: string;
-  description: string | null;
-  originalPrice: number;
-  salePrice: number;
-  quantityTotal: number;
-  quantityRemaining: number;
-  pickupStartTime: string;
-  pickupEndTime: string;
-  expiryDate: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string | null;
-  store: StoreProfile;
-  categories: Category[];
-  storeReviews: StoreReview[];
-  imageSrc: string;
-  gallery: string[];
-};
-
-const categories = {
-  bakery: {
-    id: "10000000-0000-0000-0000-000000000001",
-    name: "Bakery",
-    slug: "bakery",
-    iconUrl: null,
-    isActive: true,
-  },
-  produce: {
-    id: "10000000-0000-0000-0000-000000000002",
-    name: "Produce",
-    slug: "produce",
-    iconUrl: null,
-    isActive: true,
-  },
-  seafood: {
-    id: "10000000-0000-0000-0000-000000000003",
-    name: "Seafood",
-    slug: "seafood",
-    iconUrl: null,
-    isActive: true,
-  },
-} satisfies Record<string, Category>;
-
-const stores = {
-  morningOven: {
-    id: "8f3522c1-7d86-4b25-b8fe-5cbf8a101001",
-    ownerId: "45a26c2e-19f0-4c73-88d4-3fb5b8d21001",
-    name: "Morning Oven Bakery",
-    description: "Fresh bread and pastries rescued at the end of each day.",
-    address: "12 Nguyen Trai Street, District 1, Ho Chi Minh City",
-    latitude: 10.7715,
-    longitude: 106.701,
-    avatarUrl: "/assets/images/demos/demo-28/banners/banner-1.jpg",
-    phone: "+84 28 3822 1001",
-    bankAccount: null,
-    ratingScore: 4.8,
-    licenseUrl: null,
-    isVerify: true,
-    isActive: true,
-    createdAt: "2026-07-02T08:30:00.000Z",
-    updatedAt: null,
-  },
-  greenBasket: {
-    id: "8f3522c1-7d86-4b25-b8fe-5cbf8a101002",
-    ownerId: "45a26c2e-19f0-4c73-88d4-3fb5b8d21002",
-    name: "Green Basket Market",
-    description: "Seasonal fruits and vegetables available for local pickup.",
-    address: "24 Le Loi Street, District 3, Ho Chi Minh City",
-    latitude: 10.7791,
-    longitude: 106.6922,
-    avatarUrl: "/assets/images/demos/demo-28/banners/banner-3.jpg",
-    phone: "+84 28 3822 1002",
-    bankAccount: null,
-    ratingScore: 4.7,
-    licenseUrl: null,
-    isVerify: true,
-    isActive: true,
-    createdAt: "2026-07-04T09:15:00.000Z",
-    updatedAt: null,
-  },
-  harborFresh: {
-    id: "8f3522c1-7d86-4b25-b8fe-5cbf8a101003",
-    ownerId: "45a26c2e-19f0-4c73-88d4-3fb5b8d21003",
-    name: "Harbor Fresh Foods",
-    description: "Quality meals and seafood boxes prepared for same-day pickup.",
-    address: "8 Ton Duc Thang Street, District 1, Ho Chi Minh City",
-    latitude: 10.7828,
-    longitude: 106.7067,
-    avatarUrl: "/assets/images/demos/demo-28/banners/5.jpg",
-    phone: "+84 28 3822 1003",
-    bankAccount: null,
-    ratingScore: 4.6,
-    licenseUrl: null,
-    isVerify: true,
-    isActive: true,
-    createdAt: "2026-07-08T07:45:00.000Z",
-    updatedAt: null,
-  },
-} satisfies Record<string, StoreProfile>;
-
-const surpriseBags: SurpriseBagDetail[] = [
-  {
-    id: "137b2d0d-0c73-4fe2-9e23-100000000001",
-    storeId: stores.morningOven.id,
-    name: "Bakery Breakfast Surprise Bag",
-    description: "A mixed selection of breads and pastries left at closing. Contents vary by day.",
-    originalPrice: 95000,
-    salePrice: 45000,
-    quantityTotal: 8,
-    quantityRemaining: 4,
-    pickupStartTime: "2026-08-03T17:00:00+07:00",
-    pickupEndTime: "2026-08-03T19:00:00+07:00",
-    expiryDate: "2026-08-03T23:59:00+07:00",
-    status: "Active",
-    createdAt: "2026-07-29T09:00:00.000Z",
-    updatedAt: null,
-    store: stores.morningOven,
-    categories: [categories.bakery],
-    storeReviews: [
-      {
-        id: "7cc92a4d-7d12-4833-a246-4c76e8f21001",
-        orderId: "40000000-0000-0000-0000-000000001001",
-        buyerId: "50000000-0000-0000-0000-000000001001",
-        storeId: stores.morningOven.id,
-        bagId: "137b2d0d-0c73-4fe2-9e23-100000000001",
-        ratingScore: 5,
-        comment: "The bakery bag had a generous mix and pickup was quick.",
-        storeReply: null,
-        isReported: false,
-        createdAt: "2026-07-30T10:00:00.000Z",
-      },
-    ],
-    imageSrc: "/assets/images/demos/demo-28/flash/1.jpg",
-    gallery: [
-      "/assets/images/demos/demo-28/flash/1.jpg",
-      "/assets/images/demos/demo-28/flash/7.jpg",
-      "/assets/images/demos/demo-28/banners/banner-1.jpg",
-    ],
-  },
-  {
-    id: "137b2d0d-0c73-4fe2-9e23-100000000003",
-    storeId: stores.greenBasket.id,
-    name: "Market Fresh Vegetable Bag",
-    description: "Seasonal vegetables packed from daily surplus and ready for same-day pickup.",
-    originalPrice: 120000,
-    salePrice: 59000,
-    quantityTotal: 8,
-    quantityRemaining: 6,
-    pickupStartTime: "2026-08-03T18:00:00+07:00",
-    pickupEndTime: "2026-08-03T20:00:00+07:00",
-    expiryDate: "2026-08-04T08:00:00+07:00",
-    status: "Active",
-    createdAt: "2026-07-30T08:20:00.000Z",
-    updatedAt: null,
-    store: stores.greenBasket,
-    categories: [categories.produce],
-    storeReviews: [
-      {
-        id: "7cc92a4d-7d12-4833-a246-4c76e8f21002",
-        orderId: "40000000-0000-0000-0000-000000001002",
-        buyerId: "50000000-0000-0000-0000-000000001002",
-        storeId: stores.greenBasket.id,
-        bagId: "137b2d0d-0c73-4fe2-9e23-100000000003",
-        ratingScore: 5,
-        comment: "Fresh vegetables with clear pickup instructions.",
-        storeReply: null,
-        isReported: false,
-        createdAt: "2026-07-28T16:00:00.000Z",
-      },
-    ],
-    imageSrc: "/assets/images/demos/demo-28/flash/2.jpg",
-    gallery: [
-      "/assets/images/demos/demo-28/flash/2.jpg",
-      "/assets/images/demos/demo-28/flash/10.jpg",
-      "/assets/images/demos/demo-28/banners/banner-3.jpg",
-    ],
-  },
-  {
-    id: "137b2d0d-0c73-4fe2-9e23-100000000004",
-    storeId: stores.harborFresh.id,
-    name: "Seafood Family Surprise Bag",
-    description: "A same-day seafood dinner box selected by the store. Best collected during the pickup window.",
-    originalPrice: 360000,
-    salePrice: 189000,
-    quantityTotal: 4,
-    quantityRemaining: 2,
-    pickupStartTime: "2026-08-03T16:30:00+07:00",
-    pickupEndTime: "2026-08-03T18:30:00+07:00",
-    expiryDate: "2026-08-03T22:00:00+07:00",
-    status: "Active",
-    createdAt: "2026-07-31T09:30:00.000Z",
-    updatedAt: null,
-    store: stores.harborFresh,
-    categories: [categories.seafood],
-    storeReviews: [
-      {
-        id: "7cc92a4d-7d12-4833-a246-4c76e8f21003",
-        orderId: "40000000-0000-0000-0000-000000001003",
-        buyerId: "50000000-0000-0000-0000-000000001003",
-        storeId: stores.harborFresh.id,
-        bagId: "137b2d0d-0c73-4fe2-9e23-100000000004",
-        ratingScore: 4,
-        comment: "Great value for seafood. The pickup window was accurate.",
-        storeReply: null,
-        isReported: false,
-        createdAt: "2026-07-29T13:30:00.000Z",
-      },
-    ],
-    imageSrc: "/assets/images/demos/demo-28/flash/3.jpg",
-    gallery: [
-      "/assets/images/demos/demo-28/flash/3.jpg",
-      "/assets/images/demos/demo-28/flash/8.jpg",
-      "/assets/images/demos/demo-28/banners/5.jpg",
-    ],
-  },
-];
-
-const routeAliases: Record<string, string> = {
-  "bakery-breakfast-box": "137b2d0d-0c73-4fe2-9e23-100000000001",
-  "fresh-produce-box": "137b2d0d-0c73-4fe2-9e23-100000000003",
-  "seafood-family-box": "137b2d0d-0c73-4fe2-9e23-100000000004",
+const staticReviewsBySlug: Record<string, StaticReview[]> = {
+  "bakery-breakfast-box": [
+    {
+      author: "Minh N.",
+      rating: 5,
+      comment: "The bakery bag had a generous mix and pickup was quick.",
+      date: "July 30, 2026",
+    },
+  ],
+  "bakery-mix-bag": [
+    {
+      author: "Lan T.",
+      rating: 5,
+      comment: "Good variety and a convenient pickup window.",
+      date: "July 31, 2026",
+    },
+  ],
+  "fresh-produce-box": [
+    {
+      author: "Duy P.",
+      rating: 5,
+      comment: "Fresh vegetables with clear pickup instructions.",
+      date: "July 28, 2026",
+    },
+  ],
+  "seafood-family-box": [
+    {
+      author: "Huy T.",
+      rating: 4,
+      comment: "Great value for seafood. The pickup window was accurate.",
+      date: "July 29, 2026",
+    },
+  ],
 };
 
 function formatPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
 }
 
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
+function clampQuantity(value: number, maximum: number) {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(maximum, Math.max(1, Math.floor(value)));
 }
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+    month: "long",
+    day: "2-digit",
   }).format(new Date(value));
 }
 
-function getDiscountPercent(product: SurpriseBagDetail) {
-  if (!product.originalPrice) return 0;
-  return Math.round(((product.originalPrice - product.salePrice) / product.originalPrice) * 100);
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
 }
 
-function getRatingPercent(score: number) {
-  return `${Math.min(Math.max(score, 0), 5) * 20}%`;
+function formatPickupRange(bag: ListingBag) {
+  return `${formatDate(bag.pickupStartTime)}, ${formatTime(bag.pickupStartTime)} - ${formatTime(bag.pickupEndTime)}`;
 }
 
-function getAverageRating(reviews: StoreReview[]) {
-  if (!reviews.length) return 0;
-  return reviews.reduce((sum, review) => sum + review.ratingScore, 0) / reviews.length;
+function formatAvailability(bag: ListingBag) {
+  return `${bag.remainingQuantity} of ${bag.quantityTotal} bags left`;
 }
 
-function findProduct(bagId?: string) {
-  if (!bagId) return surpriseBags[0];
-  const normalized = decodeURIComponent(bagId).trim().toLowerCase();
-  const productId = routeAliases[normalized] ?? normalized;
+function getRelatedBags(current: ListingBag) {
+  const sameCategory = surpriseBags.filter(
+    (bag) => bag.slug !== current.slug && bag.category === current.category,
+  );
+  const fallback = surpriseBags.filter(
+    (bag) => bag.slug !== current.slug && bag.category !== current.category,
+  );
 
-  return surpriseBags.find((product) => product.id.toLowerCase() === productId) ?? surpriseBags[0];
+  return [...sameCategory, ...fallback].slice(0, 4);
 }
 
-export default function ProductMain({ bagId }: { bagId?: string }) {
-  const product = findProduct(bagId);
-  const averageRating = getAverageRating(product.storeReviews);
-  const discountPercent = getDiscountPercent(product);
-  const isAvailable = product.status === "Active" && product.quantityRemaining > 0;
-  const relatedProducts = surpriseBags.filter((item) => item.id !== product.id);
+export default function ProductMain({ bag }: { bag: ListingBag }) {
+  const [quantity, setQuantity] = useState(1);
+  const [selectedImageState, setSelectedImageState] = useState({
+    bagSlug: bag.slug,
+    imageSrc: bag.imageSrc,
+  });
+  const isAvailable = bag.remainingQuantity > 0;
+  const relatedBags = getRelatedBags(bag);
+  const reviews = staticReviewsBySlug[bag.slug] ?? [
+    {
+      author: "Local shopper",
+      rating: 5,
+      comment: `Good value from ${bag.storeName} with a straightforward pickup experience.`,
+      date: "July 31, 2026",
+    },
+  ];
+  const galleryImages = galleryImagesBySlug[bag.slug] ?? [
+    bag.imageSrc,
+    ...surpriseBags
+      .filter((item) => item.slug !== bag.slug && item.category === bag.category)
+      .map((item) => item.imageSrc),
+    ...surpriseBags
+      .filter((item) => item.slug !== bag.slug && item.category !== bag.category)
+      .map((item) => item.imageSrc),
+  ].slice(0, 3);
+  const cartHref = `/cart?bag=${encodeURIComponent(bag.slug)}&quantity=${quantity}`;
+  // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
+
+  const selectedImage = selectedImageState.bagSlug === bag.slug ? selectedImageState.imageSrc : bag.imageSrc;
+
+  function updateQuantity(value: number) {
+    setQuantity(clampQuantity(value, bag.remainingQuantity));
+  }
 
   return (
     <main className="main product-detail-page">
-      <nav aria-label="breadcrumb" className="breadcrumb-nav border-0 mb-0">
+      <nav aria-label="Breadcrumb" className="breadcrumb-nav border-0 mb-0">
         <div className="container d-flex align-items-center">
           <ol className="breadcrumb">
-            <li className="breadcrumb-item">
-              <Link href="/">Home</Link>
-            </li>
-            <li className="breadcrumb-item">
-              <Link href="/products">Surprise Bags</Link>
-            </li>
-            <li className="breadcrumb-item active" aria-current="page">
-              {product.name}
-            </li>
+            <li className="breadcrumb-item"><Link href="/">Home</Link></li>
+            <li className="breadcrumb-item"><Link href="/products">Surprise Bags</Link></li>
+            <li className="breadcrumb-item active" aria-current="page">{bag.name}</li>
           </ol>
         </div>
       </nav>
@@ -343,19 +178,28 @@ export default function ProductMain({ bagId }: { bagId?: string }) {
                 <div className="product-gallery product-gallery-vertical">
                   <div className="row">
                     <figure className="product-main-image product-detail-page__main-image">
-                      <img id="product-zoom" src={product.imageSrc} alt={product.name} />
-                      <span className="product-detail-page__discount-badge">Save {discountPercent}%</span>
+                      <Image
+                        src={selectedImage}
+                        alt={bag.imageAlt}
+                        width={900}
+                        height={675}
+                        sizes="(max-width: 767px) 100vw, 50vw"
+                        priority
+                      />
+                      <span className="product-detail-page__discount-badge">Save {bag.discountPercent}%</span>
                     </figure>
-
-                    <div id="product-zoom-gallery" className="product-image-gallery">
-                      {product.gallery.map((image, index) => (
-                        <a
+                    <div className="product-detail-page__thumbnail-list" aria-label="Product images">
+                      {galleryImages.map((image, index) => (
+                        <button
                           key={image}
-                          className={`product-gallery-item${index === 0 ? " active" : ""}`}
-                          href={image}
+                          type="button"
+                          className={`product-detail-page__thumbnail${selectedImage === image ? " active" : ""}`}
+                          aria-label={`View product image ${index + 1}`}
+                          aria-pressed={selectedImage === image}
+                          onClick={() => setSelectedImageState({ bagSlug: bag.slug, imageSrc: image })}
                         >
-                          <img src={image} alt={`${product.name} preview ${index + 1}`} />
-                        </a>
+                          <Image src={image} alt={`${bag.name} preview ${index + 1}`} width={120} height={90} />
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -364,107 +208,97 @@ export default function ProductMain({ bagId }: { bagId?: string }) {
 
               <div className="col-md-6">
                 <div className="product-details">
-                  <p className="product-detail-page__eyebrow">Surprise bag</p>
-                  <h1 className="product-title">{product.name}</h1>
+                  <p className="product-detail-page__eyebrow">Near-expiry surprise bag</p>
+                  <h1 className="product-title">{bag.name}</h1>
 
                   <div className="ratings-container">
                     <div className="ratings">
-                      <div className="ratings-val" style={{ width: getRatingPercent(averageRating) }}></div>
+                      <div className="ratings-val" style={{ width: `${Math.min(bag.popularity, 100)}%` }} />
                     </div>
-                    <a className="ratings-text" href="#product-review-link" id="review-link">
-                      ( {product.storeReviews.length} Reviews )
-                    </a>
+                    <span className="ratings-text">Popular with local shoppers</span>
                   </div>
 
                   <div className="product-price product-detail-page__price">
-                    <span>{formatPrice(product.salePrice)}</span>
-                    <del>{formatPrice(product.originalPrice)}</del>
+                    <span>{formatPrice(bag.salePrice)}</span>
+                    <del>{formatPrice(bag.originalPrice)}</del>
                   </div>
 
                   <div className="product-content">
-                    <p>{product.description}</p>
+                    <p>
+                      Rescue good food from {bag.storeName} at a discounted price. Contents vary by day and are
+                      available for pickup during the listed window.
+                    </p>
                   </div>
 
                   <dl className="product-detail-page__summary">
                     <div>
                       <dt>Store</dt>
                       <dd>
-                        <Link href={`/stores/${encodeURIComponent(product.store.id)}`}>{product.store.name}</Link>
+                        {bag.storeSlug ? (
+                          <Link href={`/stores/${encodeURIComponent(bag.storeSlug)}`}>{bag.storeName}</Link>
+                        ) : bag.storeName}
                       </dd>
                     </div>
+                    <div><dt>Pickup</dt><dd>{formatPickupRange(bag)}</dd></div>
+                    <div><dt>Expiry</dt><dd>{formatDate(bag.expiryDate)}, {formatTime(bag.expiryDate)}</dd></div>
+                    <div><dt>Available</dt><dd>{formatAvailability(bag)}</dd></div>
+                    <div><dt>Status</dt><dd>{bag.status}</dd></div>
                     <div>
-                      <dt>Pickup</dt>
-                      <dd>
-                        {formatDateTime(product.pickupStartTime)} - {formatDateTime(product.pickupEndTime)}
+                      <dt>Category</dt>
+                      <dd className="product-detail-page__categories">
+                        <Link href={`/products?category=${encodeURIComponent(bag.category)}`}>{bag.category}</Link>
                       </dd>
-                    </div>
-                    <div>
-                      <dt>Expiry</dt>
-                      <dd>{formatDateTime(product.expiryDate)}</dd>
-                    </div>
-                    <div>
-                      <dt>Available</dt>
-                      <dd>
-                        {product.quantityRemaining} of {product.quantityTotal} bags left
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Status</dt>
-                      <dd>{product.status}</dd>
                     </div>
                   </dl>
 
                   <div className="details-filter-row details-row-size">
-                    <label>Categories:</label>
-                    <div className="product-detail-page__categories">
-                      {product.categories.map((category) => (
-                        <Link href={`/products?category=${encodeURIComponent(category.name)}`} key={category.id}>
-                          {category.name}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="details-filter-row details-row-size">
-                    <label htmlFor="qty">Qty:</label>
-                    <div className="product-details-quantity">
+                    <label htmlFor="product-quantity">Quantity:</label>
+                    <div className="cart-line__quantity product-details-quantity">
+                      <button
+                        type="button"
+                        aria-label={`Decrease quantity of ${bag.name}`}
+                        onClick={() => updateQuantity(quantity - 1)}
+                        disabled={!isAvailable || quantity <= 1}
+                      >
+                        -
+                      </button>
                       <input
-                        type="number"
-                        id="qty"
-                        className="form-control"
-                        defaultValue="1"
-                        min="1"
-                        max={product.quantityRemaining}
-                        step="1"
-                        data-decimals="0"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        id="product-quantity"
+                        value={quantity}
                         disabled={!isAvailable}
+                        onChange={(event) => {
+                          const digits = event.target.value.replace(/\D/g, "");
+                          updateQuantity(Number(digits || 1));
+                        }}
                       />
+                      <button
+                        type="button"
+                        aria-label={`Increase quantity of ${bag.name}`}
+                        onClick={() => updateQuantity(quantity + 1)}
+                        disabled={!isAvailable || quantity >= bag.remainingQuantity}
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
 
                   <div className="product-details-action">
-                    <Link
-                      href={isAvailable ? `/cart?bag=${encodeURIComponent(product.id)}` : "#"}
-                      className={`btn-product btn-cart${!isAvailable ? " disabled" : ""}`}
-                    >
-                      <span>{isAvailable ? "add to cart" : "sold out"}</span>
-                    </Link>
+                    {isAvailable ? (
+                      <Link href={cartHref} className="btn-product btn-cart"><span>Add to cart</span></Link>
+                    ) : (
+                      <span className="btn-product btn-cart disabled" aria-disabled="true"><span>Sold out</span></span>
+                    )}
+                    {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
+                    {/*
                     <div className="details-action-wrapper">
-                      <Link href={`/wishlist?bag=${encodeURIComponent(product.id)}`} className="btn-product btn-wishlist">
-                        <span>Add to Wishlist</span>
-                      </Link>
+                      <Link href={wishlistHref} className="btn-product btn-wishlist"><span>Add to Wishlist</span></Link>
                     </div>
+                    */}
                   </div>
 
-                  <div className="product-details-footer">
-                    <div className="product-cat">
-                      <span>Store:</span>{" "}
-                      <Link href={`/stores/${encodeURIComponent(product.store.id)}`}>{product.store.name}</Link>
-                    </div>
-                    <div className="product-cat">
-                      <span>Created:</span> {formatDate(product.createdAt)}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -473,141 +307,83 @@ export default function ProductMain({ bagId }: { bagId?: string }) {
           <div className="product-details-tab">
             <ul className="nav nav-pills justify-content-center" role="tablist">
               <li className="nav-item">
-                <a
-                  className="nav-link active"
-                  id="product-desc-link"
-                  data-toggle="tab"
-                  href="#product-desc-tab"
-                  role="tab"
-                  aria-controls="product-desc-tab"
-                  aria-selected="true"
-                >
-                  Description
-                </a>
+                <a className="nav-link active" id="product-desc-link" data-toggle="tab" href="#product-desc-tab" role="tab" aria-controls="product-desc-tab" aria-selected="true">Bag information</a>
               </li>
               <li className="nav-item">
-                <a
-                  className="nav-link"
-                  id="product-info-link"
-                  data-toggle="tab"
-                  href="#product-info-tab"
-                  role="tab"
-                  aria-controls="product-info-tab"
-                  aria-selected="false"
-                >
-                  Pickup information
-                </a>
+                <a className="nav-link" id="product-info-link" data-toggle="tab" href="#product-info-tab" role="tab" aria-controls="product-info-tab" aria-selected="false">Pickup information</a>
               </li>
               <li className="nav-item">
-                <a
-                  className="nav-link"
-                  id="product-review-link"
-                  data-toggle="tab"
-                  href="#product-review-tab"
-                  role="tab"
-                  aria-controls="product-review-tab"
-                  aria-selected="false"
-                >
-                  Reviews ({product.storeReviews.length})
-                </a>
+                <a className="nav-link" id="product-review-link" data-toggle="tab" href="#product-review-tab" role="tab" aria-controls="product-review-tab" aria-selected="false">Reviews</a>
               </li>
             </ul>
 
             <div className="tab-content">
               <div className="tab-pane fade show active" id="product-desc-tab" role="tabpanel" aria-labelledby="product-desc-link">
                 <div className="product-desc-content">
-                  <h3>Bag Information</h3>
-                  <p>{product.description}</p>
+                  <h3>About this surprise bag</h3>
+                  <p>
+                    This discounted bag helps {bag.storeName} sell good food before it goes to waste. The exact
+                    contents are selected by the store and may vary depending on the day&apos;s surplus.
+                  </p>
                   <ul>
-                    <li>Discount: {discountPercent}% off the original value.</li>
-                    <li>Quantity: {product.quantityRemaining} bags remaining.</li>
-                    <li>Categories: {product.categories.map((category) => category.name).join(", ")}.</li>
+                    <li>Category: {bag.category}.</li>
+                    <li>Discount: {bag.discountPercent}% off the original value.</li>
+                    <li>{formatAvailability(bag)}.</li>
                   </ul>
                 </div>
               </div>
-
               <div className="tab-pane fade" id="product-info-tab" role="tabpanel" aria-labelledby="product-info-link">
                 <div className="product-desc-content">
-                  <h3>Pickup Details</h3>
-                  <p>
-                    Please collect this surprise bag at {product.store.name} during the pickup window.
-                  </p>
+                  <h3>Pickup details</h3>
+                  <p>Collect this bag from {bag.storeName} during the listed pickup window.</p>
                   <dl className="product-detail-page__tab-details">
-                    <div>
-                      <dt>Pickup start</dt>
-                      <dd>{formatDateTime(product.pickupStartTime)}</dd>
-                    </div>
-                    <div>
-                      <dt>Pickup end</dt>
-                      <dd>{formatDateTime(product.pickupEndTime)}</dd>
-                    </div>
-                    <div>
-                      <dt>Expiry date</dt>
-                      <dd>{formatDateTime(product.expiryDate)}</dd>
-                    </div>
-                    <div>
-                      <dt>Store address</dt>
-                      <dd>{product.store.address}</dd>
-                    </div>
+                    <div><dt>Pickup</dt><dd>{formatPickupRange(bag)}</dd></div>
+                    <div><dt>Expiry</dt><dd>{formatDate(bag.expiryDate)}, {formatTime(bag.expiryDate)}</dd></div>
+                    <div><dt>Available</dt><dd>{formatAvailability(bag)}</dd></div>
                   </dl>
                 </div>
               </div>
-
               <div className="tab-pane fade" id="product-review-tab" role="tabpanel" aria-labelledby="product-review-link">
                 <div className="reviews">
-                  <h3>Reviews ({product.storeReviews.length})</h3>
-                  {product.storeReviews.length ? (
-                    product.storeReviews.map((review) => (
-                      <div className="review" key={review.id}>
-                        <div className="row no-gutters">
-                          <div className="col-auto">
-                            <h4>Buyer {review.buyerId.slice(0, 8)}</h4>
-                            <div className="ratings-container">
-                              <div className="ratings">
-                                <div className="ratings-val" style={{ width: getRatingPercent(review.ratingScore) }}></div>
-                              </div>
-                            </div>
-                            <span className="review-date">{formatDate(review.createdAt)}</span>
-                          </div>
-                          <div className="col">
-                            <h4>{review.ratingScore}/5 rating</h4>
-                            <div className="review-content">
-                              <p>{review.comment ?? "No comment provided."}</p>
-                              {review.storeReply ? <p>Store reply: {review.storeReply}</p> : null}
-                            </div>
-                          </div>
+                  <h3>Reviews</h3>
+                  <div className="store-reviews__list">
+                    {reviews.map((review) => (
+                      <article className="store-review" key={`${review.author}-${review.date}`}>
+                        <div className="store-review__header">
+                          <h3>{review.author}</h3>
+                          <strong>{review.rating}/5</strong>
                         </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p>No reviews yet.</p>
-                  )}
+                        <p>{review.comment}</p>
+                        <time dateTime={review.date}>{review.date}</time>
+                      </article>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {relatedProducts.length ? (
-            <>
-              <h2 className="title text-center mb-4">More Surprise Bags</h2>
-              <div className="product-detail-page__related">
-                {relatedProducts.map((item) => (
-                  <article className="product-detail-page__related-item" key={item.id}>
-                    <Link href={`/product?bag=${encodeURIComponent(item.id)}`}>
-                      <img src={item.imageSrc} alt={item.name} />
-                    </Link>
-                    <div>
-                      <p>{item.categories[0]?.name}</p>
-                      <h3>
-                        <Link href={`/product?bag=${encodeURIComponent(item.id)}`}>{item.name}</Link>
-                      </h3>
-                      <strong>{formatPrice(item.salePrice)}</strong>
-                    </div>
-                  </article>
+          {relatedBags.length > 0 && (
+            <section className="product-detail-related" aria-labelledby="related-bags-title">
+              <div className="product-detail-section-heading">
+                <div>
+                  <p>More from StealDeals</p>
+                  <h2 id="related-bags-title">You may also like</h2>
+                </div>
+                <Link href={`/products?category=${encodeURIComponent(bag.category)}`}>
+                  View more {bag.category.toLowerCase()} bags
+                </Link>
+              </div>
+
+              <div className="row product-listing-grid">
+                {relatedBags.map((relatedBag) => (
+                  <div className="col-12 col-sm-6 col-lg-3" key={relatedBag.slug}>
+                    <SurpriseBagCard bag={relatedBag} />
+                  </div>
                 ))}
               </div>
-            </>
-          ) : null}
+            </section>
+          )}
         </div>
       </div>
     </main>

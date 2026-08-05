@@ -1,169 +1,271 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
-export default function CartMain() {
+import { useMemo, useState } from "react";
+import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
+
+type CartLine = {
+  bag: ListingBag;
+  quantity: number;
+};
+
+type StoreGroup = {
+  storeName: string;
+  storeSlug?: string;
+  lines: CartLine[];
+};
+
+const defaultCartSlugs = [
+  "bakery-breakfast-box",
+  "bakery-mix-bag",
+  "fresh-produce-box",
+];
+
+function formatPrice(value: number) {
+  return `${value.toLocaleString("en-US")} VND`;
+}
+
+function createInitialCart(initialBagSlug?: string, initialQuantity?: number) {
+  const slugs = initialBagSlug ? [initialBagSlug] : defaultCartSlugs;
+
+  return slugs.reduce<CartLine[]>((lines, slug) => {
+    const bag = surpriseBags.find((item) => item.slug === slug);
+    if (!bag || lines.some((line) => line.bag.slug === bag.slug)) return lines;
+
+    const quantity = initialBagSlug === slug && Number.isFinite(initialQuantity)
+      ? Math.min(bag.remainingQuantity, Math.max(1, Math.floor(initialQuantity as number)))
+      : 1;
+
+    lines.push({ bag, quantity });
+    return lines;
+  }, []);
+}
+
+export default function CartMain({
+  initialBagSlug,
+  initialQuantity,
+}: {
+  initialBagSlug?: string;
+  initialQuantity?: number;
+}) {
+  const [lines, setLines] = useState(() => createInitialCart(initialBagSlug, initialQuantity));
+
+  const groups = useMemo(() => {
+    const grouped = new Map<string, StoreGroup>();
+
+    lines.forEach((line) => {
+      const key = line.bag.storeSlug ?? line.bag.storeName;
+      const current = grouped.get(key) ?? {
+        storeName: line.bag.storeName,
+        storeSlug: line.bag.storeSlug,
+        lines: [],
+      };
+
+      current.lines.push(line);
+      grouped.set(key, current);
+    });
+
+    return [...grouped.values()];
+  }, [lines]);
+
+  const subtotal = lines.reduce((total, line) => total + line.bag.salePrice * line.quantity, 0);
+  const itemCount = lines.reduce((total, line) => total + line.quantity, 0);
+
+  function updateQuantity(slug: string, nextQuantity: number) {
+    setLines((current) =>
+      current.map((line) => {
+        if (line.bag.slug !== slug) return line;
+
+        const safeQuantity = Number.isFinite(nextQuantity)
+          ? Math.min(line.bag.remainingQuantity, Math.max(1, Math.floor(nextQuantity)))
+          : 1;
+
+        return { ...line, quantity: safeQuantity };
+      }),
+    );
+  }
+
+  function removeItem(slug: string) {
+    setLines((current) => current.filter((line) => line.bag.slug !== slug));
+  }
+
   return (
-    <main className="main">
-      <div className="page-header text-center" style={{ backgroundImage: 'url(\'/assets/images/page-header-bg.jpg\')' }}>
-              		<div className="container">
-              			<h1 className="page-title">Shopping Cart<span>Shop</span></h1>
-              		</div>
-              	</div>
-                  <nav aria-label="breadcrumb" className="breadcrumb-nav">
-                      <div className="container">
-                          <ol className="breadcrumb">
-                              <li className="breadcrumb-item"><Link href="/">Home</Link></li>
-                              <li className="breadcrumb-item"><a href="#">Shop</a></li>
-                              <li className="breadcrumb-item active" aria-current="page">Shopping Cart</li>
-                          </ol>
+    <main className="main cart-page">
+      <nav aria-label="Breadcrumb" className="breadcrumb-nav border-0 mb-0">
+        <div className="container">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item">
+              <Link href="/">Home</Link>
+            </li>
+            <li className="breadcrumb-item">
+              <Link href="/products">Surprise Bags</Link>
+            </li>
+            <li className="breadcrumb-item active" aria-current="page">
+              Cart
+            </li>
+          </ol>
+        </div>
+      </nav>
+
+      <div className="page-content">
+        <div className="container">
+          <div className="cart-page-heading">
+            <div>
+              <p>Review your rescued food</p>
+              <h1>Your cart</h1>
+            </div>
+            <span>{itemCount} {itemCount === 1 ? "bag" : "bags"}</span>
+          </div>
+
+          {groups.length === 0 ? (
+            <section className="cart-empty-state" aria-labelledby="cart-empty-title">
+              <i className="icon-shopping-cart" aria-hidden="true"></i>
+              <h2 id="cart-empty-title">Your cart is empty</h2>
+              <p>Browse local surprise bags and add one when you are ready to rescue a meal.</p>
+              <Link href="/products" className="btn btn-primary">
+                Browse surprise bags
+              </Link>
+            </section>
+          ) : (
+            <div className="cart-layout">
+              <div className="cart-store-groups">
+                {groups.map((group) => (
+                  <section className="cart-store-group" key={group.storeSlug ?? group.storeName}>
+                    <header className="cart-store-group__header">
+                      <div>
+                        <p>Pickup from</p>
+                        {group.storeSlug ? (
+                          <h2>
+                            <Link href={`/stores/${encodeURIComponent(group.storeSlug)}`}>
+                              {group.storeName}
+                            </Link>
+                          </h2>
+                        ) : (
+                          <h2>{group.storeName}</h2>
+                        )}
                       </div>
-                  </nav>
-      
-                  <div className="page-content">
-                  	<div className="cart">
-      	                <div className="container">
-      	                	<div className="row">
-      	                		<div className="col-lg-9">
-      	                			<table className="table table-cart table-mobile">
-      									<thead>
-      										<tr>
-      											<th>Product</th>
-      											<th>Price</th>
-      											<th>Quantity</th>
-      											<th>Total</th>
-      											<th></th>
-      										</tr>
-      									</thead>
-      
-      									<tbody>
-      										<tr>
-      											<td className="product-col">
-      												<div className="product">
-      													<figure className="product-media">
-      														<a href="#">
-      															<img src="/assets/images/products/table/product-1.jpg" alt="Product image" />
-      														</a>
-      													</figure>
-      
-      													<h3 className="product-title">
-      														<a href="#">Beige knitted elastic runner shoes</a>
-      													</h3>
-      												</div>
-      											</td>
-      											<td className="price-col">$84.00</td>
-      											<td className="quantity-col">
-                                                      <div className="cart-product-quantity">
-                                                          <input type="number" className="form-control" defaultValue="1" min="1" max="10" step="1" data-decimals="0" required />
-                                                      </div>
-                                                  </td>
-      											<td className="total-col">$84.00</td>
-      											<td className="remove-col"><button className="btn-remove"><i className="icon-close"></i></button></td>
-      										</tr>
-      										<tr>
-      											<td className="product-col">
-      												<div className="product">
-      													<figure className="product-media">
-      														<a href="#">
-      															<img src="/assets/images/products/table/product-2.jpg" alt="Product image" />
-      														</a>
-      													</figure>
-      
-      													<h3 className="product-title">
-      														<a href="#">Blue utility pinafore denim dress</a>
-      													</h3>
-      												</div>
-      											</td>
-      											<td className="price-col">$76.00</td>
-      											<td className="quantity-col">
-                                                      <div className="cart-product-quantity">
-                                                          <input type="number" className="form-control" defaultValue="1" min="1" max="10" step="1" data-decimals="0" required />
-                                                      </div>                                 
-                                                  </td>
-      											<td className="total-col">$76.00</td>
-      											<td className="remove-col"><button className="btn-remove"><i className="icon-close"></i></button></td>
-      										</tr>
-      									</tbody>
-      								</table>
-      
-      	                			<div className="cart-bottom">
-      			            			<div className="cart-discount">
-      			            				<form action="#">
-      			            					<div className="input-group">
-      				        						<input type="text" className="form-control" required placeholder="coupon code" />
-      				        						<div className="input-group-append">
-      													<button className="btn btn-outline-primary-2" type="submit"><i className="icon-long-arrow-right"></i></button>
-      												</div>
-      			        						</div>
-      			            				</form>
-      			            			</div>
-      
-      			            			<a href="#" className="btn btn-outline-dark-2"><span>UPDATE CART</span><i className="icon-refresh"></i></a>
-      		            			</div>
-      	                		</div>
-      	                		<aside className="col-lg-3">
-      	                			<div className="summary summary-cart">
-      	                				<h3 className="summary-title">Cart Total</h3>
-      
-      	                				<table className="table table-summary">
-      	                					<tbody>
-      	                						<tr className="summary-subtotal">
-      	                							<td>Subtotal:</td>
-      	                							<td>$160.00</td>
-      	                						</tr>
-      	                						<tr className="summary-shipping">
-      	                							<td>Shipping:</td>
-      	                							<td>&nbsp;</td>
-      	                						</tr>
-      
-      	                						<tr className="summary-shipping-row">
-      	                							<td>
-      													<div className="custom-control custom-radio">
-      														<input type="radio" id="free-shipping" name="shipping" className="custom-control-input" />
-      														<label className="custom-control-label" htmlFor="free-shipping">Free Shipping</label>
-      													</div>
-      	                							</td>
-      	                							<td>$0.00</td>
-      	                						</tr>
-      
-      	                						<tr className="summary-shipping-row">
-      	                							<td>
-      	                								<div className="custom-control custom-radio">
-      														<input type="radio" id="standart-shipping" name="shipping" className="custom-control-input" />
-      														<label className="custom-control-label" htmlFor="standart-shipping">Standart:</label>
-      													</div>
-      	                							</td>
-      	                							<td>$10.00</td>
-      	                						</tr>
-      
-      	                						<tr className="summary-shipping-row">
-      	                							<td>
-      	                								<div className="custom-control custom-radio">
-      														<input type="radio" id="express-shipping" name="shipping" className="custom-control-input" />
-      														<label className="custom-control-label" htmlFor="express-shipping">Express:</label>
-      													</div>
-      	                							</td>
-      	                							<td>$20.00</td>
-      	                						</tr>
-      
-      	                						<tr className="summary-shipping-estimate">
-      	                							<td>Estimate for Your Country<br /> <a href="dashboard.html">Change address</a></td>
-      	                							<td>&nbsp;</td>
-      	                						</tr>
-      
-      	                						<tr className="summary-total">
-      	                							<td>Total:</td>
-      	                							<td>$160.00</td>
-      	                						</tr>
-      	                					</tbody>
-      	                				</table>
-      
-      	                				<Link href="/checkout" className="btn btn-outline-primary-2 btn-order btn-block">PROCEED TO CHECKOUT</Link>
-      	                			</div>
-      
-      		            			<a href="category.html" className="btn btn-outline-dark-2 btn-block mb-3"><span>CONTINUE SHOPPING</span><i className="icon-refresh"></i></a>
-      	                		</aside>
-      	                	</div>
-      	                </div>
+                      {group.storeSlug ? (
+                        <Link href={`/stores/${encodeURIComponent(group.storeSlug)}`}>
+                          View store bags
+                        </Link>
+                      ) : null}
+                    </header>
+
+                    <div className="cart-store-table" role="table" aria-label={`${group.storeName} cart items`}>
+                      <div className="cart-store-table__header" role="row">
+                        <span role="columnheader">Surprise bag</span>
+                        <span role="columnheader">Price</span>
+                        <span role="columnheader">Quantity</span>
+                        <span role="columnheader">Total</span>
+                        <span aria-hidden="true"></span>
                       </div>
+
+                      {group.lines.map((line) => (
+                        <div className="cart-line" role="row" key={line.bag.slug}>
+                          <div className="cart-line__product" role="cell">
+                            <Link href={`/product?bag=${encodeURIComponent(line.bag.slug)}`}>
+                              <Image
+                                src={line.bag.imageSrc}
+                                width={112}
+                                height={84}
+                                sizes="112px"
+                                alt={line.bag.imageAlt}
+                              />
+                            </Link>
+                            <div>
+                              <Link
+                                href={`/products?category=${encodeURIComponent(line.bag.category)}`}
+                                className="cart-line__category"
+                              >
+                                {line.bag.category}
+                              </Link>
+                              <h3>
+                                <Link href={`/product?bag=${encodeURIComponent(line.bag.slug)}`}>
+                                  {line.bag.name}
+                                </Link>
+                              </h3>
+                              <p>{line.bag.pickupWindow} · {line.bag.distance}</p>
+                            </div>
+                          </div>
+                          <span className="cart-line__price" role="cell">
+                            {formatPrice(line.bag.salePrice)}
+                          </span>
+                          <div className="cart-line__quantity" role="cell">
+                            <button
+                              type="button"
+                              aria-label={`Decrease quantity of ${line.bag.name}`}
+                              onClick={() => updateQuantity(line.bag.slug, line.quantity - 1)}
+                              disabled={line.quantity <= 1}
+                            >
+                              -
+                            </button>
+                            <input
+                              aria-label={`Quantity of ${line.bag.name}`}
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              value={line.quantity}
+                              onChange={(event) => {
+                                const digits = event.target.value.replace(/\D/g, "");
+                                updateQuantity(line.bag.slug, Number(digits || 1));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Increase quantity of ${line.bag.name}`}
+                              onClick={() => updateQuantity(line.bag.slug, line.quantity + 1)}
+                              disabled={line.quantity >= line.bag.remainingQuantity}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <strong className="cart-line__total" role="cell">
+                            {formatPrice(line.bag.salePrice * line.quantity)}
+                          </strong>
+                          <button
+                            type="button"
+                            className="cart-line__remove"
+                            aria-label={`Remove ${line.bag.name}`}
+                            onClick={() => removeItem(line.bag.slug)}
+                          >
+                            <i className="icon-close" aria-hidden="true"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              <aside className="cart-summary" aria-labelledby="cart-summary-title">
+                <p>Order summary</p>
+                <h2 id="cart-summary-title">Pickup total</h2>
+                <dl>
+                  <div>
+                    <dt>Subtotal</dt>
+                    <dd>{formatPrice(subtotal)}</dd>
                   </div>
+                  <div>
+                    <dt>Delivery</dt>
+                    <dd>Pickup at store</dd>
+                  </div>
+                  <div className="cart-summary__total">
+                    <dt>Total</dt>
+                    <dd>{formatPrice(subtotal)}</dd>
+                  </div>
+                </dl>
+                <Link href="/checkout" className="btn btn-primary btn-block">
+                  Proceed to checkout
+                </Link>
+                <Link href="/products" className="cart-summary__continue">
+                  Continue browsing
+                </Link>
+              </aside>
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

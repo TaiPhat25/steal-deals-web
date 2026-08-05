@@ -83,10 +83,13 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
           </Link>
         </div>
 
+        {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
+        {/*
         <Link href={`/wishlist?bag=${encodeURIComponent(bag.slug)}`} className="surprise-bag-card__wishlist">
           <i className="icon-heart-o" aria-hidden="true"></i>
           Add to wishlist
         </Link>
+        */}
       </div>
     </article>
   );

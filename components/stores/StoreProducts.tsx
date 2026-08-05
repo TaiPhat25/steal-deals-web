@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SurpriseBagCard, { type SurpriseBag } from "@/components/home/SurpriseBagCard";
+import { surpriseBags as listingBags } from "@/components/products/product-listing-data";
 import type { StoreProfile, StoreSurpriseBag } from "@/components/stores/store-profile-data";
 
 function formatPickupWindow(start: string, end: string) {
@@ -12,13 +13,31 @@ function formatPickupWindow(start: string, end: string) {
   return `${day}, ${startTime} - ${endTime}`;
 }
 
-function toCardBag(store: StoreProfile, bag: StoreSurpriseBag, index: number): SurpriseBag {
-  const category = bag.categories[0]?.name ?? "Surprise Bag";
+function toSlug(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function normalizeName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function findListingBag(store: StoreProfile, bag: StoreSurpriseBag) {
+  return listingBags.find(
+    (listingBag) =>
+      listingBag.storeSlug === toSlug(store.name) &&
+      normalizeName(listingBag.name) === normalizeName(bag.name),
+  );
+}
+
+function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
+  const listingBag = findListingBag(store, bag);
+  const category = listingBag?.category ?? (bag.categories[0]?.name === "Produce" ? "Vegetables" : bag.categories[0]?.name ?? "Surprise Bag");
   const discountPercent = Math.round(((bag.originalPrice - bag.salePrice) / bag.originalPrice) * 100);
 
   return {
-    slug: bag.id,
-    imageSrc: `/assets/images/demos/demo-28/flash/${(index % 12) + 1}.jpg`,
+    // Store APIs use GUIDs; storefront product flows use the shared listing slug.
+    slug: listingBag?.slug ?? bag.id,
+    imageSrc: listingBag?.imageSrc ?? "/assets/images/demos/demo-28/flash/1.jpg",
     imageAlt: bag.name,
     name: bag.name,
     storeName: store.name,
@@ -56,7 +75,7 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
               Current products this store is selling for pickup.
             </p>
           </div>
-          <Link href={`/products?q=${encodeURIComponent(store.name)}`} className="store-detail-page__view-all">
+          <Link href={`/products?store=${encodeURIComponent(toSlug(store.name))}`} className="store-detail-page__view-all">
             View in marketplace
             <i className="icon-angle-right" aria-hidden="true"></i>
           </Link>
@@ -64,9 +83,9 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
 
         {activeProducts.length ? (
           <div className="store-products-scroll-row" aria-label={`${store.name} surprise bags`}>
-            {activeProducts.map((bag, index) => (
+            {activeProducts.map((bag) => (
               <div className="store-products-scroll-row__item" key={bag.id}>
-                <SurpriseBagCard bag={toCardBag(store, bag, index)} />
+                <SurpriseBagCard bag={toCardBag(store, bag)} />
               </div>
             ))}
           </div>

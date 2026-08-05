@@ -130,9 +130,12 @@ export default function Footer() {
                   <li>
                     <a href="/cart">View Cart</a>
                   </li>
+                  {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
+                  {/*
                   <li>
                     <a href="/wishlist">My Wishlist</a>
                   </li>
+                  */}
                   <li>
                     <a href="/checkout">Track my pickup</a>
                   </li>

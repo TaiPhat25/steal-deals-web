@@ -30,15 +30,15 @@ export default function StoreReviews({ reviews }: { reviews: StoreReview[] }) {
               <article className="store-review" key={review.id}>
                 <div className="store-review__header">
                   <h3>Buyer {review.buyerId.slice(0, 8)}</h3>
-                  <strong>{review.ratingScore}.0</strong>
+                  <strong>{review.ratingScore.toFixed(1)}</strong>
                 </div>
-                <p>{review.comment}</p>
+                <p>{review.comment ?? "This buyer did not leave a comment."}</p>
                 <time dateTime={review.createdAt}>{formatDate(review.createdAt)}</time>
               </article>
             ))}
           </div>
         ) : (
-          <div className="store-products__empty">
+          <div className="store-reviews__empty">
             <h3>No reviews yet</h3>
             <p>Reviews will appear here once buyers share feedback.</p>
           </div>

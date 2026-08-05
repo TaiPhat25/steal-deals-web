@@ -24,28 +24,30 @@ admin and seller dashboards.
 - Identity Service integration is implemented for registration, login, access
   token refresh, logout, current-user lookup, profile loading, email
   verification, and OTP resend.
-- Catalog, product, cart, wishlist, and checkout content is still static demo
-  data. Product-listing filters work against local data, but those screens do
-  not yet use commerce backend services.
+- Catalog, product, cart, wishlist, checkout, order history, and shipping content
+  is still static demo data. Product-listing filters work against local data,
+  but those screens do not yet use commerce backend services.
 
-The storefront currently exposes 14 routes or route patterns:
+The storefront currently exposes 16 routes or route patterns:
 
 | Route | Main component | Current data/behavior |
 | --- | --- | --- |
 | `/` | Home sections under `components/home` | Static demo-28 content with client-side carousel, countdown, and drag scrolling |
-| `/about` | `components/about/AboutMain.tsx` | Static template content |
+| `/about` | `components/about/AboutMain.tsx` | StealDeals purpose, principles, and three-step food-rescue explanation using local assets |
 | `/cart` | `components/cart/CartMain.tsx` | Static cart markup; no cart state or API |
-| `/category` | Redirect | Compatibility redirect to `/products` |
-| `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected, but checkout form/order submission is static |
-| `/contact` | `components/contact/ContactMain.tsx` | Static template content |
-| `/faq` | `components/faq/FaqMain.tsx` | Static template content |
+| `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected checkout UI with pickup/delivery, grouped bags, payment selection, and local summary state |
+| `/contact` | `components/contact/ContactMain.tsx` | StealDeals support details and frontend-only contact form |
+| `/faq` | `components/faq/FaqMain.tsx` | Native accessible FAQ groups for food rescue, pickup/orders, and accounts |
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
-| `/product` | `components/product/ProductMain.tsx` | Converted product detail with static product data |
+| `/orders` | `components/orders/OrderHistoryMain.tsx` | Authenticated order history with search and status filters |
+| `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using shared static listing data |
 | `/products` | `components/products/ProductListing.tsx` | Searchable/filterable static surprise-bag marketplace listing |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
-| `/stores/[storeSlug]` | `components/products/ProductListing.tsx` | Store-scoped listing using the shared product-listing UI |
-| `/wishlist` | `components/wishlist/WishlistMain.tsx` | Converted wishlist with static items |
+| `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable store directory using local store profiles |
+| `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store profile, active surprise bags, and reviews |
+| `/shipping` | `components/shipping/ShippingMain.tsx` | Authenticated order progress, pickup/delivery details, and order summary |
+| `/wishlist` | `components/wishlist/WishlistMain.tsx` | Temporarily disabled; previous static template retained in comments |
 
 ## Storefront structure
 
@@ -147,7 +149,8 @@ another provider inside individual pages.
 
 ### Route protection
 
-`components/auth/RequireAuth.tsx` protects `/checkout` and `/profile`.
+`components/auth/RequireAuth.tsx` protects `/checkout`, `/orders`, `/profile`,
+and `/shipping`.
 
 It waits for the initial refresh attempt, renders nothing while authentication
 is being resolved, and redirects unauthenticated visitors to `/login`. This is
@@ -264,8 +267,8 @@ are commented out on Home because those banners are not currently needed.
 Sustainability section headings and article cards use larger type for readability.
 
 The rendered Home route no longer includes the duplicate template brand-logo,
-recommendation, generic service, or generic blog sections. Their original
-source files remain available while the replacement sections are finalized.
+recommendation, generic service, or generic blog sections. Their legacy source
+files were moved to `remove-later` for manual cleanup.
 The retained `StealDealsNewsletterSection` source is an account CTA rather than a
 newsletter submission because no notification subscription endpoint exists.
 
@@ -276,6 +279,12 @@ The newsletter popup remains in source but is commented out. The promo strip,
 currency selector, language selector, Compare item, demo chooser, Blog
 navigation, and Elements navigation are retained as commented template code.
 
+Files in the root `remove-later` folder are archived legacy components, not an
+active component library. If one becomes necessary again, move it into the
+corresponding active page/component directory and update its imports before
+rendering it. The folder is excluded from `tsconfig.json` so archived files do
+not affect application type-checking.
+
 ### Product listings
 
 `/products` is the marketplace-wide surprise-bag listing. It renders 12 static
@@ -285,31 +294,100 @@ distance, and sorting controls work against client-side demo data. Size, colour,
 brand, compare, thumbnails, fake layout controls, and presentation-only
 pagination were removed.
 
-`/stores/[storeSlug]` renders the same listing scoped to one known store. It
-keeps search, category, pickup, price, and sorting controls while omitting the
-marketplace distance filter. Unknown static store slugs return `404`.
+`/stores` renders the store directory with search, verified/new filters, and
+rating, bag-count, or name sorting. Store cards link to `/stores/[id]` and use
+larger listing-specific typography for scanning store details.
 
-`/category` remains only as a compatibility redirect to `/products`. Product
-and store links now use `/products`, `/stores/[storeSlug]`, and `/product?bag=`.
-Filters are not written back to the URL and no catalog API is connected yet.
+`/stores/[id]` renders the selected store profile, active surprise bags, and
+reviews. Store bag cards map backend-shaped bag records to the shared listing
+slugs so product and cart links remain compatible. Category names are normalized
+for the current listing data, and the local store profiles include the same
+active bags shown by the marketplace. Joined and Status now share a single
+bottom divider in the store information grid without duplicating the next row.
+Unknown store IDs return `404`.
+
+Product and store links now use `/products`, `/stores`, `/stores/[id]`, and
+`/products?store=`, and `/product?bag=`. Store detail marketplace links use the
+same store slug filter as the listing page. The old `/category` route was removed because `/products` is
+now the single marketplace listing route. Filters are not
+written back to the URL and no catalog API is connected yet.
 
 ### Product, cart, wishlist, and checkout
 
-These screens retain static Molla data and markup:
+The Product Detail page reads the `bag` query parameter and uses the shared
+`components/products/product-listing-data.ts` records for every listing item.
+It renders StealDeals-specific pricing, store, pickup, availability, and
+related-bag information. Missing or unknown bag slugs return `404`. Add to Cart
+passes the bag slug and selected quantity to Cart.
 
-- Product detail and related products are not loaded by product ID.
-- Cart quantities, totals, removal, and coupon behavior are not stateful.
-- Wishlist actions are not connected to an account or backend.
-- Checkout is authentication-gated but does not create an order or process
-  payment.
+The Product Detail image gallery uses storefront-owned markup and avoids the
+legacy Molla ElevateZoom selectors, so hovering the image does not inject the
+old zoom container or thumbnail UI. It displays up to three existing product
+gallery assets as vertical thumbnails, and selecting a thumbnail updates the
+main image. The detail summary now shows backend-aligned pickup timestamps,
+expiry time, status, category, and `quantity remaining of quantity total`
+availability. Its quantity control uses the same minus/value/plus stepper
+pattern as the Cart page. Summary field labels use a slightly larger type size
+to improve scanning, and category links inherit the normal summary value size.
+The previous pickup-day/discount footer row was removed. Product reviews now
+show static FE review data until the Store Service review endpoint is connected.
+The related-bag section uses the saved Product Detail design: four full
+`SurpriseBagCard` cards, same-category items first, and a link to more bags in
+the current category.
+
+The Cart page now groups frontend cart lines by store and supports custom
+quantity stepper updates, quantity limits based on available bags, item removal,
+subtotal calculation, and a pickup-oriented checkout summary. Its initial data
+is still static; a real cart API or persisted cart state is not connected yet.
+Cart category labels link back to the filtered `/products?category=` listing,
+while bag names and images link to `/product?bag=`.
+
+The header cart dropdown now uses the same surprise-bag data as the Cart page,
+including the shared bag names, images, item count, and VND total instead of
+the legacy clothing demo items.
+
+The Cart breadcrumb uses the shared compact storefront height instead of adding
+a second layer of vertical padding.
+
+These screens still retain static storefront data and do not call commerce APIs:
+
+- Wishlist controls and the wishlist route are intentionally disabled because
+  short-lived near-expiry surprise bags are not suitable for long-term saving.
+  The previous implementation is retained in comments for possible future
+  saved-store or notification functionality.
+- Checkout is authentication-gated and now uses Order/Payment-aligned FE fields,
+  but does not yet create an order or process payment.
+
+The previous Molla checkout template is archived at
+`remove-later/CheckoutMain.tsx`.
+
+`OrderHistoryMain` and `ShippingMain` share `components/orders/order-data.ts`,
+whose static records mirror the backend `OrderResponse` shape. The pages are
+ready for `/api/orders/my-orders` and order-detail integration, but currently
+use local data and do not call the Order or Payment services.
 
 Treat their current markup as UI scaffolding. Replace static arrays and submit
 handlers at page/component boundaries when commerce endpoints are available.
 
 ### Informational pages
 
-About, Contact, and FAQ are static conversions. Contact forms and newsletter
-forms do not currently send data.
+The active informational pages use storefront-owned components and content
+instead of the original generic Molla copy:
+
+- `/faq` uses native `details` accordions grouped around rescuing food,
+  pickup/orders, and payments/accounts. Its contact CTA links to `/contact`.
+- `/about` explains the StealDeals purpose, operating principles, and the
+  three-step flow from finding a bag to local pickup. It uses food-related
+  imagery from the demo-28 food assets and links to the marketplace and Contact
+  page.
+- `/contact` provides StealDeals support hours, contact details, pickup guidance,
+  food-related hero imagery, and a responsive controlled form. The form
+  currently shows a frontend-only success state and does not send data to an
+  API.
+
+The old legacy `ProductMain.tsx`, `FaqMain.tsx`, `AboutMain.tsx`, and
+`ContactMain.tsx` files are archived in the root `remove-later` folder. The
+active page components use the project convention with `*Main.tsx` names.
 
 ## Styling and legacy runtime
 
@@ -331,6 +409,7 @@ Bootstrap/Molla stack in `app/(store)/layout.tsx`:
 Store-specific fixes and additions live in `app/(store)/globals.css`, including:
 
 - home/inner header spacing;
+- informational-page hero, FAQ, About, and Contact layouts;
 - drag-scroll product rows;
 - authenticated account dropdown alignment and hover colors;
 - profile action styling;
@@ -348,7 +427,7 @@ The shared header currently provides:
 
 - Home;
 - Surprise Bags, linking to `/products`;
-- Shop, linking to the current demo store at `/stores/morning-oven-bakery`;
+- Stores, linking to the store directory at `/stores`;
 - About Us, linking to `/about`;
 - Contact Us, linking to `/contact`;
 - search, wishlist, and cart presentation;
@@ -372,7 +451,7 @@ The top-level storefront navigation currently has no rendered submenus:
 
 - Home links directly to `/`.
 - Surprise Bags links directly to `/products`.
-- Shop links directly to the current demo store at `/stores/morning-oven-bakery`.
+- Stores links directly to the store directory at `/stores`.
 - About Us and Contact Us are direct navigation links instead of utility-bar links.
 - Pages is commented out until its navigation destinations are finalized.
 - The same structure is used by the mobile menu.
@@ -393,9 +472,19 @@ The active storefront still uses `public/assets`. Current notable state:
 - `public` contains 629 files and approximately 22.5 MB.
 - `public/assets/images/demos/demo-28` contains the active home assets.
 - `public/assets/images/demos/demo-26/logo-footer.png` was retained, although
-  the image-based footer logo is currently commented in favor of text.
+  it is still referenced by the current footer implementation.
 - `public/assets/images/menu/demos` was retained because the commented demo
   chooser still references those screenshots.
+- The asset audit moved 344 unused or legacy template assets into
+  `remove-later/assets`, preserving their original `public/assets` path
+  structure. This includes old Molla page-image folders, unused demo and skin
+  stylesheets, unused demo/helper scripts, Font Awesome, Flaming fonts, and
+  unused standalone images.
+- Assets referenced only by intentionally retained commented code were left in
+  `public/assets`, including the menu screenshots, newsletter popup images, and
+  wishlist/product template images.
+- The remaining 283 files in `public/assets` are the active storefront assets,
+  CSS/JS dependencies, and intentionally retained commented-code assets.
 - Nineteen category-only fashion images (approximately 115 KB) were removed
   after their source references were replaced. The remaining product-detail,
   cart, wishlist, and header fashion assets stay until those screens are adapted.
@@ -441,7 +530,7 @@ Current store-scoped checks:
 ```powershell
 npx.cmd tsc --noEmit --incremental false
 node --experimental-strip-types --test components/products/product-listing-data.test.mjs
-npx.cmd eslint "app/(store)" components/about components/auth components/cart components/checkout components/contact components/faq components/home components/layout components/login components/product components/products components/profile components/wishlist lib/api
+npx.cmd eslint "app/(store)" components/about components/auth components/cart components/checkout components/contact components/faq components/home components/layout components/login components/orders components/product components/products components/profile components/shipping components/wishlist lib/api
 npm.cmd run build
 ```
 
@@ -451,11 +540,10 @@ At this handoff:
 - The product-listing filter/sort test passes both checks.
 - Store-scoped ESLint has 0 errors and 75 warnings.
 - Most warnings are `@next/next/no-img-element` from retained template images.
-- The production build passes and includes dynamic `/products` and
-  `/stores/[storeSlug]` routes.
+- The production build passes and includes `/products`, `/stores`, and
+  `/stores/[id]` routes.
 - Local HTTP checks return `200` for `/products`, category-filtered products,
-  a known store, and all 12 listing images; unknown stores return `404`, and
-  `/category` returns a `307` redirect to `/products`.
+  a known store, and all 12 listing images; unknown stores return `404`.
 - The new listings were not visually checked through an automated browser in
   this environment; review desktop and mobile presentation before merging.
 
@@ -485,7 +573,7 @@ At this handoff:
 
 ## Safe continuation points
 
-1. Visually review `/products` and `/stores/morning-oven-bakery` at desktop and
+1. Visually review `/products`, `/stores`, and a known `/stores/[id]` route at desktop and
    mobile breakpoints, then refine card density and filter placement if needed.
 2. Update `.env.example` to match the agreed local Identity Service protocol
    and port.
@@ -496,8 +584,9 @@ At this handoff:
 5. Add catalog API modules under `lib/api`, replace static product-listing data,
    and move filtering/pagination to request parameters without putting fetch
    logic into visual components.
-6. Add cart and wishlist state only after their ownership is decided
-   (backend-backed account data versus temporary guest state).
+6. Decide whether to add saved-store or availability-notification state; do not
+   restore wishlist state for short-lived surprise bags without a clear product
+   requirement.
 7. Connect checkout to real cart/order/payment contracts while retaining both
    frontend route protection and backend authorization.
 8. Replace obsolete `.html`/hash links as each destination becomes available.

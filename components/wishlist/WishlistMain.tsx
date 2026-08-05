@@ -1,5 +1,6 @@
-import Link from "next/link";
+// import Link from "next/link";
 
+/*
 const wishlistItems = [
   {
     image: "/assets/images/products/table/product-1.jpg",
@@ -26,8 +27,11 @@ const wishlistItems = [
     action: "disabled",
   },
 ];
+*/
 
 export default function WishlistMain() {
+  // Wishlist is intentionally disabled for near-expiry surprise bags.
+  /*
   return (
     <main className="main">
       <div
@@ -158,4 +162,7 @@ export default function WishlistMain() {
       </div>
     </main>
   );
+  */
+
+  return null;
 }

@@ -1,248 +1,132 @@
+import Image from "next/image";
 import Link from "next/link";
+
+const principles = [
+  {
+    number: "01",
+    title: "Rescue good food",
+    description: "We help stores offer quality surplus food to people nearby before it goes to waste.",
+  },
+  {
+    number: "02",
+    title: "Make savings accessible",
+    description: "Buyers discover affordable food from local stores with clear prices and pickup times.",
+  },
+  {
+    number: "03",
+    title: "Strengthen local trade",
+    description: "Every pickup gives local businesses another way to recover value and meet new customers.",
+  },
+];
+
 export default function AboutMain() {
   return (
-    <main className="main">
-      <nav aria-label="breadcrumb" className="breadcrumb-nav border-0 mb-0">
-                      <div className="container">
-                          <ol className="breadcrumb">
-                              <li className="breadcrumb-item"><Link href="/">Home</Link></li>
-                              <li className="breadcrumb-item"><a href="#">Pages</a></li>
-                              <li className="breadcrumb-item active" aria-current="page">About us</li>
-                          </ol>
-                      </div>
-                  </nav>
-                  <div className="container">
-      	        	<div className="page-header page-header-big text-center" style={{ backgroundImage: 'url(\'/assets/images/about-header-bg.jpg\')' }}>
-              			<h1 className="page-title text-white">About us<span className="text-white">Who we are</span></h1>
-      	        	</div>
-                  </div>
-      
-                  <div className="page-content pb-0">
-                      <div className="container">
-                          <div className="row">
-                              <div className="col-lg-6 mb-3 mb-lg-0">
-                                  <h2 className="title">Our Vision</h2>
-                                  <p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Phasellus hendrerit. Pellentesque aliquet nibh nec urna. In nisi neque, aliquet vel, dapibus id, mattis vel, nisi. Sed pretium, ligula sollicitudin laoreet viverra, tortor libero sodales leo, eget blandit nunc tortor eu nibh. </p>
-                              </div>
-                              
-                              <div className="col-lg-6">
-                                  <h2 className="title">Our Mission</h2>
-                                  <p>Sed egestas, ante et vulputate volutpat, eros pede semper est, vitae luctus metus libero eu augue. Morbi purus libero, faucibus adipiscing, commodo quis, gravida id, est. Sed lectus. <br />Praesent elementum hendrerit tortor. Sed semper lorem at felis. </p>
-                              </div>
-                          </div>
-      
-                          <div className="mb-5"></div>
-                      </div>
-      
-                      <div className="bg-light-2 pt-6 pb-5 mb-6 mb-lg-8">
-                          <div className="container">
-                              <div className="row">
-                                  <div className="col-lg-5 mb-3 mb-lg-0">
-                                      <h2 className="title">Who We Are</h2>
-                                      <p className="lead text-primary mb-3">Pellentesque odio nisi, euismod pharetra a ultricies <br />in diam. Sed arcu. Cras consequat</p>
-                                      <p className="mb-2">Sed pretium, ligula sollicitudin laoreet viverra, tortor libero sodales leo, eget blandit nunc tortor eu nibh. Suspendisse potenti. Sed egestas, ante et vulputate volutpat, uctus metus libero eu augue. </p>
-      
-                                      <a href="blog.html" className="btn btn-sm btn-minwidth btn-outline-primary-2">
-                                          <span>VIEW OUR NEWS</span>
-                                          <i className="icon-long-arrow-right"></i>
-                                      </a>
-                                  </div>
-      
-                                  <div className="col-lg-6 offset-lg-1">
-                                      <div className="about-images">
-                                          <img src="/assets/images/about/img-1.jpg" alt="" className="about-img-front" />
-                                          <img src="/assets/images/about/img-2.jpg" alt="" className="about-img-back" />
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-      
-                      <div className="container">
-                          <div className="row">
-                              <div className="col-lg-5">
-                                  <div className="brands-text">
-                                      <h2 className="title">The world&apos;s premium design brands in one destination.</h2>
-                                      <p>Phasellus hendrerit. Pellentesque aliquet nibh nec urna. In nisi neque, aliquet vel, dapibus id, mattis vel, nis</p>
-                                  </div>
-                              </div>
-                              <div className="col-lg-7">
-                                  <div className="brands-display">
-                                      <div className="row justify-content-center">
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/1.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/2.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/3.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/4.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/5.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/6.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/7.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/8.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-      
-                                          <div className="col-6 col-sm-4">
-                                              <a href="#" className="brand">
-                                                  <img src="/assets/images/brands/9.png" alt="Brand Name" />
-                                              </a>
-                                          </div>
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-      
-                          <hr className="mt-4 mb-6" />
-      
-                          <h2 className="title text-center mb-4">Meet Our Team</h2>
-      
-                          <div className="row">
-                              <div className="col-md-4">
-                                  <div className="member member-anim text-center">
-                                      <figure className="member-media">
-                                          <img src="/assets/images/team/member-1.jpg" alt="member photo" />
-      
-                                          <figcaption className="member-overlay">
-                                              <div className="member-overlay-content">
-                                                  <h3 className="member-title">Samanta Grey<span>Founder & CEO</span></h3>
-                                                  <p>Sed pretium, ligula sollicitudin viverra, tortor libero sodales leo, eget blandit nunc.</p> 
-                                                  <div className="social-icons social-icons-simple">
-                                                      <a href="#" className="social-icon" title="Facebook" target="_blank"><i className="icon-facebook-f"></i></a>
-                                                      <a href="#" className="social-icon" title="Twitter" target="_blank"><i className="icon-twitter"></i></a>
-                                                      <a href="#" className="social-icon" title="Instagram" target="_blank"><i className="icon-instagram"></i></a>
-                                                  </div>
-                                              </div>
-                                          </figcaption>
-                                      </figure>
-                                      <div className="member-content">
-                                          <h3 className="member-title">Samanta Grey<span>Founder & CEO</span></h3>
-                                      </div>
-                                  </div>
-                              </div>
-      
-                              <div className="col-md-4">
-                                  <div className="member member-anim text-center">
-                                      <figure className="member-media">
-                                          <img src="/assets/images/team/member-2.jpg" alt="member photo" />
-      
-                                          <figcaption className="member-overlay">
-                                              <div className="member-overlay-content">
-                                                  <h3 className="member-title">Bruce Sutton<span>Sales & Marketing Manager</span></h3>
-                                                  <p>Sed pretium, ligula sollicitudin viverra, tortor libero sodales leo, eget blandit nunc.</p> 
-                                                  <div className="social-icons social-icons-simple">
-                                                      <a href="#" className="social-icon" title="Facebook" target="_blank"><i className="icon-facebook-f"></i></a>
-                                                      <a href="#" className="social-icon" title="Twitter" target="_blank"><i className="icon-twitter"></i></a>
-                                                      <a href="#" className="social-icon" title="Instagram" target="_blank"><i className="icon-instagram"></i></a>
-                                                  </div>
-                                              </div>
-                                          </figcaption>
-                                      </figure>
-                                      <div className="member-content">
-                                          <h3 className="member-title">Bruce Sutton<span>Sales & Marketing Manager</span></h3>
-                                      </div>
-                                  </div>
-                              </div>
-      
-                              <div className="col-md-4">
-                                  <div className="member member-anim text-center">
-                                      <figure className="member-media">
-                                          <img src="/assets/images/team/member-3.jpg" alt="member photo" />
-      
-                                          <figcaption className="member-overlay">
-                                              <div className="member-overlay-content">
-                                                  <h3 className="member-title">Janet Joy<span>Product Manager</span></h3>
-                                                  <p>Sed pretium, ligula sollicitudin viverra, tortor libero sodales leo, eget blandit nunc.</p> 
-                                                  <div className="social-icons social-icons-simple">
-                                                      <a href="#" className="social-icon" title="Facebook" target="_blank"><i className="icon-facebook-f"></i></a>
-                                                      <a href="#" className="social-icon" title="Twitter" target="_blank"><i className="icon-twitter"></i></a>
-                                                      <a href="#" className="social-icon" title="Instagram" target="_blank"><i className="icon-instagram"></i></a>
-                                                  </div>
-                                              </div>
-                                          </figcaption>
-                                      </figure>
-                                      <div className="member-content">
-                                          <h3 className="member-title">Janet Joy<span>Product Manager</span></h3>
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-      
-                      <div className="mb-2"></div>
-      
-                      <div className="about-testimonials bg-light-2 pt-6 pb-6">
-                          <div className="container">
-                              <h2 className="title text-center mb-3">What Customer Say About Us</h2>
-      
-                              <div className="owl-carousel owl-simple owl-testimonials-photo" data-toggle="owl" 
-                                  data-owl-options='{
-                                      "nav": false, 
-                                      "dots": true,
-                                      "margin": 20,
-                                      "loop": false,
-                                      "responsive": {
-                                          "1200": {
-                                              "nav": true
-                                          }
-                                      }
-                                  }'>
-                                  <blockquote className="testimonial text-center">
-                                      <img src="/assets/images/testimonials/user-1.jpg" alt="user" />
-                                      <p>“ Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Pellentesque aliquet nibh nec urna. <br />In nisi neque, aliquet vel, dapibus id, mattis vel, nisi. Sed pretium, ligula sollicitudin laoreet viverra, tortor libero sodales leo, eget blandit nunc tortor eu nibh. Nullam mollis. Ut justo. Suspendisse potenti. ”</p>
-                                      <cite>
-                                          Jenson Gregory
-                                          <span>Customer</span>
-                                      </cite>
-                                  </blockquote>
-      
-                                  <blockquote className="testimonial text-center">
-                                      <img src="/assets/images/testimonials/user-2.jpg" alt="user" />
-                                      <p>“ Impedit, ratione sequi, sunt incidunt magnam et. Delectus obcaecati optio eius error libero perferendis nesciunt atque dolores magni recusandae! Doloremque quidem error eum quis similique doloribus natus qui ut ipsum.Velit quos ipsa exercitationem, vel unde obcaecati impedit eveniet non. ”</p>
-      
-                                      <cite>
-                                          Victoria Ventura
-                                          <span>Customer</span>
-                                      </cite>
-                                  </blockquote>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
+    <main className="main info-page about-page">
+      <section className="info-page__hero info-page__hero--image">
+        <Image
+          src="/assets/images/demos/demo-28/intro-slider/1.jpg"
+          alt="Fresh surplus food ready for a local pickup"
+          fill
+          priority
+          sizes="100vw"
+        />
+        <div className="info-page__hero-overlay"></div>
+        <div className="container info-page__hero-content">
+          <p className="info-page__eyebrow">About StealDeals</p>
+          <h1>Good food deserves another chance</h1>
+          <p>We connect local stores with buyers who want affordable food and a more responsible way to shop.</p>
+        </div>
+      </section>
+
+      <nav aria-label="Breadcrumb" className="breadcrumb-nav border-0 mb-0">
+        <div className="container">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item"><Link href="/">Home</Link></li>
+            <li className="breadcrumb-item active" aria-current="page">About us</li>
+          </ol>
+        </div>
+      </nav>
+
+      <div className="page-content">
+        <section className="about-page__intro container">
+          <div>
+            <p className="info-page__eyebrow">Our purpose</p>
+            <h2>A simpler way to rescue surplus food</h2>
+            <p>
+              StealDeals is a food rescue marketplace for local stores and nearby buyers. Stores list
+              surprise bags from their daily surplus, and buyers reserve them for pickup at a lower price.
+            </p>
+            <p>
+              The contents may be a surprise, but the important details are clear: what category the bag
+              belongs to, how much it costs, when it can be collected, and how many are available.
+            </p>
+            <Link href="/products" className="btn btn-primary">
+              Browse surprise bags
+              <i className="icon-long-arrow-right" aria-hidden="true"></i>
+            </Link>
+          </div>
+          <figure className="about-page__intro-image">
+            <Image
+              src="/assets/images/demos/demo-28/blog/1.jpg"
+              alt="A shared meal made with fresh food"
+              width={720}
+              height={520}
+              sizes="(max-width: 991px) 100vw, 50vw"
+            />
+          </figure>
+        </section>
+
+        <section className="about-page__principles" aria-labelledby="principles-title">
+          <div className="container">
+            <div className="about-page__section-heading">
+              <p className="info-page__eyebrow">What guides us</p>
+              <h2 id="principles-title">Better for buyers, stores, and communities</h2>
+            </div>
+            <div className="about-page__principle-grid">
+              {principles.map((principle) => (
+                <article className="about-page__principle" key={principle.number}>
+                  <span>{principle.number}</span>
+                  <h3>{principle.title}</h3>
+                  <p>{principle.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="about-page__steps container" aria-labelledby="steps-title">
+          <div className="about-page__steps-image">
+            <Image
+              src="/assets/images/demos/demo-28/blog/2.jpg"
+              alt="Fresh baked food prepared for customers"
+              width={720}
+              height={520}
+              sizes="(max-width: 991px) 100vw, 50vw"
+            />
+          </div>
+          <div>
+            <p className="info-page__eyebrow">How it works</p>
+            <h2 id="steps-title">From surplus to pickup in three steps</h2>
+            <ol className="about-page__step-list">
+              <li><strong>Find a bag.</strong> Browse nearby stores and filter by food category, pickup time, or price.</li>
+              <li><strong>Reserve your order.</strong> Choose the quantity you want and complete checkout.</li>
+              <li><strong>Collect locally.</strong> Bring your order confirmation and pick up during the displayed window.</li>
+            </ol>
+          </div>
+        </section>
+
+        <section className="info-page__cta container" aria-labelledby="about-cta-title">
+          <div>
+            <p className="info-page__eyebrow">Join the movement</p>
+            <h2 id="about-cta-title">Small pickups can make a real difference</h2>
+            <p>Discover a nearby bag or learn how your store can take part.</p>
+          </div>
+          <div className="about-page__cta-actions">
+            <Link href="/products" className="btn btn-primary">Find food</Link>
+            <Link href="/contact" className="btn btn-outline-primary-2">Contact us</Link>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

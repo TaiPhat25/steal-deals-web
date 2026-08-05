@@ -158,7 +158,7 @@ export default function MobileMenu() {
                 </ul> */}
               </li>
               <li>
-                <Link href="/stores/morning-oven-bakery">Shop</Link>
+                <Link href="/stores">Stores</Link>
                 {/* <ul>
                   <li>
                     <a href="product.html">Default</a>

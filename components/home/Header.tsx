@@ -1,7 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { surpriseBags } from "@/components/products/product-listing-data";
+
+const headerCartSlugs = [
+  "bakery-breakfast-box",
+  "bakery-mix-bag",
+  "fresh-produce-box",
+];
+
+const headerCartItems = headerCartSlugs.flatMap((slug) => {
+  const bag = surpriseBags.find((item) => item.slug === slug);
+  return bag ? [bag] : [];
+});
+
+const headerCartTotal = headerCartItems.reduce((total, bag) => total + bag.salePrice, 0);
+
+function formatHeaderPrice(value: number) {
+  return `${value.toLocaleString("en-US")} VND`;
+}
 
 export default function Header() {
   const { currentUser, isAuthenticated, logout } = useAuth();
@@ -697,7 +716,7 @@ export default function Header() {
                     </div> */}
                   </li>
                   <li>
-                    <Link href="/stores/morning-oven-bakery">Shop</Link>
+                    <Link href="/stores">Stores</Link>
                     {/* <div className="megamenu megamenu-sm">
                       <div className="row no-gutters">
                         <div className="col-md-6">
@@ -952,12 +971,15 @@ export default function Header() {
                 </form>
               </div>
 
+              {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
+              {/*
               <a href="/wishlist" className="wishlist-link">
                 <div className="icon position-relative">
                   <i className="icon-heart-o"></i>
                   <span className="wishlist-count">3</span>
                 </div>
               </a>
+              */}
 
               <div className="dropdown cart-dropdown">
                 <a
@@ -971,70 +993,43 @@ export default function Header() {
                 >
                   <div className="icon position-relative">
                     <i className="icon-shopping-cart"></i>
-                    <span className="cart-count">2</span>
+                    <span className="cart-count">{headerCartItems.length}</span>
                   </div>
-                  <span className="cart-txt font-weight-normal">$0.00</span>
+                  <span className="cart-txt font-weight-normal">{formatHeaderPrice(headerCartTotal)}</span>
                 </a>
 
                 <div className="dropdown-menu dropdown-menu-right">
                   <div className="dropdown-cart-products">
-                    <div className="product mb-0 rounded-0 w-100">
-                      <div className="product-cart-details">
-                        <h4 className="product-title overflow-hidden letter-spacing-normal">
-                          <a href="product.html">
-                            Beige knitted elastic runner shoes
-                          </a>
-                        </h4>
+                    {headerCartItems.map((bag) => (
+                      <div className="product mb-0 rounded-0 w-100" key={bag.slug}>
+                        <div className="product-cart-details">
+                          <h4 className="product-title overflow-hidden letter-spacing-normal">
+                            <Link href={`/product?bag=${encodeURIComponent(bag.slug)}`}>
+                              {bag.name}
+                            </Link>
+                          </h4>
 
-                        <span className="cart-product-info">
-                          <span className="cart-product-qty">1</span>x $84.00
-                        </span>
+                          <span className="cart-product-info">
+                            <span className="cart-product-qty">1</span>x {formatHeaderPrice(bag.salePrice)}
+                          </span>
+                        </div>
+
+                        <figure className="product-image-container">
+                          <Link
+                            href={`/product?bag=${encodeURIComponent(bag.slug)}`}
+                            className="product-image"
+                          >
+                            <Image src={bag.imageSrc} width={80} height={80} alt={bag.imageAlt} />
+                          </Link>
+                        </figure>
                       </div>
-
-                      <figure className="product-image-container">
-                        <a href="product.html" className="product-image">
-                          <img
-                            src="/assets/images/products/cart/product-1.jpg"
-                            alt="product mb-0 rounded-0 w-100"
-                          />
-                        </a>
-                      </figure>
-                      <a href="#" className="btn-remove" title="Remove Product">
-                        <i className="icon-close"></i>
-                      </a>
-                    </div>
-
-                    <div className="product mb-0 rounded-0 w-100">
-                      <div className="product-cart-details">
-                        <h4 className="product-title overflow-hidden letter-spacing-normal">
-                          <a href="product.html">
-                            Blue utility pinafore denim dress
-                          </a>
-                        </h4>
-
-                        <span className="cart-product-info">
-                          <span className="cart-product-qty">1</span>x $76.00
-                        </span>
-                      </div>
-
-                      <figure className="product-image-container">
-                        <a href="product.html" className="product-image">
-                          <img
-                            src="/assets/images/products/cart/product-2.jpg"
-                            alt="product mb-0 rounded-0 w-100"
-                          />
-                        </a>
-                      </figure>
-                      <a href="#" className="btn-remove" title="Remove Product">
-                        <i className="icon-close"></i>
-                      </a>
-                    </div>
+                    ))}
                   </div>
 
                   <div className="dropdown-cart-total">
                     <span>Total</span>
 
-                    <span className="cart-total-price">$160.00</span>
+                    <span className="cart-total-price">{formatHeaderPrice(headerCartTotal)}</span>
                   </div>
 
                   <div className="dropdown-cart-action">
