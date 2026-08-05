@@ -472,9 +472,19 @@ The active storefront still uses `public/assets`. Current notable state:
 - `public` contains 629 files and approximately 22.5 MB.
 - `public/assets/images/demos/demo-28` contains the active home assets.
 - `public/assets/images/demos/demo-26/logo-footer.png` was retained, although
-  the image-based footer logo is currently commented in favor of text.
+  it is still referenced by the current footer implementation.
 - `public/assets/images/menu/demos` was retained because the commented demo
   chooser still references those screenshots.
+- The asset audit moved 344 unused or legacy template assets into
+  `remove-later/assets`, preserving their original `public/assets` path
+  structure. This includes old Molla page-image folders, unused demo and skin
+  stylesheets, unused demo/helper scripts, Font Awesome, Flaming fonts, and
+  unused standalone images.
+- Assets referenced only by intentionally retained commented code were left in
+  `public/assets`, including the menu screenshots, newsletter popup images, and
+  wishlist/product template images.
+- The remaining 283 files in `public/assets` are the active storefront assets,
+  CSS/JS dependencies, and intentionally retained commented-code assets.
 - Nineteen category-only fashion images (approximately 115 KB) were removed
   after their source references were replaced. The remaining product-detail,
   cart, wishlist, and header fashion assets stay until those screens are adapted.
