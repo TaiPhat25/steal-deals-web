@@ -299,10 +299,16 @@ rating, bag-count, or name sorting. Store cards link to `/stores/[id]` and use
 larger listing-specific typography for scanning store details.
 
 `/stores/[id]` renders the selected store profile, active surprise bags, and
-reviews. Unknown store IDs return `404`.
+reviews. Store bag cards map backend-shaped bag records to the shared listing
+slugs so product and cart links remain compatible. Category names are normalized
+for the current listing data, and the local store profiles include the same
+active bags shown by the marketplace. Joined and Status now share a single
+bottom divider in the store information grid without duplicating the next row.
+Unknown store IDs return `404`.
 
 Product and store links now use `/products`, `/stores`, `/stores/[id]`, and
-`/product?bag=`. The old `/category` route was removed because `/products` is
+`/products?store=`, and `/product?bag=`. Store detail marketplace links use the
+same store slug filter as the listing page. The old `/category` route was removed because `/products` is
 now the single marketplace listing route. Filters are not
 written back to the URL and no catalog API is connected yet.
 

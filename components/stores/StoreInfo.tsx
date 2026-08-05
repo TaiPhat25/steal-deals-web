@@ -13,7 +13,9 @@ function formatCoordinate(value: number) {
 }
 
 export default function StoreInfo({ store }: { store: StoreProfile }) {
-  const productCount = store.surpriseBags.length;
+  const productCount = store.surpriseBags.filter(
+    (bag) => bag.status === "Active" && bag.quantityRemaining > 0,
+  ).length;
   const reviewCount = store.storeReviews.length;
 
   return (
@@ -51,11 +53,11 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
                   <dd>{store.phone}</dd>
                 </div>
               ) : null}
-              <div>
+              <div className="store-info__details-item--bordered">
                 <dt>Joined</dt>
                 <dd>{formatDate(store.createdAt)}</dd>
               </div>
-              <div>
+              <div className="store-info__details-item--bordered store-info__details-item--row-end">
                 <dt>Status</dt>
                 <dd>{store.isActive ? "Active" : "Inactive"}</dd>
               </div>

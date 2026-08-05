@@ -814,6 +814,15 @@ img {
   border-top: 1px solid #e5e5e5;
 }
 
+.store-info__details-item--bordered {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.store-info__details-item--row-end + div {
+  border-top: 0;
+}
+
 .store-info__details dt {
   color: #777;
   font-weight: 400;
@@ -902,17 +911,20 @@ img {
   font-size: 1.3rem;
 }
 
-.store-products__empty {
+.store-products__empty,
+.store-reviews__empty {
   padding: 4rem 2rem;
   background: #f7f7f7;
   text-align: center;
 }
 
-.store-products__empty h3 {
+.store-products__empty h3,
+.store-reviews__empty h3 {
   margin-bottom: 0.75rem;
 }
 
-.store-products__empty p {
+.store-products__empty p,
+.store-reviews__empty p {
   margin-bottom: 0;
   color: #777;
 }

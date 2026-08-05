@@ -62,7 +62,7 @@ export default async function StoreDetailPage({ params }: StoreDetailPageProps) 
               <Link href="/">Home</Link>
             </li>
             <li className="breadcrumb-item">
-              <Link href="/products">Surprise Bags</Link>
+              <Link href="/stores">Stores</Link>
             </li>
             <li className="breadcrumb-item active" aria-current="page">
               {store.name}
