@@ -633,13 +633,13 @@ export default function AdminSupport() {
               </p>
             </section>
             {activeReport.targetType === "Store" && (
-              <Link className="font-semibold text-primary hover:underline" href="/admin/sellers">
-                Open Seller Accounts to moderate this store
+              <Link className="font-semibold text-primary hover:underline" href="/admin/sellers?tab=stores">
+                Open Seller Management to moderate this store
               </Link>
             )}
             {activeReport.targetType === "User" && (
-              <Link className="font-semibold text-primary hover:underline" href="/admin/users">
-                Open User Accounts to review this user
+              <Link className="font-semibold text-primary hover:underline" href="/admin/buyers">
+                Open Buyer Management to review this user
               </Link>
             )}
             {activeReport.targetType === "Food listing" && (

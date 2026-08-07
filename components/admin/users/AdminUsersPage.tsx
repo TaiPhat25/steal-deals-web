@@ -23,6 +23,14 @@ import type {
 const ROLES: AdminRole[] = ["Customer", "Seller", "Admin"];
 const PAGE_SIZES = [10, 20, 50] as const;
 
+type AdminUsersPageProps = {
+  basePath?: string;
+  baseQuery?: string;
+  fixedRole?: AdminRole;
+  notice?: string;
+  title?: string;
+};
+
 function positiveInteger(value: string | null, fallback: number) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
@@ -53,7 +61,13 @@ function loadErrorMessage(error: unknown) {
   return "Unable to load users. Check that Identity Service is available and try again.";
 }
 
-export default function AdminUsersPage() {
+export default function AdminUsersPage({
+  basePath = "/admin/users",
+  baseQuery = "",
+  fixedRole,
+  notice,
+  title = "User accounts",
+}: AdminUsersPageProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryString = searchParams.toString();
@@ -76,7 +90,7 @@ export default function AdminUsersPage() {
 
   const search = searchParams.get("search")?.trim() ?? "";
   const rawRole = searchParams.get("role");
-  const role = ROLES.includes(rawRole as AdminRole) ? (rawRole as AdminRole) : "";
+  const role = fixedRole ?? (ROLES.includes(rawRole as AdminRole) ? (rawRole as AdminRole) : "");
   const rawStatus = searchParams.get("status");
   const status = rawStatus === "active" || rawStatus === "inactive" ? rawStatus : "";
   const page = positiveInteger(searchParams.get("page"), 1);
@@ -96,9 +110,9 @@ export default function AdminUsersPage() {
         }
       }
       const next = params.toString();
-      router.replace(next ? `/admin/users?${next}` : "/admin/users", { scroll: false });
+      router.replace(next ? `${basePath}?${next}` : basePath, { scroll: false });
     },
-    [queryString, router],
+    [basePath, queryString, router],
   );
 
   useEffect(() => {
@@ -192,7 +206,8 @@ export default function AdminUsersPage() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
-  const hasFilters = Boolean(search || role || status);
+  const clearHref = baseQuery ? `${basePath}?${baseQuery}` : basePath;
+  const hasFilters = Boolean(search || !fixedRole && role || status);
   const currentPage = result?.page ?? page;
   const totalPages = result?.totalPages ?? 0;
   const rangeLabel = useMemo(() => {
@@ -276,12 +291,18 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      {notice && (
+        <p className="mb-4 rounded-xl bg-warning/15 px-4 py-3 text-sm text-warning-dark">
+          {notice}
+        </p>
+      )}
+
       <DashboardCard className="w-full overflow-hidden">
         <div className="p-4 sm:p-6 pb-4">
           <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">Identity Service</p>
-              <h1 className="text-xl font-bold text-light-primary-text">User accounts</h1>
+              <h1 className="text-xl font-bold text-light-primary-text">{title}</h1>
             </div>
             <DashboardButton
               ref={createButtonRef}
@@ -305,23 +326,25 @@ export default function AdminUsersPage() {
               />
             </div>
             <div className="flex items-center" style={{ display: "flex", flexWrap: "nowrap", flexShrink: 0, gap: "12px", alignItems: "center" }}>
-              <div style={{ flexShrink: 0 }}>
-                <label htmlFor="role-filter" className="sr-only">Filter by role</label>
-                <select id="role-filter" value={role} onChange={(event) => updateQuery({ role: event.target.value || null, page: null })} className="h-9 ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary" style={{ minWidth: "120px" }}>
-                  <option value="">All roles</option>
-                  {ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
-                </select>
-              </div>
+              {!fixedRole && (
+                <div style={{ flexShrink: 0 }}>
+                  <label htmlFor="role-filter" className="sr-only">Filter by role</label>
+                  <select id="role-filter" value={role} onChange={(event) => updateQuery({ role: event.target.value || null, page: null })} className="h-9 ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary" style={{ minWidth: "120px" }}>
+                    <option value="">All roles</option>
+                    {ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </div>
+              )}
               <div style={{ flexShrink: 0 }}>
                 <label htmlFor="status-filter" className="sr-only">Filter by account status</label>
                 <select id="status-filter" value={status} onChange={(event) => updateQuery({ status: event.target.value || null, page: null })} className="h-9 ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary" style={{ minWidth: "140px" }}>
                   <option value="">All statuses</option>
                   <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="inactive">Disabled</option>
                 </select>
               </div>
               {hasFilters && (
-                <button type="button" onClick={() => { setSearchInput(""); router.replace("/admin/users", { scroll: false }); }} className="h-9 px-3 rounded-full text-sm font-semibold text-primary hover:bg-primary-lighter" style={{ flexShrink: 0 }}>Clear filters</button>
+                <button type="button" onClick={() => { setSearchInput(""); router.replace(clearHref, { scroll: false }); }} className="h-9 px-3 rounded-full text-sm font-semibold text-primary hover:bg-primary-lighter" style={{ flexShrink: 0 }}>Clear filters</button>
               )}
             </div>
           </div>
@@ -350,15 +373,16 @@ export default function AdminUsersPage() {
             <div className="mx-auto size-12 rounded-full bg-primary-lighter text-primary-dark flex items-center justify-center text-xl" aria-hidden="true">◎</div>
             <h2 className="mt-4 font-bold text-light-primary-text">{hasFilters ? "No matching users" : "No users yet"}</h2>
             <p className="mt-2 text-sm text-light-secondary-text">{hasFilters ? "Try changing or clearing the current filters." : "Create the first Identity user from this panel."}</p>
-            {hasFilters && <button type="button" onClick={() => { setSearchInput(""); router.replace("/admin/users", { scroll: false }); }} className="mt-5 h-9 px-5 rounded-full ring ring-gray-500/20 text-primary text-sm font-bold hover:bg-gray-100">Clear filters</button>}
+            {hasFilters && <button type="button" onClick={() => { setSearchInput(""); router.replace(clearHref, { scroll: false }); }} className="mt-5 h-9 px-5 rounded-full ring ring-gray-500/20 text-primary text-sm font-bold hover:bg-gray-100">Clear filters</button>}
           </div>
         ) : (
           <div className="overflow-x-auto border-t border-gray-500/20">
             <table className="w-full caption-bottom text-sm">
               <thead>
                 <tr className="bg-gray-100 border-b border-gray-500/20">
-                  <th className="h-12 p-3 pl-5 text-left text-light-primary-text text-sm font-semibold">ID</th>
+                  <th className="h-12 p-3 pl-5 text-left text-light-primary-text text-sm font-semibold">No.</th>
                   <th className="h-12 p-3 text-left text-light-primary-text text-sm font-semibold">User</th>
+                  <th className="h-12 p-3 text-left text-light-primary-text text-sm font-semibold">Phone</th>
                   <th className="h-12 p-3 text-left text-light-primary-text text-sm font-semibold">Roles</th>
                   <th className="h-12 p-3 text-left text-light-primary-text text-sm font-semibold">Created</th>
                   <th className="h-12 p-3 text-left text-light-primary-text text-sm font-semibold">Email</th>
@@ -367,11 +391,11 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {result?.items.map((user) => {
+                {result?.items.map((user, index) => {
                   const isCurrentAdmin = user.id === effectiveCurrentAdminId;
                   return (
                     <tr key={user.id} className="border-b last:border-0 border-gray-500/20 hover:bg-gray-50/50">
-                      <td className="px-3 py-3.5 pl-5 whitespace-nowrap text-xs text-light-secondary-text font-mono" title={user.id}>#{user.id.slice(0, 8)}</td>
+                      <td className="px-3 py-3.5 pl-5 whitespace-nowrap text-light-secondary-text">{(currentPage - 1) * pageSize + index + 1}</td>
                       <td className="px-3 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <Avatar name={user.fullName} />
@@ -381,6 +405,7 @@ export default function AdminUsersPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-3 py-3.5 whitespace-nowrap text-sm text-light-primary-text">{user.phone ?? "No phone"}</td>
                       <td className="px-3 py-3.5 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {user.roles.map((item) => <span key={item} className={`px-2 py-1 inline-flex rounded-full text-xs font-medium ${roleClass(item)}`}>{item}</span>)}
@@ -447,6 +472,7 @@ export default function AdminUsersPage() {
           accessToken={accessToken ?? ""}
           demoMode={demoMode}
           currentAdminId={effectiveCurrentAdminId}
+          initialRole={fixedRole}
           onClose={closeDrawer}
           onSaved={handleSaved}
         />

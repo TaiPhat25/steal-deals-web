@@ -36,8 +36,9 @@ const navigation: Record<
     brand: "StealDeal Admin",
     items: [
       { label: "Dashboard", href: "/admin", icon: "dashboard" },
-      { label: "User Accounts", href: "/admin/users", icon: "users" },
-      { label: "Seller Accounts", href: "/admin/sellers", icon: "sellers" },
+      { label: "Buyer Management", href: "/admin/buyers", icon: "users" },
+      { label: "Seller Management", href: "/admin/sellers", icon: "sellers" },
+      { label: "Admin Management", href: "/admin/admins", icon: "users" },
       { label: "Food Categories", href: "/admin/categories", icon: "categories" },
       { label: "Support & Reports", href: "/admin/support", icon: "support" },
     ],
@@ -268,7 +269,7 @@ function Header({
             <Avatar name="John Smith" size="sm" />
             <span className="hidden text-left md:block">
               <span className="block font-semibold">John Smith</span>
-              <span className="block text-xs text-gray-500">{seller ? "Store Owner" : "Administrator"}</span>
+              <span className="block text-xs text-gray-500" title={seller ? undefined : "Frontend role code: SuperAdmin"}>{seller ? "Store Owner" : "Super Admin"}</span>
             </span>
             <span aria-hidden="true">⌄</span>
           </button>

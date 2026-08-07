@@ -26,6 +26,7 @@ type UserDrawerProps = {
   accessToken: string;
   demoMode: boolean;
   currentAdminId: string;
+  initialRole?: AdminRole;
   onClose: () => void;
   onSaved: (message: string) => void;
 };
@@ -40,6 +41,7 @@ export default function UserDrawer({
   accessToken,
   demoMode,
   currentAdminId,
+  initialRole,
   onClose,
   onSaved,
 }: UserDrawerProps) {
@@ -50,7 +52,7 @@ export default function UserDrawer({
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [roles, setRoles] = useState<AdminRole[]>(["Customer"]);
+  const [roles, setRoles] = useState<AdminRole[]>([initialRole ?? "Customer"]);
   const [loading, setLoading] = useState(mode === "edit");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
