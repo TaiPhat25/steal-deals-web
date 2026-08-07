@@ -28,8 +28,15 @@ foundation. The storefront was deliberately left untouched.
 
 The admin routes now behave as a usable prototype instead of a static theme:
 
-- `/admin/users` remains the Identity Service CRUD screen when the API is
-  reachable. A network-level fetch failure activates an in-memory fallback with
+- `/admin/buyers`, `/admin/sellers`, and `/admin/admins` are the three account
+  management destinations. Buyers and admins reuse the Identity Service CRUD
+  screen with a fixed role filter; Seller Management adds Seller accounts to
+  its existing Stores and future Applications/contracts tabs. `/admin/users`
+  remains available as the unfiltered Identity screen but is no longer in the
+  sidebar. The header presents `SuperAdmin` as a frontend-only role; the API
+  still receives only the current backend roles.
+- Identity management uses the real API when it is reachable. A network-level
+  fetch failure activates an in-memory fallback with
   backend-shaped user fields, filtering, pagination, details, create/edit, and
   delete behavior. The page displays a Demo data banner and API retry action.
   Authentication, authorization, validation, and other HTTP errors never
@@ -38,7 +45,7 @@ The admin routes now behave as a usable prototype instead of a static theme:
   pagination, selection, create/edit, unique name/slug validation, and
   confirmed deletion. Its dummy records now use the backend
   category fields: `id`, `name`, `slug`, `iconUrl`, and `isActive`.
-- `/admin/sellers` is the Seller Accounts workspace. Its Stores tab uses the
+- `/admin/sellers` is the Seller Management workspace. Its Stores tab uses the
   backend store-profile fields and provides local search, details, verification,
   and active-state toggling. Its Applications tab retains the searchable seller
   onboarding review, approval, and reasoned rejection flow, but is visibly
@@ -48,7 +55,7 @@ The admin routes now behave as a usable prototype instead of a static theme:
   resolve/reopen actions. Reports cover food listings, stores, and users with
   target details and Open, Reviewing, Actioned, and Dismissed transitions.
 - The former `/admin/customers` and `/admin/inbox` routes were removed.
-  Customer identities remain available through `/admin/users`; support
+  Customer identities remain available through `/admin/buyers`; support
   conversations now stay attached to their tickets instead of a separate admin
   chat inbox.
 - `/admin` uses four period-aware summary blocks with a per-day/per-month
@@ -57,6 +64,8 @@ The admin routes now behave as a usable prototype instead of a static theme:
   future-only dummy data. Order status and recent-order dummy data use backend
   field names, snapshot fields, UUID-shaped IDs, ISO timestamps, VND amounts,
   and current backend-created/handled status spellings.
+- GUIDs remain record keys and mutation identifiers, but account, store, and
+  recent-order tables display page-aware row numbers instead.
 
 Admin prototype data resets on refresh. Categories, sellers, support, and
 overview records remain page-local; the overview's pending-seller summary does
@@ -190,7 +199,7 @@ npm.cmd run build
 ```
 
 At this handoff all three commands pass. All application routes build,
-including the 14 admin/seller routes. The generated dashboard CSS is about 46
+including the 16 admin/seller routes. The generated dashboard CSS is about 46
 KB, down from two copied 100 KB stylesheets, and dashboard public assets total
 about 4 KB instead of 1.96 MB across 370 files.
 
