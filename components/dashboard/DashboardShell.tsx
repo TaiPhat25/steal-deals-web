@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { Avatar } from "./ui";
 
 export type DashboardRole = "admin" | "seller";
@@ -17,7 +18,9 @@ type IconName =
   | "orders"
   | "reviews"
   | "settings"
-  | "inbox";
+  | "inbox"
+  | "language"
+  | "notifications";
 
 type NavItem = {
   label: string;
@@ -71,6 +74,8 @@ const iconPaths: Record<IconName, string> = {
   settings:
     "M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3.08 14H3v-4h.08A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 8.97 4.6 1.7 1.7 0 0 0 10 3.08V3h4v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9 1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15",
   inbox: "M4 5h16v12H8l-4 4zM8 9h8M8 13h5",
+  language: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M3 12h18M12 3c2.3 2.5 3.5 5.5 3.5 9s-1.2 6.5-3.5 9M12 3c-2.3 2.5-3.5 5.5-3.5 9s1.2 6.5 3.5 9",
+  notifications: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4",
 };
 
 function Icon({ name, className = "size-5.5" }: { name: IconName; className?: string }) {
@@ -178,12 +183,20 @@ function Header({
   role: DashboardRole;
   onToggleSidebar: () => void;
 }) {
-  const [openMenu, setOpenMenu] = useState<"language" | "notifications" | "profile" | null>(
+  const { isLoading, logout } = useAuth();
+  const [openMenu, setOpenMenu] = useState<"notifications" | "profile" | null>(
     null,
   );
   const seller = role === "seller";
   const toggle = (menu: NonNullable<typeof openMenu>) =>
     setOpenMenu((current) => (current === menu ? null : menu));
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      window.location.assign("/login");
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4 lg:px-6 xl:px-10">
@@ -201,28 +214,9 @@ function Header({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <div className="relative">
-          <button
-            aria-expanded={openMenu === "language"}
-            aria-label="Choose language"
-            className="flex items-center gap-1 rounded-full px-2 py-1 text-sm hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-primary"
-            onClick={() => toggle("language")}
-            type="button"
-          >
-            <span aria-hidden="true">🇬🇧</span>
-            <span className="hidden sm:inline">English</span>
-          </button>
-          {openMenu === "language" && (
-            <div className="absolute right-0 z-50 mt-2 w-36 rounded-lg border border-gray-100 bg-white p-1 shadow-lg">
-              <button
-                className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-gray-50"
-                onClick={() => setOpenMenu(null)}
-                type="button"
-              >
-                🇬🇧 English
-              </button>
-            </div>
-          )}
+        <div aria-label="Current language: English" className="flex items-center gap-1.5 px-2 py-1 text-sm">
+          <Icon className="size-4.5" name="language" />
+          <span className="hidden sm:inline">English</span>
         </div>
 
         {seller && (
@@ -246,7 +240,7 @@ function Header({
             onClick={() => toggle("notifications")}
             type="button"
           >
-            <span aria-hidden="true">♢</span>
+            <Icon className="size-5" name="notifications" />
             <span className="absolute right-0 top-0 flex size-4 items-center justify-center rounded-full bg-error text-[10px] font-bold text-white">
               8
             </span>
@@ -266,6 +260,7 @@ function Header({
         <div className="relative">
           <button
             aria-expanded={openMenu === "profile"}
+            aria-label="Open account menu"
             className="flex items-center gap-2 rounded-lg p-1 text-sm hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-primary"
             onClick={() => toggle("profile")}
             type="button"
@@ -273,39 +268,32 @@ function Header({
             <Avatar name="John Smith" size="sm" />
             <span className="hidden text-left md:block">
               <span className="block font-semibold">John Smith</span>
-              <span className="block text-xs text-gray-500">
-                {seller ? "Store Owner" : "Administrator"}
-              </span>
+              <span className="block text-xs text-gray-500">{seller ? "Store Owner" : "Administrator"}</span>
             </span>
             <span aria-hidden="true">⌄</span>
           </button>
           {openMenu === "profile" && (
             <div className="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-gray-100 bg-white p-1 text-sm shadow-lg">
-              <p className="border-b border-gray-100 px-3 py-2 text-xs text-gray-500">
-                {seller ? "Manage shop account" : "Manage account"}
-              </p>
-              {seller ? (
-                <Link
-                  className="block rounded-md px-3 py-2 hover:bg-gray-50"
-                  href="/seller/settings"
-                >
-                  Store profile
-                </Link>
-              ) : (
+              {seller && (
                 <>
-                  <button className="block w-full rounded-md px-3 py-2 text-left hover:bg-gray-50" type="button">
-                    Profile
-                  </button>
-                  <button className="block w-full rounded-md px-3 py-2 text-left hover:bg-gray-50" type="button">
-                    Settings
-                  </button>
+                  <p className="border-b border-gray-100 px-3 py-2 text-xs text-gray-500">
+                    Manage shop account
+                  </p>
+                  <Link
+                    className="block rounded-md px-3 py-2 hover:bg-gray-50"
+                    href="/seller/settings"
+                  >
+                    Store profile
+                  </Link>
                 </>
               )}
               <button
-                className="block w-full border-t border-gray-100 px-3 py-2 text-left text-error hover:bg-gray-50"
+                className={`block w-full px-3 py-2 text-left text-error hover:bg-gray-50 ${seller ? "border-t border-gray-100" : ""}`}
+                disabled={isLoading}
+                onClick={handleLogout}
                 type="button"
               >
-                Logout
+                {isLoading ? "Logging out…" : "Logout"}
               </button>
             </div>
           )}
