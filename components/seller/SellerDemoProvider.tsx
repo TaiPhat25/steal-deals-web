@@ -53,6 +53,14 @@ export const DEMO_CATEGORIES: CategoryResponse[] = [
 
 const STORE_ID = "20000000-0000-0000-0000-000000000001";
 
+export const DEMO_CUSTOMER_NAMES: Record<string, string> = {
+  "50000000-0000-0000-0000-000000000001": "Linh Nguyen",
+  "50000000-0000-0000-0000-000000000002": "Daniel Lee",
+  "50000000-0000-0000-0000-000000000003": "Mai Tran",
+  "50000000-0000-0000-0000-000000000004": "An Pham",
+  "50000000-0000-0000-0000-000000000005": "Huy Le",
+};
+
 const INITIAL_PRODUCTS: SurplusBag[] = [
   { id: "30000000-0000-0000-0000-000000000101", storeId: STORE_ID, storeName: "Steal Deals Shop", name: "Bakery Surprise Bag", description: "A mixed selection of breads and pastries left at closing.", originalPrice: 180000, salePrice: 60000, quantityTotal: 10, quantityRemaining: 6, pickupStartTime: "2026-07-30T17:30:00+07:00", pickupEndTime: "2026-07-30T18:30:00+07:00", expiryDate: "2026-07-30T23:59:00+07:00", status: "Active", categories: [DEMO_CATEGORIES[0]], createdAt: "2026-07-28T09:00:00+07:00" },
   { id: "30000000-0000-0000-0000-000000000102", storeId: STORE_ID, storeName: "Steal Deals Shop", name: "Fresh Lunch Bag", description: "Chef-selected lunch items prepared today.", originalPrice: 240000, salePrice: 80000, quantityTotal: 8, quantityRemaining: 3, pickupStartTime: "2026-07-30T14:00:00+07:00", pickupEndTime: "2026-07-30T15:00:00+07:00", expiryDate: "2026-07-30T18:00:00+07:00", status: "Active", categories: [DEMO_CATEGORIES[1]], createdAt: "2026-07-28T09:10:00+07:00" },

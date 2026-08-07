@@ -85,8 +85,9 @@ client-side navigation between seller routes but reset on refresh. There is no
 seller API client, browser storage, fake latency, or speculative
 request/response layer.
 
-- `/seller` derives four metrics, confirmed pickups, and recent orders from the
-  shared demo state. Pending orders can be confirmed from the overview.
+- `/seller` derives five metrics, including remaining units expiring today,
+  plus confirmed pickups and recent orders from the shared demo state. Pending
+  orders can be confirmed from the overview.
 - `/seller/products` manages surplus bags rather than generic ecommerce
   products. It provides local search/filter/pagination, selection and bulk
   status changes, quantity updates, deletion, and links to record-specific
@@ -105,7 +106,9 @@ request/response layer.
   statuses are limited to `Pending`, `Confirmed`,
   `InventoryReservationFailed`, `PaymentFailed`, and `Cancelled`. Order details
   allow the locally simulated `Pending` -> `Confirmed` transition or
-  cancellation.
+  cancellation. The demo list is FIFO by `createdAt`, displays page-aware row
+  numbers, and resolves customer names from an explicit demo-only ID map because
+  the current order response exposes only `userId`.
 - `/seller/settings` uses the current store profile/create/update fields,
   including address, phone, bank account, and license URL. Latitude and
   longitude remain in the demo record because the current backend request
