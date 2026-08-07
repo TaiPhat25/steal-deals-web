@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { use, useMemo, useState, type FormEvent } from "react";
 import { Avatar, DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast, DialogActions } from "@/components/dashboard/Dialog";
 import type { StoreProfileResponse } from "@/lib/api/dashboard-types";
@@ -38,8 +38,13 @@ const PAGE_SIZE = 4;
 const date = (value: string) => new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(value));
 const applicationTone = (status: ApplicationStatus) => status === "Approved" ? "success" : status === "Rejected" ? "error" : "warning";
 
-export default function AdminSellers() {
-  const [tab, setTab] = useState<SellerTab>("stores");
+export default function AdminSellers({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string | string[] }>;
+}) {
+  const requestedTab = use(searchParams).tab;
+  const [tab, setTab] = useState<SellerTab>(requestedTab === "applications" ? "applications" : "stores");
   const [stores, setStores] = useState(INITIAL_STORES);
   const [applications, setApplications] = useState(INITIAL_APPLICATIONS);
   const [search, setSearch] = useState("");
