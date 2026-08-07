@@ -13,6 +13,8 @@ const time = (value: string) => new Intl.DateTimeFormat("en", { hour: "2-digit",
 
 export default function SellerProducts() {
   const { products, setProducts } = useSellerDemo();
+  // ponytail: expiry refreshes on page load; add a timer only if sellers keep this screen open across expiry.
+  const [now] = useState(Date.now);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState<BagStatus | "">("");
@@ -76,7 +78,7 @@ export default function SellerProducts() {
               <td className="p-3"><strong>{money(product.salePrice)}</strong><span className="ml-2 text-xs text-light-secondary-text line-through">{money(product.originalPrice)}</span></td>
               <td className="p-3"><input type="number" min="0" max={product.quantityTotal} aria-label={`Remaining quantity for ${product.name}`} value={product.quantityRemaining} onChange={(event) => { const quantityRemaining = Math.min(product.quantityTotal, Math.max(0, Number(event.target.value))); setProducts((items) => items.map((item) => item.id === product.id ? { ...item, quantityRemaining, status: quantityRemaining === 0 ? "Sold out" : item.status === "Sold out" ? "Active" : item.status } : item)); }} className="h-8 w-16 rounded-lg border-none bg-gray-100 px-2 ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></td>
               <td className="p-3 whitespace-nowrap">{time(product.pickupStartTime)}–{time(product.pickupEndTime)}</td>
-              <td className="p-3"><StatusBadge tone={statusTone(product.status)}>{product.status}</StatusBadge></td>
+              <td className="p-3"><div className="flex flex-wrap gap-2"><StatusBadge tone={statusTone(product.status)}>{product.status}</StatusBadge>{Date.parse(product.expiryDate) < now && <StatusBadge tone="error">Expired</StatusBadge>}</div></td>
               <td className="p-3 pr-5 text-right whitespace-nowrap"><Link href={`/seller/products/details?id=${product.id}`} className="inline-flex h-8 items-center rounded-lg px-2 font-semibold text-primary hover:bg-primary-lighter">View</Link><Link href={`/seller/products/edit?id=${product.id}`} className="inline-flex h-8 items-center rounded-lg px-2 font-semibold text-primary hover:bg-primary-lighter">Edit</Link><button type="button" onClick={() => setDeleting(product)} className="h-8 rounded-lg px-2 font-semibold text-error-dark hover:bg-error-alpha-16">Delete</button></td>
             </tr>)}</tbody>
           </table>
