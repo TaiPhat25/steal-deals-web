@@ -19,8 +19,9 @@ foundation. The storefront was deliberately left untouched.
 - `components/dashboard/Dialog.tsx` contains the shared native dialog, action
   footer, and auto-dismissing toast used by the interactive admin screens.
 - Page files are Server Components unless they use state or navigation hooks.
-  The admin overview keeps its static metrics server-rendered and delegates the
-  interactive recent-orders table to
+  The admin overview stays server-rendered and delegates its interactive
+  day/month statistics control to
+  `components/admin/dashboard/Statistics.tsx` and its recent-orders table to
   `components/admin/dashboard/RecentOrders.tsx`.
 
 ## Admin functionality
@@ -50,17 +51,20 @@ The admin routes now behave as a usable prototype instead of a static theme:
   Customer identities remain available through `/admin/users`; support
   conversations now stay attached to their tickets instead of a separate admin
   chat inbox.
-- `/admin` now uses four useful summary blocks instead of eight repetitive
-  counters. Order status and recent-order dummy data use backend field names,
-  snapshot fields, UUID-shaped IDs, ISO timestamps, VND amounts, and current
-  backend-created/handled status spellings.
+- `/admin` uses four period-aware summary blocks with a per-day/per-month
+  switch. It also lists pending seller applications and links directly to
+  `/admin/sellers?tab=applications`; these onboarding records remain
+  future-only dummy data. Order status and recent-order dummy data use backend
+  field names, snapshot fields, UUID-shaped IDs, ISO timestamps, VND amounts,
+  and current backend-created/handled status spellings.
 
 Admin prototype data resets on refresh. Categories, sellers, support, and
-overview records remain page-local. User Accounts prefer the real API and use
-`lib/api/admin-demo.ts` only while Identity Service is unreachable. There is no
-browser storage or fake latency. When backend endpoints are stable, remove the
-fallback and replace the remaining page-local mutation handlers with API calls
-while retaining controls, dialogs, validation, and feedback.
+overview records remain page-local; the overview's pending-seller summary does
+not share state with the seller workspace. User Accounts prefer the real API
+and use `lib/api/admin-demo.ts` only while Identity Service is unreachable.
+There is no browser storage or fake latency. When backend endpoints are stable,
+remove the fallback and replace the remaining page-local mutation handlers with
+API calls while retaining controls, dialogs, validation, and feedback.
 
 ## Seller functionality
 
@@ -185,10 +189,10 @@ node --experimental-strip-types lib/api/admin-demo.test.mjs
 npm.cmd run build
 ```
 
-At this handoff both commands pass. All application routes build, including the
-14 admin/seller routes. The generated dashboard CSS is about 46 KB, down from
-two copied 100 KB stylesheets, and dashboard public assets total about 4 KB
-instead of 1.96 MB across 370 files.
+At this handoff all three commands pass. All application routes build,
+including the 14 admin/seller routes. The generated dashboard CSS is about 46
+KB, down from two copied 100 KB stylesheets, and dashboard public assets total
+about 4 KB instead of 1.96 MB across 370 files.
 
 ## Safe continuation points
 

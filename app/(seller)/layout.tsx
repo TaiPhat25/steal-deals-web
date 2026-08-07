@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AuthProvider from "@/components/auth/AuthProvider";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import SellerDemoProvider from "@/components/seller/SellerDemoProvider";
 import "../dashboard.css";
@@ -24,9 +25,11 @@ export default function SellerRootLayout({
         />
       </head>
       <body className="min-h-screen antialiased">
-        <SellerDemoProvider>
-          <DashboardShell role="seller">{children}</DashboardShell>
-        </SellerDemoProvider>
+        <AuthProvider>
+          <SellerDemoProvider>
+            <DashboardShell role="seller">{children}</DashboardShell>
+          </SellerDemoProvider>
+        </AuthProvider>
       </body>
     </html>
   );
