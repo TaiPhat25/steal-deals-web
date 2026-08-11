@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
-  DEMO_CATEGORIES,
   type BagStatus,
   type SurplusBag,
 } from "@/components/seller/SellerDemoProvider";
 import { DashboardButton, DashboardCard, ProductImage } from "@/components/dashboard/ui";
+import { listCategories } from "@/lib/api/store";
+import type { CategoryResponse } from "@/lib/api/dashboard-types";
 
 export type ProductInput = {
   name: string;
@@ -31,14 +32,39 @@ export default function ProductForm({
   title,
 }: {
   initial?: SurplusBag;
-  onSave: (input: ProductInput) => void;
+  onSave: (input: ProductInput) => void | Promise<void>;
   title: string;
 }) {
   const [imageName, setImageName] = useState(initial?.imageName ?? "");
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    let active = true;
+    void listCategories()
+      .then((items) => {
+        if (!active) return;
+        const selected = initial?.categories[0];
+        const available = items.filter((item) => item.isActive || item.id === selected?.id);
+        setCategories(selected && !available.some((item) => item.id === selected.id) ? [selected, ...available] : available);
+        if (available.length === 0 && !selected) setError("No active categories are available.");
+      })
+      .catch((caught) => {
+        if (active) setError(caught instanceof Error ? caught.message : "Unable to load categories.");
+      })
+      .finally(() => {
+        if (active) setCategoriesLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [initial]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
     const data = new FormData(event.currentTarget);
     const originalPrice = Number(data.get("originalPrice"));
     const salePrice = Number(data.get("salePrice"));
@@ -57,19 +83,26 @@ export default function ProductForm({
       setError("Expiry must not be before the pickup window ends.");
       return;
     }
-    onSave({
-      name: String(data.get("name")).trim(),
-      description: String(data.get("description")).trim(),
-      originalPrice,
-      salePrice,
-      quantityTotal: Number(data.get("quantityTotal")),
-      pickupStartTime,
-      pickupEndTime,
-      expiryDate,
-      status: String(data.get("status")) as BagStatus,
-      categoryIds: [String(data.get("categoryId"))],
-      ...(imageName ? { imageName } : {}),
-    });
+    setSubmitting(true);
+    try {
+      await onSave({
+        name: String(data.get("name")).trim(),
+        description: String(data.get("description")).trim(),
+        originalPrice,
+        salePrice,
+        quantityTotal: Number(data.get("quantityTotal")),
+        pickupStartTime,
+        pickupEndTime,
+        expiryDate,
+        status: String(data.get("status")) as BagStatus,
+        categoryIds: [String(data.get("categoryId"))],
+        ...(imageName ? { imageName } : {}),
+      });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to save this bag.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const inputClass = "mt-2 h-10 w-full rounded-xl border-none bg-gray-100 px-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary";
@@ -80,7 +113,7 @@ export default function ProductForm({
       <DashboardCard className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[1fr_240px]">
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block text-sm font-semibold sm:col-span-2">Bag name *<input name="name" required defaultValue={initial?.name} className={inputClass} /></label>
-          <label className="block text-sm font-semibold">Category *<select name="categoryId" required defaultValue={initial?.categories[0]?.id ?? ""} className={inputClass}><option value="" disabled>Select category</option>{DEMO_CATEGORIES.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+          <label className="block text-sm font-semibold">Category *<select name="categoryId" required disabled={categoriesLoading} defaultValue={initial?.categories[0]?.id ?? ""} className={inputClass}><option value="" disabled>{categoriesLoading ? "Loading categories…" : "Select category"}</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
           <label className="block text-sm font-semibold">Status *<select name="status" defaultValue={initial?.status ?? "Draft"} className={inputClass}><option>Draft</option><option>Active</option><option>Sold out</option></select></label>
           <label className="block text-sm font-semibold">Total quantity *<input name="quantityTotal" type="number" required min="1" defaultValue={initial?.quantityTotal ?? 1} className={inputClass} /></label>
           <label className="block text-sm font-semibold">Original price (VND) *<input name="originalPrice" type="number" required min="1" step="any" defaultValue={initial?.originalPrice} className={inputClass} /></label>
@@ -101,7 +134,7 @@ export default function ProductForm({
         </div>
       </DashboardCard>
       {error && <div role="alert" className="rounded-xl bg-error-alpha-16 px-4 py-3 text-sm text-error-dark">{error}</div>}
-      <div className="flex justify-end gap-3"><Link href="/seller/products" className="inline-flex h-9 items-center rounded-full border border-gray-300 px-4 text-sm font-bold text-gray-700 hover:bg-gray-50">Cancel</Link><DashboardButton type="submit">{initial ? "Save changes" : "Create bag"}</DashboardButton></div>
+      <div className="flex justify-end gap-3"><Link href="/seller/products" className="inline-flex h-9 items-center rounded-full border border-gray-300 px-4 text-sm font-bold text-gray-700 hover:bg-gray-50">Cancel</Link><DashboardButton type="submit" disabled={submitting || categoriesLoading || categories.length === 0}>{submitting ? "Saving…" : initial ? "Save changes" : "Create bag"}</DashboardButton></div>
     </form>
   );
 }

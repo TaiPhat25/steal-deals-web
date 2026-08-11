@@ -41,10 +41,15 @@ The admin routes now behave as a usable prototype instead of a static theme:
   delete behavior. The page displays a Demo data banner and API retry action.
   Authentication, authorization, validation, and other HTTP errors never
   activate fallback mode.
-- `/admin/categories` provides in-memory search, active-state filtering,
-  pagination, selection, create/edit, unique name/slug validation, and
-  confirmed deletion. Its dummy records now use the backend
-  category fields: `id`, `name`, `slug`, `iconUrl`, and `isActive`.
+- `/admin/categories` uses the Store Service for list, create, update, and
+  delete. A failed list request restores backend-shaped dummy categories with
+  a Demo data banner and retry action; edit and delete remain local only while
+  that fallback is active. Search, active-state filtering, pagination, and
+  selection remain client-side. Bulk delete calls the single-record endpoint
+  for each selected category and refreshes the list if any request fails.
+  Category delete is a backend soft delete: it sets `isActive` to `false`
+  instead of removing the record. The current table removes a successfully
+  deleted row immediately; a later list reload may show it again as inactive.
 - `/admin/sellers` is the Seller Management workspace. Its Stores tab uses the
   backend store-profile fields and provides local search, details, verification,
   and active-state toggling. Its Applications tab retains the searchable seller
@@ -67,31 +72,37 @@ The admin routes now behave as a usable prototype instead of a static theme:
 - GUIDs remain record keys and mutation identifiers, but account, store, and
   recent-order tables display page-aware row numbers instead.
 
-Admin prototype data resets on refresh. Categories, sellers, support, and
-overview records remain page-local; the overview's pending-seller summary does
-not share state with the seller workspace. User Accounts prefer the real API
-and use `lib/api/admin-demo.ts` only while Identity Service is unreachable.
+Admin category CRUD prefers the Store Service and falls back to local list,
+edit, and delete behavior when its initial list cannot load. Sellers, support,
+and overview records remain page-local; the overview's pending-seller summary
+does not share state with the seller workspace. User Accounts prefer the real
+API and use `lib/api/admin-demo.ts` only while Identity Service is unreachable.
 There is no browser storage or fake latency. When backend endpoints are stable,
 remove the fallback and replace the remaining page-local mutation handlers with
 API calls while retaining controls, dialogs, validation, and feedback.
 
 ## Seller functionality
 
-Seller-domain endpoints are documented by the backend, but this dashboard does
-not call them yet. Seller routes still use
+Seller routes still use
 `components/seller/SellerDemoProvider.tsx`, a small in-memory React provider
 mounted inside the seller layout. Product, order, and store changes survive
-client-side navigation between seller routes but reset on refresh. There is no
-seller API client, browser storage, fake latency, or speculative
-request/response layer.
+client-side navigation between seller routes but reset on refresh. The create
+bag form now loads public categories and sends `POST /api/bags` to the Store
+Service, then inserts the returned bag into that provider. `/seller/products`
+first resolves the authenticated seller's store through `GET /api/stores/me`,
+then loads that store's bags through `GET /api/bags/store/{storeId}`. If either
+request fails, it restores the provider's dummy bags and displays a retryable
+Demo data banner. Other seller reads and mutations remain local. There is no
+browser storage, fake latency, or speculative request/response layer.
 
 - `/seller` derives five metrics, including remaining units expiring today,
   plus confirmed pickups and recent orders from the shared demo state. Pending
   orders can be confirmed from the overview.
 - `/seller/products` manages surplus bags rather than generic ecommerce
-  products. It provides local search/filter/pagination, selection and bulk
-  status changes, quantity updates, deletion, and links to record-specific
-  create/edit/details routes.
+  products. Its initial list prefers the Store Service and falls back to dummy
+  data. Search/filter/pagination, selection and bulk status changes, quantity
+  updates, deletion, and record-specific create/edit/details routes operate on
+  the currently loaded provider records.
 - `/seller/products/add`, `/seller/products/edit`, and
   `/seller/products/details` share the backend-shaped surprise-bag model:
   `salePrice`, `quantityTotal`, `quantityRemaining`, category objects, ISO pickup
@@ -101,6 +112,8 @@ request/response layer.
   as an explicitly future UI field because the current bag DTO has no media.
   Both price inputs accept any positive number, matching backend `decimal`
   values without an accidental HTML step grid.
+  The add form uses real category IDs and the documented `CreateBagRequest`.
+  Edit and details still operate on provider records only.
 - `/seller/orders` provides local search/filter/pagination, derived status
   counts, and CSV export over backend-shaped order and item snapshots. Dummy
   statuses are limited to `Pending`, `Confirmed`,
@@ -146,6 +159,12 @@ pagination.
 `lib/api/admin-demo.ts` is the only API-unavailable fallback. It deliberately
 mirrors the existing admin user functions instead of introducing a fake server
 or general mock repository.
+
+`lib/api/store.ts` contains only the Store Service calls currently in use:
+public category listing, admin category create/update/delete, seller bag
+creation, current seller store lookup, and store bag listing. They use
+`NEXT_PUBLIC_STORE_API_URL`; Identity calls continue to use
+`NEXT_PUBLIC_API_URL`.
 
 Backend status fields remain `string` in response types. The demo uses a narrow
 UI-only list of current spellings; do not treat it as a final backend enum.
@@ -198,10 +217,11 @@ Run these after dashboard changes:
 ```powershell
 npx.cmd eslint "app/(admin)" "app/(seller)" components/admin components/dashboard components/seller
 node --experimental-strip-types lib/api/admin-demo.test.mjs
+node --experimental-strip-types lib/api/client.test.mjs
 npm.cmd run build
 ```
 
-At this handoff all three commands pass. All application routes build,
+At this handoff all four commands pass. All application routes build,
 including the 16 admin/seller routes. The generated dashboard CSS is about 46
 KB, down from two copied 100 KB stylesheets, and dashboard public assets total
 about 4 KB instead of 1.96 MB across 370 files.
@@ -215,8 +235,9 @@ about 4 KB instead of 1.96 MB across 370 files.
   host and Next image policy are known.
 - Keep search/filter state page-specific until three pages share the same real
   backend query contract; the current controls have different domain behavior.
-- Connect seller accounts/applications, categories, support/reports, and
-  recent-order handlers at their existing local mutation boundaries. Do not
+- Connect seller accounts/applications, support/reports, and recent-order
+  handlers at their existing local mutation
+  boundaries. Do not
   preserve the disposable in-memory transformation code after an endpoint
   replaces it.
 - Browser-level visual regression coverage is not present. Before a design

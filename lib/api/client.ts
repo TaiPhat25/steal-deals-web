@@ -57,6 +57,7 @@ async function parseResponse(response: Response): Promise<unknown> {
 export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
+  baseUrl = API_BASE_URL,
 ): Promise<T> {
   const { body, headers, ...requestOptions } = options;
   const requestHeaders = new Headers(headers);
@@ -66,7 +67,7 @@ export async function apiRequest<T>(
   }
 
   const sendRequest = () =>
-    fetch(`${API_BASE_URL}${path}`, {
+    fetch(`${baseUrl}${path}`, {
       ...requestOptions,
       headers: requestHeaders,
       credentials: "include",
