@@ -111,7 +111,12 @@ browser storage, fake latency, or speculative request/response layer.
   appear across seller routes. Image inputs retain only the selected filename
   as an explicitly future UI field because the current bag DTO has no media.
   Both price inputs accept any positive number, matching backend `decimal`
-  values without an accidental HTML step grid.
+  values without an accidental HTML step grid. Discount shortcuts, the custom
+  percentage input, and the live discount label derive `salePrice` in the UI;
+  no unsupported discount field is sent to the Store Service.
+  The shared form groups related fields and defaults new pickup windows to the
+  next half-hour for one hour. Native date-time inputs remain available for
+  exact values, with shortcuts for shifting pickup and expiry times.
   The add form uses real category IDs and the documented `CreateBagRequest`.
   Edit and details still operate on provider records only.
 - `/seller/orders` provides local search/filter/pagination, derived status
