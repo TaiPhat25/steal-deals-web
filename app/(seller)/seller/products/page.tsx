@@ -1,17 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSellerDemo, type BagStatus, type SurplusBag } from "@/components/seller/SellerDemoProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { DEMO_PRODUCTS, useSellerDemo, type BagStatus, type SurplusBag } from "@/components/seller/SellerDemoProvider";
 import { DashboardButton, DashboardCard, PageHeader, ProductImage, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast, DialogActions } from "@/components/dashboard/Dialog";
+import { listMyStoreBags } from "@/lib/api/store";
 
 const PAGE_SIZE = 4;
-const statusTone = (status: BagStatus) => status === "Active" ? "success" : status === "Sold out" ? "error" : "warning";
+const statusTone = (status: string) => status === "Active" ? "success" : status === "Sold out" ? "error" : "warning";
 const money = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 const time = (value: string) => new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 
 export default function SellerProducts() {
+  const { accessToken, isInitialized } = useAuth();
   const { products, setProducts } = useSellerDemo();
   // ponytail: expiry refreshes on page load; add a timer only if sellers keep this screen open across expiry.
   const [now] = useState(Date.now);
@@ -22,6 +25,9 @@ export default function SellerProducts() {
   const [selected, setSelected] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<SurplusBag | "selected" | null>(null);
   const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [demoReason, setDemoReason] = useState("");
+  const [reloadVersion, setReloadVersion] = useState(0);
   const categories = [...new Set(products.flatMap((product) => product.categories.map((item) => item.name)))];
   const filtered = useMemo(() => products.filter((product) => {
     const query = search.trim().toLowerCase();
@@ -32,6 +38,44 @@ export default function SellerProducts() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const allVisibleSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setLoading(true);
+      setDemoReason("");
+      if (!accessToken) {
+        setProducts(DEMO_PRODUCTS);
+        setPage(1);
+        setSelected([]);
+        setDemoReason("A seller session is not available.");
+        setLoading(false);
+        return;
+      }
+      void listMyStoreBags(accessToken)
+        .then((bags) => {
+          if (!active) return;
+          setProducts(bags);
+          setPage(1);
+          setSelected([]);
+        })
+        .catch((caught) => {
+          if (!active) return;
+          setProducts(DEMO_PRODUCTS);
+          setPage(1);
+          setSelected([]);
+          setDemoReason(caught instanceof Error ? caught.message : "The Store Service could not be reached.");
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [accessToken, isInitialized, reloadVersion, setProducts]);
 
   function resetPage() {
     setPage(1);
@@ -68,6 +112,8 @@ export default function SellerProducts() {
           </div>
           {selected.length > 0 && <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-gray-100 p-3"><span className="text-sm font-semibold">{selected.length} selected</span><button type="button" onClick={() => updateSelected("Active")} className="text-sm font-semibold text-primary">Activate</button><button type="button" onClick={() => updateSelected("Draft")} className="text-sm font-semibold text-warning-dark">Move to draft</button><button type="button" onClick={() => setDeleting("selected")} className="text-sm font-semibold text-error-dark">Delete</button></div>}
         </div>
+        {demoReason && <div className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6" role="status"><p><strong>Demo data active.</strong> {demoReason}</p><button type="button" onClick={() => setReloadVersion((version) => version + 1)} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
+        {loading ? <div className="border-t border-gray-500/20 px-4 py-14 text-center text-sm text-light-secondary-text" role="status">Loading surplus bags…</div> : <>
         <div className="overflow-x-auto border-t border-gray-500/20">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-left"><tr><th className="p-3 pl-5"><input type="checkbox" aria-label="Select visible bags" checked={allVisibleSelected} onChange={() => setSelected(allVisibleSelected ? selected.filter((id) => !rows.some((row) => row.id === id)) : [...new Set([...selected, ...rows.map((row) => row.id)])])} className="size-4 accent-primary" /></th><th className="p-3">Bag</th><th className="p-3">Category</th><th className="p-3">Price</th><th className="p-3">Remaining</th><th className="p-3">Pickup</th><th className="p-3">Status</th><th className="p-3 pr-5 text-right">Actions</th></tr></thead>
@@ -85,8 +131,9 @@ export default function SellerProducts() {
           {rows.length === 0 && <div className="px-4 py-14 text-center text-sm text-light-secondary-text">No surplus bags match these filters.</div>}
         </div>
         <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6"><span className="text-sm text-light-secondary-text">{filtered.length} bags</span><div className="flex items-center gap-2"><button type="button" aria-label="Previous page" disabled={page === 1} onClick={() => setPage(page - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">‹</button><span className="text-sm font-semibold">Page {page} of {totalPages}</span><button type="button" aria-label="Next page" disabled={page === totalPages} onClick={() => setPage(page + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">›</button></div></div>
+        </>}
       </DashboardCard>
-      {deleting && <DashboardDialog title={deleting === "selected" ? `Delete ${selected.length} bags?` : `Delete ${deleting.name}?`} onClose={() => setDeleting(null)}><p className="p-5 text-sm leading-6 text-light-secondary-text sm:p-6">This removes the selected dummy data until the page is refreshed.</p><DialogActions onCancel={() => setDeleting(null)}><DashboardButton variant="danger" onClick={confirmDelete}>Delete</DashboardButton></DialogActions></DashboardDialog>}
+      {deleting && <DashboardDialog title={deleting === "selected" ? `Delete ${selected.length} bags?` : `Delete ${deleting.name}?`} onClose={() => setDeleting(null)}><p className="p-5 text-sm leading-6 text-light-secondary-text sm:p-6">This only removes the selected data from the current dashboard state.</p><DialogActions onCancel={() => setDeleting(null)}><DashboardButton variant="danger" onClick={confirmDelete}>Delete</DashboardButton></DialogActions></DashboardDialog>}
     </>
   );
 }
