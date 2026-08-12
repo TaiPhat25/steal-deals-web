@@ -1,14 +1,19 @@
 "use client";
 
 import {
+  useCallback,
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { listStoreOrders } from "@/lib/api/order";
+import { getMyStore, listStoreBags } from "@/lib/api/store";
 import type {
   CategoryResponse,
   OrderResponse,
@@ -27,7 +32,7 @@ export type OrderStatus =
   | "PaymentFailed"
   | "Confirmed"
   | "Cancelled";
-export type SellerOrder = Omit<OrderResponse, "status"> & { status: OrderStatus };
+export type SellerOrder = Omit<OrderResponse, "status"> & { status: string };
 
 export type OperatingHour = {
   day: string;
@@ -109,17 +114,126 @@ type SellerDemoValue = {
   setOrders: Dispatch<SetStateAction<SellerOrder[]>>;
   settings: StoreSettings;
   setSettings: Dispatch<SetStateAction<StoreSettings>>;
+  settingsLoading: boolean;
+  settingsDemoReason: string;
+  productsLoading: boolean;
+  productsDemoReason: string;
+  ordersLoading: boolean;
+  ordersDemoReason: string;
+  retryApi: () => void;
 };
 
 const SellerDemoContext = createContext<SellerDemoValue | null>(null);
 
 export default function SellerDemoProvider({ children }: { children: ReactNode }) {
+  const { accessToken, isInitialized } = useAuth();
   const [products, setProducts] = useState(DEMO_PRODUCTS);
   const [orders, setOrders] = useState(INITIAL_ORDERS);
   const [settings, setSettings] = useState(INITIAL_SETTINGS);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsDemoReason, setSettingsDemoReason] = useState("");
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsDemoReason, setProductsDemoReason] = useState("");
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersDemoReason, setOrdersDemoReason] = useState("");
+  const [reloadVersion, setReloadVersion] = useState(0);
+  const retryApi = useCallback(() => setReloadVersion((version) => version + 1), []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setSettingsLoading(true);
+      setProductsLoading(true);
+      setOrdersLoading(true);
+      setSettingsDemoReason("");
+      setProductsDemoReason("");
+      setOrdersDemoReason("");
+
+      const fallback = (reason: string) => {
+        setSettings(INITIAL_SETTINGS);
+        setProducts(DEMO_PRODUCTS);
+        setOrders(INITIAL_ORDERS);
+        setSettingsDemoReason(reason);
+        setProductsDemoReason(reason);
+        setOrdersDemoReason(reason);
+        setSettingsLoading(false);
+        setProductsLoading(false);
+        setOrdersLoading(false);
+      };
+
+      if (!accessToken) {
+        fallback("A seller session is not available.");
+        return;
+      }
+
+      void getMyStore(accessToken)
+        .then(async (store) => {
+          if (!active) return;
+          setSettings((current) => ({ ...current, ...store, bankAccount: "", licenseUrl: "" }));
+          setSettingsLoading(false);
+
+          const [bags, storeOrders] = await Promise.allSettled([
+            listStoreBags(store.id),
+            listStoreOrders(accessToken, store.id),
+          ]);
+          if (!active) return;
+
+          if (bags.status === "fulfilled") {
+            setProducts(bags.value);
+          } else {
+            setProducts(DEMO_PRODUCTS);
+            setProductsDemoReason(bags.reason instanceof Error ? bags.reason.message : "The Store Service could not be reached.");
+          }
+
+          if (storeOrders.status === "fulfilled") {
+            setOrders(storeOrders.value);
+          } else {
+            setOrders(INITIAL_ORDERS);
+            setOrdersDemoReason(storeOrders.reason instanceof Error ? storeOrders.reason.message : "The Order Service could not be reached.");
+          }
+          setProductsLoading(false);
+          setOrdersLoading(false);
+        })
+        .catch((caught) => {
+          if (active) fallback(caught instanceof Error ? caught.message : "The Store Service could not be reached.");
+        });
+    }, 0);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [accessToken, isInitialized, reloadVersion]);
+
   const value = useMemo(
-    () => ({ products, setProducts, orders, setOrders, settings, setSettings }),
-    [orders, products, settings],
+    () => ({
+      products,
+      setProducts,
+      orders,
+      setOrders,
+      settings,
+      setSettings,
+      settingsLoading,
+      settingsDemoReason,
+      productsLoading,
+      productsDemoReason,
+      ordersLoading,
+      ordersDemoReason,
+      retryApi,
+    }),
+    [
+      orders,
+      ordersDemoReason,
+      ordersLoading,
+      products,
+      productsDemoReason,
+      productsLoading,
+      retryApi,
+      settings,
+      settingsDemoReason,
+      settingsLoading,
+    ],
   );
   return <SellerDemoContext.Provider value={value}>{children}</SellerDemoContext.Provider>;
 }

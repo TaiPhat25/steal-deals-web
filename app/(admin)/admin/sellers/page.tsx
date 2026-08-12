@@ -1,11 +1,13 @@
 "use client";
 
-import { Suspense, use, useMemo, useState, type FormEvent } from "react";
+import { Suspense, use, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 import AdminUsersPage from "@/components/admin/users/AdminUsersPage";
 import { Avatar, DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast, DialogActions } from "@/components/dashboard/Dialog";
 import type { StoreProfileResponse } from "@/lib/api/dashboard-types";
+import { listStores, toggleStoreActive, verifyStore } from "@/lib/api/store";
 
 type SellerTab = "accounts" | "stores" | "applications";
 type ApplicationStatus = "Pending" | "Approved" | "Rejected";
@@ -47,6 +49,7 @@ export default function AdminSellers({
 }) {
   const requestedTab = use(searchParams).tab;
   const router = useRouter();
+  const { accessToken, isInitialized } = useAuth();
   const [tab, setTab] = useState<SellerTab>(requestedTab === "stores" || requestedTab === "applications" ? requestedTab : "accounts");
   const [stores, setStores] = useState(INITIAL_STORES);
   const [applications, setApplications] = useState(INITIAL_APPLICATIONS);
@@ -57,6 +60,37 @@ export default function AdminSellers({
   const [activeApplication, setActiveApplication] = useState<SellerApplication | null>(null);
   const [rejecting, setRejecting] = useState<SellerApplication | null>(null);
   const [toast, setToast] = useState("");
+  const [storesLoading, setStoresLoading] = useState(true);
+  const [storesDemoReason, setStoresDemoReason] = useState("");
+  const [storesError, setStoresError] = useState("");
+  const [busyStoreId, setBusyStoreId] = useState("");
+  const [reloadVersion, setReloadVersion] = useState(0);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setStoresLoading(true);
+      setStoresDemoReason("");
+      setStoresError("");
+      void listStores()
+        .then((items) => {
+          if (active) setStores(items);
+        })
+        .catch((caught) => {
+          if (!active) return;
+          setStores(INITIAL_STORES);
+          setStoresDemoReason(caught instanceof Error ? caught.message : "The Store Service could not be reached.");
+        })
+        .finally(() => {
+          if (active) setStoresLoading(false);
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [isInitialized, reloadVersion]);
 
   const filteredStores = useMemo(() => stores.filter((store) => {
     const query = search.trim().toLowerCase();
@@ -81,10 +115,23 @@ export default function AdminSellers({
     setPage(1);
   }
 
-  function updateStore(store: StoreProfileResponse, changes: Partial<Pick<StoreProfileResponse, "isVerify" | "isActive">>) {
-    setStores((items) => items.map((item) => item.id === store.id ? { ...item, ...changes } : item));
-    setActiveStore(null);
-    setToast(`${store.name} was updated.`);
+  async function updateStore(store: StoreProfileResponse, changes: Partial<Pick<StoreProfileResponse, "isVerify" | "isActive">>) {
+    setBusyStoreId(store.id);
+    setStoresError("");
+    try {
+      if (!storesDemoReason) {
+        if (!accessToken) throw new Error("An admin session is required to update stores.");
+        if (changes.isVerify) await verifyStore(accessToken, store.id);
+        if (changes.isActive !== undefined) await toggleStoreActive(accessToken, store.id);
+      }
+      setStores((items) => items.map((item) => item.id === store.id ? { ...item, ...changes } : item));
+      setActiveStore(null);
+      setToast(`${store.name} was updated.`);
+    } catch (caught) {
+      setStoresError(caught instanceof Error ? caught.message : "Unable to update this store.");
+    } finally {
+      setBusyStoreId("");
+    }
   }
 
   function updateApplication(application: SellerApplication, next: ApplicationStatus, reason?: string) {
@@ -123,8 +170,10 @@ export default function AdminSellers({
           {tab === "applications" && <p className="mt-4 rounded-xl bg-warning/15 px-4 py-3 text-sm text-warning-dark">Seller onboarding is retained as a future UI workflow; the backend reference does not define this record yet.</p>}
           <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><label className="relative w-full lg:w-80"><span className="sr-only">Search {tab}</span><span className="absolute left-3 top-1/2 -translate-y-1/2 text-light-secondary-text">⌕</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder={tab === "stores" ? "Search store, owner ID, address..." : "Search applicant or store..."} className="h-9 w-full rounded-full border-none bg-gray-100 pl-9 pr-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label><div className="flex gap-3"><select aria-label={`${tab} status`} value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"><option value="">All statuses</option>{tab === "stores" ? <><option value="active">Active</option><option value="inactive">Disabled</option><option value="verified">Verified</option></> : <><option>Pending</option><option>Approved</option><option>Rejected</option></>}</select>{(search || status) && <button type="button" onClick={() => { setSearch(""); setStatus(""); setPage(1); }} className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter">Clear</button>}</div></div>
         </div>
+        {tab === "stores" && storesDemoReason && <div className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6" role="status"><p><strong>Demo data active.</strong> {storesDemoReason}</p><button type="button" onClick={() => setReloadVersion((version) => version + 1)} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
+        {tab === "stores" && storesError && <div role="alert" className="border-t border-error/30 bg-error-alpha-16 px-4 py-3 text-sm text-error-dark sm:px-6">{storesError}</div>}
         <div className="overflow-x-auto border-t border-gray-500/20">
-          {tab === "stores" ? (
+          {tab === "stores" && storesLoading ? <div className="px-4 py-14 text-center text-sm text-light-secondary-text" role="status">Loading stores…</div> : tab === "stores" ? (
             <table className="w-full text-sm">
               <thead className="bg-gray-100 text-left"><tr><th className="p-3 pl-5">No.</th><th className="p-3">Store</th><th className="p-3">Address</th><th className="p-3">Rating</th><th className="p-3">Verification</th><th className="p-3">Status</th><th className="p-3 pr-5 text-right">Action</th></tr></thead>
               <tbody>{(rows as StoreProfileResponse[]).map((store, index) => <tr key={store.id} className="border-t border-gray-500/20 hover:bg-gray-50/50"><td className="p-3 pl-5 text-light-secondary-text">{(currentPage - 1) * PAGE_SIZE + index + 1}</td><td className="p-3"><strong className="block">{store.name}</strong><span className="text-xs text-light-secondary-text">{store.phone ?? "No phone"}</span></td><td className="max-w-64 p-3"><span className="block truncate" title={store.address ?? ""}>{store.address ?? "Not set"}</span></td><td className="p-3">{store.ratingScore.toFixed(1)}</td><td className="p-3"><StatusBadge tone={store.isVerify ? "success" : "warning"}>{store.isVerify ? "Verified" : "Unverified"}</StatusBadge></td><td className="p-3"><StatusBadge tone={store.isActive ? "success" : "error"}>{store.isActive ? "Active" : "Inactive"}</StatusBadge></td><td className="p-3 pr-5 text-right"><button type="button" onClick={() => setActiveStore(store)} className="h-8 rounded-lg px-3 font-semibold text-primary hover:bg-primary-lighter">View</button></td></tr>)}</tbody>
@@ -136,7 +185,7 @@ export default function AdminSellers({
         </div>
         <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6"><span className="text-sm text-light-secondary-text">{filtered.length} {tab}</span><div className="flex items-center gap-2"><button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">‹</button><span className="text-sm font-semibold">Page {currentPage} of {totalPages}</span><button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">›</button></div></div>
       </DashboardCard>
-      {activeStore && <DashboardDialog title={activeStore.name} onClose={() => setActiveStore(null)}><div className="space-y-5 p-5 text-sm sm:p-6"><div className="flex gap-2"><StatusBadge tone={activeStore.isVerify ? "success" : "warning"}>{activeStore.isVerify ? "Verified" : "Unverified"}</StatusBadge><StatusBadge tone={activeStore.isActive ? "success" : "error"}>{activeStore.isActive ? "Active" : "Inactive"}</StatusBadge></div><p className="leading-6 text-light-secondary-text">{activeStore.description ?? "No description provided."}</p><dl className="grid grid-cols-[100px_1fr] gap-3"><dt className="text-light-secondary-text">Store ID</dt><dd className="break-all font-mono text-xs">{activeStore.id}</dd><dt className="text-light-secondary-text">Owner ID</dt><dd className="break-all font-mono text-xs">{activeStore.ownerId}</dd><dt className="text-light-secondary-text">Address</dt><dd>{activeStore.address ?? "Not set"}</dd><dt className="text-light-secondary-text">Coordinates</dt><dd>{activeStore.latitude}, {activeStore.longitude}</dd><dt className="text-light-secondary-text">Created</dt><dd>{date(activeStore.createdAt)}</dd></dl></div><footer className="flex flex-wrap justify-end gap-3 border-t border-gray-500/20 p-4 sm:px-6"><DashboardButton variant="secondary" onClick={() => setActiveStore(null)}>Close</DashboardButton>{!activeStore.isVerify && <DashboardButton onClick={() => updateStore(activeStore, { isVerify: true })}>Verify store</DashboardButton>}<DashboardButton variant={activeStore.isActive ? "danger" : "primary"} onClick={() => updateStore(activeStore, { isActive: !activeStore.isActive })}>{activeStore.isActive ? "Deactivate" : "Activate"}</DashboardButton></footer></DashboardDialog>}
+      {activeStore && <DashboardDialog title={activeStore.name} onClose={() => !busyStoreId && setActiveStore(null)}><div className="space-y-5 p-5 text-sm sm:p-6"><div className="flex gap-2"><StatusBadge tone={activeStore.isVerify ? "success" : "warning"}>{activeStore.isVerify ? "Verified" : "Unverified"}</StatusBadge><StatusBadge tone={activeStore.isActive ? "success" : "error"}>{activeStore.isActive ? "Active" : "Inactive"}</StatusBadge></div><p className="leading-6 text-light-secondary-text">{activeStore.description ?? "No description provided."}</p><dl className="grid grid-cols-[100px_1fr] gap-3"><dt className="text-light-secondary-text">Store ID</dt><dd className="break-all font-mono text-xs">{activeStore.id}</dd><dt className="text-light-secondary-text">Owner ID</dt><dd className="break-all font-mono text-xs">{activeStore.ownerId}</dd><dt className="text-light-secondary-text">Address</dt><dd>{activeStore.address ?? "Not set"}</dd><dt className="text-light-secondary-text">Coordinates</dt><dd>{activeStore.latitude}, {activeStore.longitude}</dd><dt className="text-light-secondary-text">Created</dt><dd>{date(activeStore.createdAt)}</dd></dl></div><footer className="flex flex-wrap justify-end gap-3 border-t border-gray-500/20 p-4 sm:px-6"><DashboardButton disabled={Boolean(busyStoreId)} variant="secondary" onClick={() => setActiveStore(null)}>Close</DashboardButton>{!activeStore.isVerify && <DashboardButton disabled={Boolean(busyStoreId)} onClick={() => updateStore(activeStore, { isVerify: true })}>{busyStoreId ? "Updating…" : "Verify store"}</DashboardButton>}<DashboardButton disabled={Boolean(busyStoreId)} variant={activeStore.isActive ? "danger" : "primary"} onClick={() => updateStore(activeStore, { isActive: !activeStore.isActive })}>{busyStoreId ? "Updating…" : activeStore.isActive ? "Deactivate" : "Activate"}</DashboardButton></footer></DashboardDialog>}
       {activeApplication && <DashboardDialog title={activeApplication.storeName} onClose={() => setActiveApplication(null)}><div className="space-y-4 p-5 text-sm sm:p-6"><p className="rounded-xl bg-warning/15 p-3 text-warning-dark">Future-only onboarding record; no current backend DTO.</p><dl className="grid grid-cols-[100px_1fr] gap-3"><dt className="text-light-secondary-text">Owner</dt><dd>{activeApplication.ownerName}</dd><dt className="text-light-secondary-text">Email</dt><dd>{activeApplication.email}</dd><dt className="text-light-secondary-text">Phone</dt><dd>{activeApplication.phone}</dd><dt className="text-light-secondary-text">Category</dt><dd>{activeApplication.category}</dd><dt className="text-light-secondary-text">Submitted</dt><dd>{date(activeApplication.submittedAt)}</dd>{activeApplication.reason && <><dt className="text-light-secondary-text">Reason</dt><dd>{activeApplication.reason}</dd></>}</dl></div><footer className="flex justify-end gap-3 border-t border-gray-500/20 p-4 sm:px-6"><DashboardButton variant="secondary" onClick={() => setActiveApplication(null)}>Close</DashboardButton>{activeApplication.status === "Pending" && <><DashboardButton variant="danger" onClick={() => { setRejecting(activeApplication); setActiveApplication(null); }}>Reject</DashboardButton><DashboardButton onClick={() => updateApplication(activeApplication, "Approved")}>Approve</DashboardButton></>}</footer></DashboardDialog>}
       {rejecting && <DashboardDialog title={`Reject ${rejecting.storeName}?`} onClose={() => setRejecting(null)}><form onSubmit={reject}><div className="p-5 sm:p-6"><label className="block text-sm font-semibold">Reason<textarea name="reason" required rows={4} className="mt-2 w-full rounded-xl border-none bg-gray-100 p-3 ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label></div><DialogActions onCancel={() => setRejecting(null)}><DashboardButton type="submit" variant="danger">Reject application</DashboardButton></DialogActions></form></DashboardDialog>}
     </>

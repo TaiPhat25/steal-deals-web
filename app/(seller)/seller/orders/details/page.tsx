@@ -3,37 +3,59 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { DashboardButton, DashboardCard, ProductImage, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast, DialogActions } from "@/components/dashboard/Dialog";
 import { DEMO_CUSTOMER_NAMES, useSellerDemo, type OrderStatus } from "@/components/seller/SellerDemoProvider";
+import { updateOrderStatus } from "@/lib/api/order";
 
 const money = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 const dateTime = (value: string | null) => value ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Not set";
-const tone = (status: OrderStatus) => status === "Confirmed" ? "success" : status === "Pending" ? "warning" : "error";
+const tone = (status: string) => status === "Confirmed" ? "success" : status === "Pending" ? "warning" : "error";
 
 function OrderDetailsContent() {
   const id = useSearchParams().get("id");
-  const { orders, setOrders } = useSellerDemo();
+  const { accessToken } = useAuth();
+  const { orders, setOrders, ordersLoading, ordersDemoReason, retryApi } = useSellerDemo();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [toast, setToast] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const order = orders.find((item) => item.id === id);
-  if (!order) return <DashboardCard className="p-8 text-center"><h1 className="text-xl font-bold">Order not found</h1><p className="mt-2 text-sm text-light-secondary-text">The selected dummy order does not exist.</p><Link href="/seller/orders" className="mt-5 inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white">Back to orders</Link></DashboardCard>;
+  if (ordersLoading) return <DashboardCard className="p-8 text-center text-sm text-light-secondary-text" role="status">Loading order…</DashboardCard>;
+  if (!order) return <DashboardCard className="p-8 text-center"><h1 className="text-xl font-bold">Order not found</h1><p className="mt-2 text-sm text-light-secondary-text">The selected order does not exist.</p><Link href="/seller/orders" className="mt-5 inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white">Back to orders</Link></DashboardCard>;
   const currentOrder = order;
 
-  function changeStatus(status: OrderStatus) {
-    setOrders((items) => items.map((item) => item.id === currentOrder.id ? { ...item, status, updatedAt: new Date().toISOString() } : item));
-    setConfirmCancel(false);
-    setToast(`Order ${currentOrder.id.slice(0, 8)} marked ${status}.`);
+  async function changeStatus(status: OrderStatus) {
+    setBusy(true);
+    setError("");
+    try {
+      if (ordersDemoReason) {
+        setOrders((items) => items.map((item) => item.id === currentOrder.id ? { ...item, status, updatedAt: new Date().toISOString() } : item));
+      } else {
+        if (!accessToken) throw new Error("A seller session is required to update this order.");
+        const updated = await updateOrderStatus(accessToken, currentOrder.id, status);
+        setOrders((items) => items.map((item) => item.id === currentOrder.id ? updated : item));
+      }
+      setConfirmCancel(false);
+      setToast(`Order ${currentOrder.id.slice(0, 8)} marked ${status}.`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to update this order.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <>
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
       <div className="space-y-6">
+        {ordersDemoReason && <div role="status" className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><p><strong>Demo data active.</strong> {ordersDemoReason}</p><button type="button" onClick={retryApi} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div><Link href="/seller/orders" className="text-sm font-semibold text-primary hover:underline">← Back to orders</Link><h1 className="mt-2 text-xl font-bold">Order #{order.id.slice(0, 8)}</h1></div>
-          {order.status === "Pending" && <div className="flex gap-3"><DashboardButton variant="danger" onClick={() => setConfirmCancel(true)}>Cancel order</DashboardButton><DashboardButton onClick={() => changeStatus("Confirmed")}>Confirm order</DashboardButton></div>}
+          {order.status === "Pending" && <div className="flex gap-3"><DashboardButton disabled={busy} variant="danger" onClick={() => setConfirmCancel(true)}>Cancel order</DashboardButton><DashboardButton disabled={busy} onClick={() => changeStatus("Confirmed")}>Confirm order</DashboardButton></div>}
         </div>
+        {error && <div role="alert" className="rounded-xl bg-error-alpha-16 px-4 py-3 text-sm text-error-dark">{error}</div>}
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <DashboardCard className="overflow-hidden">
             <div className="flex items-center justify-between border-b border-gray-500/20 p-4 sm:px-6"><h2 className="font-bold">Bag items</h2><StatusBadge tone={tone(order.status)}>{order.status}</StatusBadge></div>
@@ -46,7 +68,7 @@ function OrderDetailsContent() {
           </div>
         </div>
       </div>
-      {confirmCancel && <DashboardDialog title={`Cancel order #${order.id.slice(0, 8)}?`} onClose={() => setConfirmCancel(false)}><p className="p-5 text-sm leading-6 text-light-secondary-text sm:p-6">This changes the local order status to the backend&apos;s current <strong>Cancelled</strong> spelling.</p><DialogActions onCancel={() => setConfirmCancel(false)}><DashboardButton variant="danger" onClick={() => changeStatus("Cancelled")}>Cancel order</DashboardButton></DialogActions></DashboardDialog>}
+      {confirmCancel && <DashboardDialog title={`Cancel order #${order.id.slice(0, 8)}?`} onClose={() => !busy && setConfirmCancel(false)}><p className="p-5 text-sm leading-6 text-light-secondary-text sm:p-6">{ordersDemoReason ? "This changes only the current demo order." : "This updates the order status to Cancelled in the Order Service."}</p><DialogActions onCancel={() => !busy && setConfirmCancel(false)}><DashboardButton disabled={busy} variant="danger" onClick={() => changeStatus("Cancelled")}>{busy ? "Cancelling…" : "Cancel order"}</DashboardButton></DialogActions></DashboardDialog>}
     </>
   );
 }

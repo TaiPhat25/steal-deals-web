@@ -5,49 +5,27 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { DashboardButton, DashboardCard, ProductImage, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardToast } from "@/components/dashboard/Dialog";
 import { useSellerDemo } from "@/components/seller/SellerDemoProvider";
-import { getMyStore, updateStore } from "@/lib/api/store";
+import { updateStore } from "@/lib/api/store";
 
 export default function SellerSettings() {
-  const { accessToken, isInitialized } = useAuth();
-  const { settings, setSettings } = useSellerDemo();
+  const { accessToken } = useAuth();
+  const {
+    settings,
+    setSettings,
+    settingsLoading: loading,
+    settingsDemoReason: loadError,
+    retryApi,
+  } = useSellerDemo();
   const [draft, setDraft] = useState(() => structuredClone(settings));
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
-  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [loadError, setLoadError] = useState("");
-  const [reloadVersion, setReloadVersion] = useState(0);
   const inputClass = "mt-2 h-10 w-full rounded-xl border-none bg-gray-100 px-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary";
 
   useEffect(() => {
-    if (!isInitialized) return;
-    let active = true;
-    const timeout = window.setTimeout(() => {
-      setLoading(true);
-      setLoadError("");
-      if (!accessToken) {
-        setLoadError("A seller session is not available.");
-        setLoading(false);
-        return;
-      }
-      void getMyStore(accessToken)
-        .then((store) => {
-          if (!active) return;
-          setSettings((current) => ({ ...current, ...store, bankAccount: "", licenseUrl: "" }));
-          setDraft((current) => ({ ...current, ...store, bankAccount: "", licenseUrl: "" }));
-        })
-        .catch((caught) => {
-          if (active) setLoadError(caught instanceof Error ? caught.message : "The Store Service could not be reached.");
-        })
-        .finally(() => {
-          if (active) setLoading(false);
-        });
-    }, 0);
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-    };
-  }, [accessToken, isInitialized, reloadVersion, setSettings]);
+    const timeout = window.setTimeout(() => setDraft(structuredClone(settings)), 0);
+    return () => window.clearTimeout(timeout);
+  }, [settings]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,7 +74,7 @@ export default function SellerSettings() {
       <form onSubmit={save} className="space-y-6">
         <div><p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Store profile</p><h1 className="text-xl font-bold">Settings</h1></div>
         {loading && <div role="status" className="rounded-xl bg-white px-4 py-3 text-sm text-light-secondary-text">Loading store information…</div>}
-        {loadError && <div role="status" className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><p><strong>Demo data active.</strong> {loadError}</p><button type="button" onClick={() => setReloadVersion((version) => version + 1)} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
+        {loadError && <div role="status" className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><p><strong>Demo data active.</strong> {loadError}</p><button type="button" onClick={retryApi} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
         <DashboardCard className="space-y-6 p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">Store information</h2><p className="mt-1 text-sm text-light-secondary-text">Public and seller-editable store details.</p></div><div className="flex gap-2"><StatusBadge tone={draft.isVerify ? "success" : "warning"}>{draft.isVerify ? "Verified" : "Unverified"}</StatusBadge><StatusBadge tone={draft.isActive ? "success" : "error"}>{draft.isActive ? "Active" : "Inactive"}</StatusBadge></div></div>
           <div className="grid gap-4 md:grid-cols-2">
