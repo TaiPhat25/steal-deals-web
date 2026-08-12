@@ -184,7 +184,8 @@ function Header({
   role: DashboardRole;
   onToggleSidebar: () => void;
 }) {
-  const { isLoading, logout } = useAuth();
+  const { currentUser, isLoading, logout } = useAuth();
+  const displayName = currentUser?.name || "Account";
   const [openMenu, setOpenMenu] = useState<"notifications" | "profile" | null>(
     null,
   );
@@ -266,9 +267,9 @@ function Header({
             onClick={() => toggle("profile")}
             type="button"
           >
-            <Avatar name="John Smith" size="sm" />
+            <Avatar name={displayName} size="sm" />
             <span className="hidden text-left md:block">
-              <span className="block font-semibold">John Smith</span>
+              <span className="block font-semibold">{displayName}</span>
               <span className="block text-xs text-gray-500" title={seller ? undefined : "Frontend role code: SuperAdmin"}>{seller ? "Store Owner" : "Super Admin"}</span>
             </span>
             <span aria-hidden="true">⌄</span>
