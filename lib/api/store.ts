@@ -28,6 +28,17 @@ export type CreateBagRequest = {
   categoryIds?: string[];
 };
 
+export type UpdateStoreRequest = {
+  name: string;
+  description?: string | null;
+  address?: string | null;
+  latitude: number;
+  longitude: number;
+  phone?: string | null;
+  bankAccount?: string | null;
+  licenseUrl?: string | null;
+};
+
 const STORE_API_BASE_URL = process.env.NEXT_PUBLIC_STORE_API_URL;
 
 function storeApiBaseUrl() {
@@ -86,13 +97,29 @@ export function createBag(accessToken: string, request: CreateBagRequest) {
   );
 }
 
-export async function listMyStoreBags(accessToken: string) {
-  const baseUrl = storeApiBaseUrl();
-  const store = await apiRequest<StoreProfileResponse>(
+export function getMyStore(accessToken: string) {
+  return apiRequest<StoreProfileResponse>(
     "/api/stores/me",
     { method: "GET", headers: bearer(accessToken) },
-    baseUrl,
+    storeApiBaseUrl(),
   );
+}
+
+export function updateStore(
+  accessToken: string,
+  id: string,
+  request: UpdateStoreRequest,
+) {
+  return apiRequest<StoreProfileResponse>(
+    `/api/stores/${encodeURIComponent(id)}`,
+    { method: "PUT", headers: bearer(accessToken), body: request },
+    storeApiBaseUrl(),
+  );
+}
+
+export async function listMyStoreBags(accessToken: string) {
+  const baseUrl = storeApiBaseUrl();
+  const store = await getMyStore(accessToken);
   return apiRequest<SurpriseBagResponse[]>(
     `/api/bags/store/${encodeURIComponent(store.id)}`,
     { method: "GET" },

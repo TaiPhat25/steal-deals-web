@@ -1,27 +1,87 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { DashboardButton, DashboardCard, ProductImage, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardToast } from "@/components/dashboard/Dialog";
 import { useSellerDemo } from "@/components/seller/SellerDemoProvider";
+import { getMyStore, updateStore } from "@/lib/api/store";
 
 export default function SellerSettings() {
+  const { accessToken, isInitialized } = useAuth();
   const { settings, setSettings } = useSellerDemo();
   const [draft, setDraft] = useState(() => structuredClone(settings));
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [reloadVersion, setReloadVersion] = useState(0);
   const inputClass = "mt-2 h-10 w-full rounded-xl border-none bg-gray-100 px-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary";
 
-  function save(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (!isInitialized) return;
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      setLoading(true);
+      setLoadError("");
+      if (!accessToken) {
+        setLoadError("A seller session is not available.");
+        setLoading(false);
+        return;
+      }
+      void getMyStore(accessToken)
+        .then((store) => {
+          if (!active) return;
+          setSettings((current) => ({ ...current, ...store, bankAccount: "", licenseUrl: "" }));
+          setDraft((current) => ({ ...current, ...store, bankAccount: "", licenseUrl: "" }));
+        })
+        .catch((caught) => {
+          if (active) setLoadError(caught instanceof Error ? caught.message : "The Store Service could not be reached.");
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [accessToken, isInitialized, reloadVersion, setSettings]);
+
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const invalidDay = draft.operatingHours.find((hour) => hour.active && hour.close <= hour.open);
     if (invalidDay) {
       setError(`${invalidDay.day}'s closing time must be after its opening time.`);
       return;
     }
-    setSettings(structuredClone(draft));
+    if (!accessToken) {
+      setError("A seller session is required to save store settings.");
+      return;
+    }
     setError("");
-    setToast("Store settings saved.");
+    setIsSaving(true);
+    try {
+      const store = await updateStore(accessToken, draft.id, {
+        name: draft.name,
+        description: draft.description,
+        address: draft.address,
+        latitude: draft.latitude,
+        longitude: draft.longitude,
+        phone: draft.phone,
+        bankAccount: draft.bankAccount || null,
+        licenseUrl: draft.licenseUrl || null,
+      });
+      const saved = { ...draft, ...store };
+      setSettings(structuredClone(saved));
+      setDraft(structuredClone(saved));
+      setToast("Store settings saved.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to save store settings.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function cancel() {
@@ -35,6 +95,8 @@ export default function SellerSettings() {
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
       <form onSubmit={save} className="space-y-6">
         <div><p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Store profile</p><h1 className="text-xl font-bold">Settings</h1></div>
+        {loading && <div role="status" className="rounded-xl bg-white px-4 py-3 text-sm text-light-secondary-text">Loading store information…</div>}
+        {loadError && <div role="status" className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><p><strong>Demo data active.</strong> {loadError}</p><button type="button" onClick={() => setReloadVersion((version) => version + 1)} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
         <DashboardCard className="space-y-6 p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">Store information</h2><p className="mt-1 text-sm text-light-secondary-text">Public and seller-editable store details.</p></div><div className="flex gap-2"><StatusBadge tone={draft.isVerify ? "success" : "warning"}>{draft.isVerify ? "Verified" : "Unverified"}</StatusBadge><StatusBadge tone={draft.isActive ? "success" : "error"}>{draft.isActive ? "Active" : "Inactive"}</StatusBadge></div></div>
           <div className="grid gap-4 md:grid-cols-2">
@@ -52,7 +114,7 @@ export default function SellerSettings() {
         </DashboardCard>
         <DashboardCard className="space-y-5 p-4 sm:p-6"><div><h2 className="text-lg font-bold">Operating hours (future field)</h2><p className="mt-1 text-sm text-light-secondary-text">Useful for pickup planning, but not part of the current store contract.</p></div><div className="grid gap-3 lg:grid-cols-2">{draft.operatingHours.map((hour, index) => <div key={hour.day} className={`rounded-xl p-4 ${hour.active ? "bg-primary-alpha-16" : "bg-gray-100"}`}><div className="flex items-center justify-between"><strong>{hour.day}</strong><label className="flex items-center gap-2 text-sm"><span>{hour.active ? "Open" : "Closed"}</span><input type="checkbox" checked={hour.active} onChange={(event) => setDraft({ ...draft, operatingHours: draft.operatingHours.map((item, itemIndex) => itemIndex === index ? { ...item, active: event.target.checked } : item) })} className="size-4 accent-primary" /></label></div>{hour.active && <div className="mt-3 grid grid-cols-2 gap-3"><label className="text-xs font-semibold">Opens<input type="time" value={hour.open} onChange={(event) => setDraft({ ...draft, operatingHours: draft.operatingHours.map((item, itemIndex) => itemIndex === index ? { ...item, open: event.target.value } : item) })} className={inputClass} /></label><label className="text-xs font-semibold">Closes<input type="time" value={hour.close} onChange={(event) => setDraft({ ...draft, operatingHours: draft.operatingHours.map((item, itemIndex) => itemIndex === index ? { ...item, close: event.target.value } : item) })} className={inputClass} /></label></div>}</div>)}</div></DashboardCard>
         {error && <div role="alert" className="rounded-xl bg-error-alpha-16 px-4 py-3 text-sm text-error-dark">{error}</div>}
-        <div className="flex justify-end gap-3"><DashboardButton variant="secondary" onClick={cancel}>Cancel</DashboardButton><DashboardButton type="submit">Save settings</DashboardButton></div>
+        <div className="flex justify-end gap-3"><DashboardButton disabled={isSaving} variant="secondary" onClick={cancel}>Cancel</DashboardButton><DashboardButton disabled={loading || isSaving || Boolean(loadError)} type="submit">{isSaving ? "Saving…" : "Save settings"}</DashboardButton></div>
       </form>
     </>
   );
