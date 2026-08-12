@@ -12,6 +12,9 @@ foundation. The storefront was deliberately left untouched.
   `DashboardShell`.
 - `components/dashboard/DashboardShell.tsx` owns the responsive shell, header,
   sidebar, role-specific navigation, menus, and profile presentation.
+  The account label and avatar initials use the authenticated
+  `/api/auth/me` name for both roles. Notifications remain intentionally
+  unconnected because the Notification Service is not ready.
   The seller header intentionally has no global surplus-bag search; bag and
   order filters stay on their relevant pages.
 - `components/dashboard/ui.tsx` contains the small set of repeated primitives:
@@ -50,11 +53,14 @@ The admin routes now behave as a usable prototype instead of a static theme:
   Category delete is a backend soft delete: it sets `isActive` to `false`
   instead of removing the record. The current table removes a successfully
   deleted row immediately; a later list reload may show it again as inactive.
-- `/admin/sellers` is the Seller Management workspace. Its Stores tab uses the
-  backend store-profile fields and provides local search, details, verification,
-  and active-state toggling. Its Applications tab retains the searchable seller
-  onboarding review, approval, and reasoned rejection flow, but is visibly
-  labeled as a future-only contract because seller onboarding has no backend DTO.
+- `/admin/sellers` is the Seller Management workspace. Its Stores tab loads
+  `GET /api/stores` and uses the Store Service verification and active-state
+  endpoints. A failed list request restores backend-shaped dummy stores with a
+  Demo data banner and retry action; verification and active-state changes stay
+  local only while that fallback is active. Its Applications tab retains the
+  searchable seller onboarding review, approval, and reasoned rejection flow,
+  but is visibly labeled as a future-only contract because seller onboarding
+  has no backend DTO.
 - `/admin/support` separates Support tickets and Reports in tabs. Support
   tickets retain search/filter/pagination, conversation replies, and
   resolve/reopen actions. Reports cover food listings, stores, and users with
@@ -72,37 +78,39 @@ The admin routes now behave as a usable prototype instead of a static theme:
 - GUIDs remain record keys and mutation identifiers, but account, store, and
   recent-order tables display page-aware row numbers instead.
 
-Admin category CRUD prefers the Store Service and falls back to local list,
-edit, and delete behavior when its initial list cannot load. Sellers, support,
-and overview records remain page-local; the overview's pending-seller summary
-does not share state with the seller workspace. User Accounts prefer the real
-API and use `lib/api/admin-demo.ts` only while Identity Service is unreachable.
+Admin category CRUD and the Seller Management Stores tab prefer the Store
+Service and fall back to local behavior when their initial lists cannot load.
+Applications, support, and overview records remain page-local; the overview's
+pending-seller summary does not share state with the seller workspace. User
+Accounts prefer the real API and use `lib/api/admin-demo.ts` only while Identity
+Service is unreachable.
 There is no browser storage or fake latency. When backend endpoints are stable,
 remove the fallback and replace the remaining page-local mutation handlers with
 API calls while retaining controls, dialogs, validation, and feedback.
 
 ## Seller functionality
 
-Seller routes still use
-`components/seller/SellerDemoProvider.tsx`, a small in-memory React provider
-mounted inside the seller layout. Product, order, and store changes survive
-client-side navigation between seller routes but reset on refresh. The create
-bag form now loads public categories and sends `POST /api/bags` to the Store
-Service, then inserts the returned bag into that provider. `/seller/products`
-first resolves the authenticated seller's store through `GET /api/stores/me`,
-then loads that store's bags through `GET /api/bags/store/{storeId}`. If either
-request fails, it restores the provider's dummy bags and displays a retryable
-Demo data banner. Other seller reads and mutations remain local. There is no
-browser storage, fake latency, or speculative request/response layer.
+Seller routes use `components/seller/SellerDemoProvider.tsx` as the shared
+client data boundary. After authentication initializes, it resolves the
+seller's store through `GET /api/stores/me`, then loads that store's bags and
+orders in parallel. Store, bag, and order failures retain separate loading and
+fallback reasons so each affected page can show a Demo data banner and retry
+all three services. Product, order, and store changes survive client-side
+navigation between seller routes but reset on refresh. There is no browser
+storage, fake latency, notification integration, or speculative API layer.
 
 - `/seller` derives five metrics, including remaining units expiring today,
-  plus confirmed pickups and recent orders from the shared demo state. Pending
-  orders can be confirmed from the overview.
+  plus confirmed pickups and recent orders from the provider's API-backed
+  store, bag, and order data. Pending orders use the Order Service status
+  endpoint. When a required service fails, the overview explicitly uses the
+  provider's fallback records and exposes a retry action.
 - `/seller/products` manages surplus bags rather than generic ecommerce
   products. Its initial list prefers the Store Service and falls back to dummy
-  data. Search/filter/pagination, selection and bulk status changes, quantity
-  updates, deletion, and record-specific create/edit/details routes operate on
-  the currently loaded provider records.
+  data. Search/filter/pagination stays client-side. Single and bulk status
+  changes call the single-record status endpoint, and deletion calls the
+  single-record delete endpoint for each selected bag. Those mutations remain
+  local only in visible fallback mode. Inline `quantityRemaining` edits remain
+  local because the current API has no inventory-adjustment request.
 - `/seller/products/add`, `/seller/products/edit`, and
   `/seller/products/details` share the backend-shaped surprise-bag model:
   `salePrice`, `quantityTotal`, `quantityRemaining`, category objects, ISO pickup
@@ -117,26 +125,34 @@ browser storage, fake latency, or speculative request/response layer.
   The shared form groups related fields and defaults new pickup windows to the
   next half-hour for one hour. Native date-time inputs remain available for
   exact values, with shortcuts for shifting pickup and expiry times.
-  The add form uses real category IDs and the documented `CreateBagRequest`.
-  Edit and details still operate on provider records only.
-- `/seller/orders` provides local search/filter/pagination, derived status
-  counts, and CSV export over backend-shaped order and item snapshots. Dummy
-  statuses are limited to `Pending`, `Confirmed`,
-  `InventoryReservationFailed`, `PaymentFailed`, and `Cancelled`. Order details
-  allow the locally simulated `Pending` -> `Confirmed` transition or
-  cancellation. The demo list is FIFO by `createdAt`, displays page-aware row
-  numbers, and resolves customer names from an explicit demo-only ID map because
-  the current order response exposes only `userId`.
+  The add form uses real category IDs and `POST /api/bags`. Edit uses
+  `PUT /api/bags/{id}` plus the status endpoint when needed. Details can change
+  status and duplicate a bag through the Store Service. All successful results
+  are written back to the shared provider immediately.
+- `/seller/orders` loads `GET /api/orders/store/{storeId}` and provides local
+  search/filter/pagination, derived status counts, and CSV export over those
+  results. Details use the loaded order and send Confirmed or Cancelled through
+  `PATCH /api/orders/{id}/status`. If the Order Service fails, both screens use
+  the provider's backend-shaped dummy orders with a visible retryable banner.
+  Customer names remain available only for those demo IDs because the current
+  order response exposes only `userId`; real records display `Unknown customer`.
 - `/seller/settings` uses the current store profile/create/update fields,
   including address, phone, bank account, and license URL. Latitude and
   longitude remain in the demo record because the current backend request
   requires them, but they are hidden from sellers. The backend does not
   currently document geocoding, so integration must preserve stored
   coordinates or add address-to-coordinate handling.
-  Operating hours, cover images, and request-side avatar selection remain
-  visibly marked future UI fields. Save updates the shared demo state, Cancel
-  restores the last saved values, and active days require a closing time after
-  their opening time.
+  The form loads `GET /api/stores/me` through the provider and saves supported
+  fields through `PUT /api/stores/{id}`. Operating hours, cover images, and
+  request-side avatar selection remain visibly marked future UI fields. Cancel
+  restores the last successfully loaded or saved values, and active days
+  require a closing time after their opening time. `bankAccount` and
+  `licenseUrl` can be sent but are cleared on reload because the response does
+  not return them.
+- `/seller/store-reviews` remains local. The current response omits `bagId` and
+  `isReported`, which the screen requires, and the API has no remove-reply or
+  clear-report operation. Do not partially integrate this page by inventing
+  those fields.
 - `/seller/inbox` provides customer/order search, local messages, emoji and
   attachment placeholders, contact details, and conversation clearing. Voice
   and video controls remain disabled until a calling service exists.
@@ -144,9 +160,10 @@ browser storage, fake latency, or speculative request/response layer.
   not add realtime presence, typing indicators, calls, or attachment storage
   unless messaging becomes a graded core requirement.
 
-When seller endpoints arrive, replace provider reads and state setters at each
-page boundary with backend queries and mutations, then remove the provider.
-Keep the current controls, validation, order transition feedback, dialogs, and
+When the Store and Order services are stable, remove the provider's fallback
+records and demo-mode mutation branches. The provider can remain as shared
+client state while seller routes need changes to appear immediately across
+pages. Keep the current controls, validation, feedback, dialogs, and
 empty/error presentation.
 
 ## Backend-aligned mock contracts
@@ -161,15 +178,18 @@ Identity request/response types in `lib/api/admin-types.ts` and
 nullable request values, address fields, update email support, and optional
 pagination.
 
-`lib/api/admin-demo.ts` is the only API-unavailable fallback. It deliberately
-mirrors the existing admin user functions instead of introducing a fake server
-or general mock repository.
+`lib/api/admin-demo.ts` is the Identity-specific API-unavailable fallback. It
+deliberately mirrors the existing admin user functions instead of introducing
+a fake server or general mock repository. Store-shaped and Order-shaped
+fallback arrays remain colocated with their existing dashboard consumers or
+the seller provider.
 
 `lib/api/store.ts` contains only the Store Service calls currently in use:
-public category listing, admin category create/update/delete, seller bag
-creation, current seller store lookup, and store bag listing. They use
-`NEXT_PUBLIC_STORE_API_URL`; Identity calls continue to use
-`NEXT_PUBLIC_API_URL`.
+category CRUD, store listing/current-store/update/moderation, and bag
+list/create/update/delete/status operations. They use
+`NEXT_PUBLIC_STORE_API_URL`. `lib/api/order.ts` contains seller store-order
+listing and status updates and uses `NEXT_PUBLIC_ORDER_API_URL`. Identity calls
+continue to use `NEXT_PUBLIC_API_URL`.
 
 Backend status fields remain `string` in response types. The demo uses a narrow
 UI-only list of current spellings; do not treat it as a final backend enum.
@@ -179,9 +199,35 @@ Future-only dashboard data remains local and explicit:
 - store cover/avatar filename and operating hours;
 - seller applications;
 - support tickets, reports, and seller inbox conversations.
+- seller store reviews and review moderation state;
+- dashboard notification counts and menu content.
 
 The first two preserve likely product needs without claiming current DTO
-support. The last three remain prototypes until backend contracts exist.
+support. The remaining entries stay prototypes until backend contracts exist.
+
+## API fallback removal checklist
+
+These are temporary API-unavailable fallbacks, not permanent application data.
+Remove each one when its backend service and browser integration are stable:
+
+- Identity account management: `lib/api/admin-demo.ts`, used by Buyers,
+  Sellers, Admins, and the unfiltered Users route only after a network-level
+  Identity failure.
+- Admin categories: `INITIAL_CATEGORIES` in `/admin/categories`; create, edit,
+  and delete remain local only while its Demo data banner is visible.
+- Admin store management: `INITIAL_STORES` in `/admin/sellers`; verification
+  and activation remain local only while its Demo data banner is visible.
+- Seller store, bag, and order data: `INITIAL_SETTINGS`, `DEMO_PRODUCTS`, and
+  `INITIAL_ORDERS` in `SellerDemoProvider`. The provider records a separate
+  fallback reason for Store, Bag, and Order loading and exposes one retry action.
+- Seller customer display names: `DEMO_CUSTOMER_NAMES` is only meaningful for
+  fallback orders. Remove it when the seller-safe order response supplies the
+  customer display field.
+
+Do not confuse those fallbacks with future-only prototypes. Seller
+applications, support/reports, inbox, reviews, notifications, media, and
+operating hours have no complete approved contract and must remain explicitly
+local until the backend work is complete.
 
 ## Styling conventions
 
@@ -240,11 +286,10 @@ about 4 KB instead of 1.96 MB across 370 files.
   host and Next image policy are known.
 - Keep search/filter state page-specific until three pages share the same real
   backend query contract; the current controls have different domain behavior.
-- Connect seller accounts/applications, support/reports, and recent-order
-  handlers at their existing local mutation
-  boundaries. Do not
-  preserve the disposable in-memory transformation code after an endpoint
-  replaces it.
+- Connect seller applications, support/reports, and admin overview orders at
+  their existing local mutation boundaries once complete backend contracts
+  exist. Do not preserve the disposable in-memory transformation code after an
+  endpoint replaces it.
 - Browser-level visual regression coverage is not present. Before a design
   overhaul, capture desktop and mobile baselines for the dashboard, tables,
   inbox, product forms, and user dialogs.

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { DEMO_PRODUCTS, useSellerDemo, type BagStatus, type SurplusBag } from "@/components/seller/SellerDemoProvider";
+import { useSellerDemo, type BagStatus, type SurplusBag } from "@/components/seller/SellerDemoProvider";
 import { DashboardButton, DashboardCard, PageHeader, ProductImage, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast, DialogActions } from "@/components/dashboard/Dialog";
-import { listMyStoreBags } from "@/lib/api/store";
+import { deleteBag, updateBagStatus } from "@/lib/api/store";
 
 const PAGE_SIZE = 4;
 const statusTone = (status: string) => status === "Active" ? "success" : status === "Sold out" ? "error" : "warning";
@@ -14,8 +14,14 @@ const money = (value: number) => new Intl.NumberFormat("vi-VN", { style: "curren
 const time = (value: string) => new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 
 export default function SellerProducts() {
-  const { accessToken, isInitialized } = useAuth();
-  const { products, setProducts } = useSellerDemo();
+  const { accessToken } = useAuth();
+  const {
+    products,
+    setProducts,
+    productsLoading: loading,
+    productsDemoReason: demoReason,
+    retryApi,
+  } = useSellerDemo();
   // ponytail: expiry refreshes on page load; add a timer only if sellers keep this screen open across expiry.
   const [now] = useState(Date.now);
   const [search, setSearch] = useState("");
@@ -25,9 +31,8 @@ export default function SellerProducts() {
   const [selected, setSelected] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<SurplusBag | "selected" | null>(null);
   const [toast, setToast] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [demoReason, setDemoReason] = useState("");
-  const [reloadVersion, setReloadVersion] = useState(0);
+  const [mutating, setMutating] = useState(false);
+  const [actionError, setActionError] = useState("");
   const categories = [...new Set(products.flatMap((product) => product.categories.map((item) => item.name)))];
   const filtered = useMemo(() => products.filter((product) => {
     const query = search.trim().toLowerCase();
@@ -39,61 +44,51 @@ export default function SellerProducts() {
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const allVisibleSelected = rows.length > 0 && rows.every((row) => selected.includes(row.id));
 
-  useEffect(() => {
-    if (!isInitialized) return;
-    let active = true;
-    const timeout = window.setTimeout(() => {
-      setLoading(true);
-      setDemoReason("");
-      if (!accessToken) {
-        setProducts(DEMO_PRODUCTS);
-        setPage(1);
-        setSelected([]);
-        setDemoReason("A seller session is not available.");
-        setLoading(false);
-        return;
-      }
-      void listMyStoreBags(accessToken)
-        .then((bags) => {
-          if (!active) return;
-          setProducts(bags);
-          setPage(1);
-          setSelected([]);
-        })
-        .catch((caught) => {
-          if (!active) return;
-          setProducts(DEMO_PRODUCTS);
-          setPage(1);
-          setSelected([]);
-          setDemoReason(caught instanceof Error ? caught.message : "The Store Service could not be reached.");
-        })
-        .finally(() => {
-          if (active) setLoading(false);
-        });
-    }, 0);
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-    };
-  }, [accessToken, isInitialized, reloadVersion, setProducts]);
-
   function resetPage() {
     setPage(1);
     setSelected([]);
   }
 
-  function updateSelected(next: BagStatus) {
-    setProducts((items) => items.map((item) => selected.includes(item.id) ? { ...item, status: next === "Active" && item.quantityRemaining === 0 ? "Sold out" : next } : item));
-    setToast(`${selected.length} bag${selected.length === 1 ? "" : "s"} marked ${next.toLowerCase()}.`);
-    setSelected([]);
+  async function updateSelected(next: BagStatus) {
+    setMutating(true);
+    setActionError("");
+    try {
+      if (!demoReason) {
+        if (!accessToken) throw new Error("A seller session is required to update bags.");
+        await Promise.all(selected.map((id) => {
+          const product = products.find((item) => item.id === id);
+          const status = next === "Active" && product?.quantityRemaining === 0 ? "Sold out" : next;
+          return updateBagStatus(accessToken, id, status);
+        }));
+      }
+      setProducts((items) => items.map((item) => selected.includes(item.id) ? { ...item, status: next === "Active" && item.quantityRemaining === 0 ? "Sold out" : next } : item));
+      setToast(`${selected.length} bag${selected.length === 1 ? "" : "s"} marked ${next.toLowerCase()}.`);
+      setSelected([]);
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : "Unable to update the selected bags.");
+    } finally {
+      setMutating(false);
+    }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     const ids = deleting === "selected" ? selected : deleting ? [deleting.id] : [];
-    setProducts((items) => items.filter((item) => !ids.includes(item.id)));
-    setToast(`${ids.length} bag${ids.length === 1 ? "" : "s"} deleted.`);
-    setDeleting(null);
-    resetPage();
+    setMutating(true);
+    setActionError("");
+    try {
+      if (!demoReason) {
+        if (!accessToken) throw new Error("A seller session is required to delete bags.");
+        await Promise.all(ids.map((id) => deleteBag(accessToken, id)));
+      }
+      setProducts((items) => items.filter((item) => !ids.includes(item.id)));
+      setToast(`${ids.length} bag${ids.length === 1 ? "" : "s"} deleted.`);
+      setDeleting(null);
+      resetPage();
+    } catch (caught) {
+      setActionError(caught instanceof Error ? caught.message : "Unable to delete the selected bags.");
+    } finally {
+      setMutating(false);
+    }
   }
 
   return (
@@ -110,9 +105,10 @@ export default function SellerProducts() {
               {(search || category || status) && <button type="button" onClick={() => { setSearch(""); setCategory(""); setStatus(""); resetPage(); }} className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter">Clear</button>}
             </div>
           </div>
-          {selected.length > 0 && <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-gray-100 p-3"><span className="text-sm font-semibold">{selected.length} selected</span><button type="button" onClick={() => updateSelected("Active")} className="text-sm font-semibold text-primary">Activate</button><button type="button" onClick={() => updateSelected("Draft")} className="text-sm font-semibold text-warning-dark">Move to draft</button><button type="button" onClick={() => setDeleting("selected")} className="text-sm font-semibold text-error-dark">Delete</button></div>}
+          {selected.length > 0 && <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-gray-100 p-3"><span className="text-sm font-semibold">{selected.length} selected</span><button type="button" disabled={mutating} onClick={() => updateSelected("Active")} className="text-sm font-semibold text-primary disabled:opacity-40">Activate</button><button type="button" disabled={mutating} onClick={() => updateSelected("Draft")} className="text-sm font-semibold text-warning-dark disabled:opacity-40">Move to draft</button><button type="button" disabled={mutating} onClick={() => setDeleting("selected")} className="text-sm font-semibold text-error-dark disabled:opacity-40">Delete</button></div>}
         </div>
-        {demoReason && <div className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6" role="status"><p><strong>Demo data active.</strong> {demoReason}</p><button type="button" onClick={() => setReloadVersion((version) => version + 1)} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
+        {demoReason && <div className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6" role="status"><p><strong>Demo data active.</strong> {demoReason}</p><button type="button" onClick={retryApi} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
+        {actionError && <div role="alert" className="border-t border-error/30 bg-error-alpha-16 px-4 py-3 text-sm text-error-dark sm:px-6">{actionError}</div>}
         {loading ? <div className="border-t border-gray-500/20 px-4 py-14 text-center text-sm text-light-secondary-text" role="status">Loading surplus bags…</div> : <>
         <div className="overflow-x-auto border-t border-gray-500/20">
           <table className="w-full text-sm">
@@ -133,7 +129,7 @@ export default function SellerProducts() {
         <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6"><span className="text-sm text-light-secondary-text">{filtered.length} bags</span><div className="flex items-center gap-2"><button type="button" aria-label="Previous page" disabled={page === 1} onClick={() => setPage(page - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">‹</button><span className="text-sm font-semibold">Page {page} of {totalPages}</span><button type="button" aria-label="Next page" disabled={page === totalPages} onClick={() => setPage(page + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">›</button></div></div>
         </>}
       </DashboardCard>
-      {deleting && <DashboardDialog title={deleting === "selected" ? `Delete ${selected.length} bags?` : `Delete ${deleting.name}?`} onClose={() => setDeleting(null)}><p className="p-5 text-sm leading-6 text-light-secondary-text sm:p-6">This only removes the selected data from the current dashboard state.</p><DialogActions onCancel={() => setDeleting(null)}><DashboardButton variant="danger" onClick={confirmDelete}>Delete</DashboardButton></DialogActions></DashboardDialog>}
+      {deleting && <DashboardDialog title={deleting === "selected" ? `Delete ${selected.length} bags?` : `Delete ${deleting.name}?`} onClose={() => !mutating && setDeleting(null)}><p className="p-5 text-sm leading-6 text-light-secondary-text sm:p-6">{demoReason ? "This only removes the selected data from the current demo state." : "This deletes the selected bags from the Store Service."}</p><DialogActions onCancel={() => !mutating && setDeleting(null)}><DashboardButton variant="danger" disabled={mutating} onClick={confirmDelete}>{mutating ? "Deleting…" : "Delete"}</DashboardButton></DialogActions></DashboardDialog>}
     </>
   );
 }
