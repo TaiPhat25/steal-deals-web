@@ -2783,6 +2783,7 @@ img {
   font-weight: 600;
 }
 
+.checkout-field input,
 .checkout-field textarea,
 .checkout-voucher input {
   width: 100%;
@@ -2795,6 +2796,7 @@ img {
   resize: vertical;
 }
 
+.checkout-field input:focus,
 .checkout-field textarea:focus,
 .checkout-voucher input:focus {
   border-color: #61ab00;

@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
+import { getProfile } from "@/lib/api/account";
+import { createOrder } from "@/lib/api/order";
 
 type DeliveryType = "Pickup" | "Delivery";
 
@@ -37,13 +40,37 @@ function createInitialLines() {
 }
 
 export default function CheckoutMain() {
+  const { accessToken } = useAuth();
   const [lines, setLines] = useState(createInitialLines);
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("Pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("CashOnPickup");
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let active = true;
+
+    void getProfile(accessToken)
+      .then((profile) => {
+        if (!active) return;
+        setContactName(profile.fullName ?? "");
+        setContactPhone(profile.phone ?? "");
+      })
+      .catch(() => {
+        if (active) setError("Unable to load your contact details. Enter them below to continue.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
 
   const groups = useMemo<CheckoutStoreGroup[]>(() => {
     const grouped = new Map<string, CheckoutStoreGroup>();
@@ -85,6 +112,45 @@ export default function CheckoutMain() {
     setVoucherDiscount(voucherCode.trim().toUpperCase() === "STEAL10" ? 10000 : 0);
   }
 
+  async function submitOrders() {
+    if (!accessToken) {
+      setError("Sign in before placing an order.");
+      return;
+    }
+    const normalizedName = contactName.trim();
+    const normalizedPhone = contactPhone.trim();
+    if (!normalizedName || !normalizedPhone) {
+      setError("Enter a contact name and phone number.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    try {
+      await Promise.all(groups.map((group, index) => createOrder(accessToken, {
+        storeId: group.storeId,
+        storeNameSnapshot: group.storeName,
+        contactNameSnapshot: normalizedName,
+        contactPhoneSnapshot: normalizedPhone,
+        deliveryFee: deliveryType === "Delivery" ? 25000 : 0,
+        voucherDiscount: index === 0 ? voucherDiscount : 0,
+        deliveryType,
+        deliveryAddress: deliveryType === "Delivery" ? deliveryAddress.trim() : "",
+        items: group.lines.map(({ bag, quantity }) => ({
+          bagId: bag.slug,
+          bagNameSnapshot: bag.name,
+          unitPriceSnapshot: bag.salePrice,
+          quantity,
+        })),
+      })));
+      setSubmitted(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to place your order.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <main className="main checkout-page">
       <nav aria-label="Breadcrumb" className="breadcrumb-nav border-0 mb-0">
@@ -111,8 +177,8 @@ export default function CheckoutMain() {
             <section className="checkout-success" aria-live="polite">
               <span className="checkout-success__icon" aria-hidden="true">&#10003;</span>
               <p>Order details ready</p>
-              <h2>Your rescue order is ready to submit</h2>
-              <span>The checkout details have been collected. Order Service and payment integration will be connected next.</span>
+              <h2>Your rescue order has been placed</h2>
+              <span>The store now has your saved contact details for this order.</span>
               <div className="checkout-success__actions">
                 <Link href="/products" className="btn btn-primary">Continue browsing</Link>
                 <Link href="/" className="btn btn-outline-primary-2">Back to home</Link>
@@ -123,7 +189,7 @@ export default function CheckoutMain() {
               className="checkout-layout"
               onSubmit={(event) => {
                 event.preventDefault();
-                setSubmitted(true);
+                void submitOrders();
               }}
             >
               <div className="checkout-main-column">
@@ -135,6 +201,15 @@ export default function CheckoutMain() {
                     </div>
                     <span className="checkout-panel__step">1</span>
                   </div>
+
+                  <label className="checkout-field">
+                    <span>Contact name *</span>
+                    <input type="text" autoComplete="name" maxLength={256} required value={contactName} onChange={(event) => setContactName(event.target.value)} />
+                  </label>
+                  <label className="checkout-field">
+                    <span>Contact phone *</span>
+                    <input type="tel" autoComplete="tel" maxLength={20} required value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} />
+                  </label>
 
                   <div className="checkout-choice-grid">
                     <label className={`checkout-choice${deliveryType === "Pickup" ? " is-selected" : ""}`}>
@@ -226,7 +301,8 @@ export default function CheckoutMain() {
                 </div>
                 <div className="checkout-summary__row"><span>Voucher discount</span><strong>{voucherDiscount ? `- ${formatPrice(voucherDiscount)}` : "-"}</strong></div>
                 <div className="checkout-summary__total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
-                <button type="submit" className="btn btn-primary checkout-submit">Place order <span aria-hidden="true">&#8594;</span></button>
+                {error && <div className="alert alert-danger" role="alert">{error}</div>}
+                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting}>{submitting ? "Placing order..." : "Place order"} <span aria-hidden="true">&#8594;</span></button>
                 <p className="checkout-summary__note">By placing your order, you agree to collect the bags during the listed pickup window.</p>
               </aside>
             </form>

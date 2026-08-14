@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { OrderResponse } from "@/lib/api/dashboard-types";
+import type { CreateOrderRequest, OrderResponse } from "@/lib/api/dashboard-types";
 
 const ORDER_API_BASE_URL = process.env.NEXT_PUBLIC_ORDER_API_URL;
 
@@ -10,6 +10,14 @@ function orderApiBaseUrl() {
 
 function bearer(accessToken: string) {
   return { Authorization: `Bearer ${accessToken}` };
+}
+
+export function createOrder(accessToken: string, request: CreateOrderRequest) {
+  return apiRequest<OrderResponse>(
+    "/api/orders",
+    { method: "POST", headers: bearer(accessToken), body: request },
+    orderApiBaseUrl(),
+  );
 }
 
 export function listStoreOrders(accessToken: string, storeId: string) {

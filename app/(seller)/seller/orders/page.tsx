@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
-import { DEMO_CUSTOMER_NAMES, useSellerDemo, type OrderStatus } from "@/components/seller/SellerDemoProvider";
+import { useSellerDemo, type OrderStatus } from "@/components/seller/SellerDemoProvider";
 import { oldestOrdersFirst } from "@/lib/seller-dashboard";
 
 const PAGE_SIZE = 4;
@@ -19,6 +19,7 @@ const label = (status: string) => labels[status as OrderStatus] ?? status;
 const tone = (status: string) => status === "Confirmed" ? "success" : status === "Pending" ? "warning" : "error";
 const money = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 const date = (value: string) => new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(value));
+const provided = (value?: string | null) => value?.trim() || "Not provided";
 
 export default function SellerOrders() {
   const { orders, ordersLoading, ordersDemoReason, retryApi } = useSellerDemo();
@@ -31,7 +32,7 @@ export default function SellerOrders() {
   const stats = STATUSES.map((item) => ({ label: labels[item], value: visibleOrders.filter((order) => order.status === item).length }));
   const filtered = useMemo(() => oldestOrdersFirst(visibleOrders.filter((order) => {
     const query = search.trim().toLowerCase();
-    return (!query || `${order.id} ${DEMO_CUSTOMER_NAMES[order.userId] ?? ""} ${order.storeNameSnapshot}`.toLowerCase().includes(query))
+    return (!query || `${order.id} ${order.contactNameSnapshot} ${order.contactPhoneSnapshot} ${order.storeNameSnapshot}`.toLowerCase().includes(query))
       && (!status || order.status === status)
       && (!createdDate || order.createdAt.slice(0, 10) === createdDate);
   })), [createdDate, search, status, visibleOrders]);
@@ -41,8 +42,8 @@ export default function SellerOrders() {
   function exportCsv() {
     const escape = (value: string | number | null) => `"${String(value ?? "").replaceAll('"', '""')}"`;
     const csv = [
-      ["id", "customerName", "userId", "storeId", "items", "totalAmount", "deliveryType", "pickupCode", "status", "createdAt"],
-      ...filtered.map((order) => [order.id, DEMO_CUSTOMER_NAMES[order.userId] ?? "", order.userId, order.storeId, order.items.length, order.totalAmount, order.deliveryType, order.pickupCode, order.status, order.createdAt]),
+      ["id", "contactNameSnapshot", "contactPhoneSnapshot", "userId", "storeId", "items", "totalAmount", "deliveryType", "pickupCode", "status", "createdAt"],
+      ...filtered.map((order) => [order.id, order.contactNameSnapshot, order.contactPhoneSnapshot, order.userId, order.storeId, order.items.length, order.totalAmount, order.deliveryType, order.pickupCode, order.status, order.createdAt]),
     ].map((row) => row.map(escape).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const link = document.createElement("a");
@@ -76,7 +77,7 @@ export default function SellerOrders() {
         </div>
         {ordersDemoReason && <div className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6" role="status"><p><strong>Demo data active.</strong> {ordersDemoReason}</p><button type="button" onClick={retryApi} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
         {ordersLoading ? <div className="border-t border-gray-500/20 px-4 py-14 text-center text-sm text-light-secondary-text" role="status">Loading orders…</div> : <div className="overflow-x-auto border-t border-gray-500/20">
-          <table className="w-full text-sm"><thead className="bg-gray-100 text-left"><tr><th className="p-3 pl-5">No.</th><th className="p-3">Customer</th><th className="p-3">Items</th><th className="p-3">Total</th><th className="p-3">Delivery</th><th className="p-3">Status</th><th className="p-3">Created</th><th className="p-3 pr-5 text-right">Action</th></tr></thead><tbody>{rows.map((order, index) => <tr key={order.id} className="border-t border-gray-500/20 hover:bg-gray-50/50"><td className="p-3 pl-5 text-light-secondary-text">{(page - 1) * PAGE_SIZE + index + 1}</td><td className="p-3 font-semibold">{DEMO_CUSTOMER_NAMES[order.userId] ?? "Unknown customer"}</td><td className="p-3">{order.items.reduce((sum, item) => sum + item.quantity, 0)}</td><td className="p-3 font-semibold">{money(order.totalAmount)}</td><td className="p-3">{order.deliveryType}</td><td className="p-3"><StatusBadge tone={tone(order.status)}>{label(order.status)}</StatusBadge></td><td className="p-3">{date(order.createdAt)}</td><td className="p-3 pr-5 text-right"><Link href={`/seller/orders/details?id=${order.id}`} className="inline-flex h-8 items-center rounded-lg px-3 font-semibold text-primary hover:bg-primary-lighter">Manage</Link></td></tr>)}</tbody></table>
+          <table className="w-full text-sm"><thead className="bg-gray-100 text-left"><tr><th className="p-3 pl-5">No.</th><th className="p-3">Customer contact</th><th className="p-3">Items</th><th className="p-3">Total</th><th className="p-3">Delivery</th><th className="p-3">Status</th><th className="p-3">Created</th><th className="p-3 pr-5 text-right">Action</th></tr></thead><tbody>{rows.map((order, index) => <tr key={order.id} className="border-t border-gray-500/20 hover:bg-gray-50/50"><td className="p-3 pl-5 text-light-secondary-text">{(page - 1) * PAGE_SIZE + index + 1}</td><td className="p-3"><strong className="block">{provided(order.contactNameSnapshot)}</strong><span className="text-light-secondary-text">{provided(order.contactPhoneSnapshot)}</span></td><td className="p-3">{order.items.reduce((sum, item) => sum + item.quantity, 0)}</td><td className="p-3 font-semibold">{money(order.totalAmount)}</td><td className="p-3">{order.deliveryType}</td><td className="p-3"><StatusBadge tone={tone(order.status)}>{label(order.status)}</StatusBadge></td><td className="p-3">{date(order.createdAt)}</td><td className="p-3 pr-5 text-right"><Link href={`/seller/orders/details?id=${order.id}`} className="inline-flex h-8 items-center rounded-lg px-3 font-semibold text-primary hover:bg-primary-lighter">Manage</Link></td></tr>)}</tbody></table>
           {rows.length === 0 && <div className="px-4 py-14 text-center text-sm text-light-secondary-text">{view === "today" && !search && !status ? <><p>No orders today.</p><button type="button" onClick={() => changeView("history")} className="mt-3 font-semibold text-primary hover:underline">View order history</button></> : "No orders match these filters."}</div>}
         </div>}
         <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6"><span className="text-sm text-light-secondary-text">{filtered.length} orders</span><div className="flex items-center gap-2"><button type="button" aria-label="Previous page" disabled={page === 1} onClick={() => setPage(page - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">‹</button><span className="text-sm font-semibold">Page {page} of {totalPages}</span><button type="button" aria-label="Next page" disabled={page === totalPages} onClick={() => setPage(page + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">›</button></div></div>
