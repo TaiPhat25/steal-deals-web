@@ -121,7 +121,7 @@ function getRelatedBags(current: ListingBag) {
     (bag) => bag.slug !== current.slug && bag.category !== current.category,
   );
 
-  return [...sameCategory, ...fallback].slice(0, 4);
+  return [...sameCategory, ...fallback].slice(0, 5);
 }
 
 export default function ProductMain({ bag }: { bag: ListingBag }) {
@@ -242,7 +242,6 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                     <div><dt>Pickup</dt><dd>{formatPickupRange(bag)}</dd></div>
                     <div><dt>Expiry</dt><dd>{formatDate(bag.expiryDate)}, {formatTime(bag.expiryDate)}</dd></div>
                     <div><dt>Available</dt><dd>{formatAvailability(bag)}</dd></div>
-                    <div><dt>Status</dt><dd>{bag.status}</dd></div>
                     <div>
                       <dt>Category</dt>
                       <dd className="product-detail-page__categories">
@@ -287,7 +286,7 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
 
                   <div className="product-details-action">
                     {isAvailable ? (
-                      <Link href={cartHref} className="btn-product btn-cart"><span>Add to cart</span></Link>
+                      <Link href={cartHref} className="btn-product btn-cart product-detail-page__cart"><span>Add to cart</span></Link>
                     ) : (
                       <span className="btn-product btn-cart disabled" aria-disabled="true"><span>Sold out</span></span>
                     )}
@@ -375,9 +374,9 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                 </Link>
               </div>
 
-              <div className="row product-listing-grid">
+              <div className="product-detail-page__related-grid">
                 {relatedBags.map((relatedBag) => (
-                  <div className="col-12 col-sm-6 col-lg-3" key={relatedBag.slug}>
+                  <div key={relatedBag.slug}>
                     <SurpriseBagCard bag={relatedBag} />
                   </div>
                 ))}

@@ -8,7 +8,6 @@ import {
   normalizeSort,
   storeNames,
   surpriseBags,
-  type ListingBag,
 } from "./product-listing-data";
 
 type ProductListingProps = {
@@ -56,7 +55,6 @@ export default function ProductListing({
 }: ProductListingProps) {
   const [query, setQuery] = useState(initialQuery);
   const [categories, setCategories] = useState(initialCategory ? [initialCategory] : []);
-  const [pickupDay, setPickupDay] = useState<"all" | ListingBag["pickupDay"]>("all");
   const [maxPrice, setMaxPrice] = useState(300000);
   const [maxDistance, setMaxDistance] = useState(10);
   const [sort, setSort] = useState(normalizeSort(initialSort));
@@ -80,13 +78,13 @@ export default function ProductListing({
       filterBags(surpriseBags, {
         query,
         categories,
-        pickupDay,
+        pickupDay: "all",
         maxPrice,
         maxDistance: storeSlug ? Number.POSITIVE_INFINITY : maxDistance,
         sort,
         storeSlug,
       }),
-    [categories, maxDistance, maxPrice, pickupDay, query, sort, storeSlug],
+    [categories, maxDistance, maxPrice, query, sort, storeSlug],
   );
 
   function toggleCategory(category: string) {
@@ -100,7 +98,6 @@ export default function ProductListing({
   function clearFilters() {
     setQuery("");
     setCategories([]);
-    setPickupDay("all");
     setMaxPrice(300000);
     setMaxDistance(10);
     setSort("popularity");
@@ -228,28 +225,6 @@ export default function ProductListing({
                           </label>
                         </div>
                         <span className="item-count">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </FilterWidget>
-
-                <FilterWidget id="pickup-filter" title="Pickup">
-                  <div className="filter-items">
-                    {(["all", "today", "tomorrow"] as const).map((day) => (
-                      <div className="filter-item" key={day}>
-                        <div className="custom-control custom-radio">
-                          <input
-                            type="radio"
-                            className="custom-control-input"
-                            id={`pickup-${day}`}
-                            name="pickup-day"
-                            checked={pickupDay === day}
-                            onChange={() => setPickupDay(day)}
-                          />
-                          <label className="custom-control-label text-capitalize" htmlFor={`pickup-${day}`}>
-                            {day === "all" ? "Any day" : day}
-                          </label>
-                        </div>
                       </div>
                     ))}
                   </div>

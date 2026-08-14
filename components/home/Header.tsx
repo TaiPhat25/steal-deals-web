@@ -998,7 +998,7 @@ export default function Header() {
                   <span className="cart-txt font-weight-normal">{formatHeaderPrice(headerCartTotal)}</span>
                 </a>
 
-                <div className="dropdown-menu dropdown-menu-right">
+                <div className="dropdown-menu dropdown-menu-right store-cart-dropdown-menu">
                   <div className="dropdown-cart-products">
                     {headerCartItems.map((bag) => (
                       <div className="product mb-0 rounded-0 w-100" key={bag.slug}>
@@ -1010,7 +1010,8 @@ export default function Header() {
                           </h4>
 
                           <span className="cart-product-info">
-                            <span className="cart-product-qty">1</span>x {formatHeaderPrice(bag.salePrice)}
+                            <span className="cart-product-qty store-cart-product-quantity">1x</span>{" "}
+                            {formatHeaderPrice(bag.salePrice)}
                           </span>
                         </div>
 
