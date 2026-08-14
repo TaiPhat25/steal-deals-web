@@ -166,11 +166,19 @@ hash URLs:
 - Sign In uses `/login`.
 - Register uses `/register`.
 
+Both routes use direct breadcrumbs from `Home` to the current authentication
+page; the old template `Pages` placeholder has been removed.
+
 Successful login stores the access token in memory, loads `/api/auth/me`, and
 navigates to `/`. The header then displays `Welcome, <name>` with Profile and
 Logout actions.
 
-Registration sends first name, last name, email, password, and optional phone.
+The sign-in form also displays `User`, `Seller`, and `Admin` radio options,
+with `User` selected by default. This selection is currently UI-only because
+`POST /api/auth/login` accepts only email and password; the selected role is
+not sent to the backend until a role-aware login contract is implemented.
+
+Registration sends first name, last name, email, password, and required phone.
 It does not authenticate the new account. When email verification is required,
 the page opens an OTP modal. Successful verification and Enter later both
 navigate to `/login`.
@@ -213,8 +221,18 @@ The Verify link opens the email modal through `/profile?verify=email` without
 scrolling the page. Successful verification reloads the profile and removes
 the query parameter. Enter later closes the modal without scrolling.
 
-The phone `Add` link points to `/profile?edit=phone`, but phone editing is not
-implemented yet.
+The phone `Edit` link opens a local profile modal at `/profile?edit=phone`.
+The address section provides an `Add address` modal at `/profile?edit=address`.
+Both modals update the profile view immediately; permanent account/address
+persistence still requires an Account Service update endpoint.
+
+Buyers without the `Seller` role also see a `Become a Seller` link in the
+Roles section. It opens a local application modal at `/profile?seller=apply`
+with store name, description, address, and contact phone fields. Submission
+currently shows a frontend-only confirmation; no seller application API is
+called yet. The backend currently supports seller-owned store creation and
+admin role assignment, but does not expose a public buyer-to-seller
+application endpoint.
 
 ## Store pages and interactions
 
@@ -289,22 +307,27 @@ not affect application type-checking.
 
 `/products` is the marketplace-wide surprise-bag listing. It renders 12 static
 food bags using the same `SurpriseBagCard` used by Home and food imagery from
-`public/assets/images/demos/demo-28/flash`. Search, category, pickup day, price,
-distance, and sorting controls work against client-side demo data. Size, colour,
-brand, compare, thumbnails, fake layout controls, and presentation-only
+`public/assets/images/demos/demo-28/flash`. Search, category, price, distance,
+and sorting controls work against client-side demo data. The sidebar no longer
+shows the pickup-day radio filter; pickup timing remains available through the
+`Sort by` dropdown's `Pickup Soonest` option. Size, colour, brand, compare,
+thumbnails, fake layout controls, and presentation-only
 pagination were removed.
 
-`/stores` renders the store directory with search, verified/new filters, and
-rating, bag-count, or name sorting. Store cards link to `/stores/[id]` and use
-larger listing-specific typography for scanning store details.
+`/stores` renders the store directory with a half-width desktop search field,
+old/new store filters, and rating, bag-count, or name sorting. Store cards use a
+four-column desktop grid and link to `/stores/[id]`. Client-side pagination is
+implemented at 20 stores per page; the current static dataset has fewer than 20
+stores, so pagination controls appear when additional store data is available.
 
 `/stores/[id]` renders the selected store profile, active surprise bags, and
 reviews. Store bag cards map backend-shaped bag records to the shared listing
 slugs so product and cart links remain compatible. Category names are normalized
 for the current listing data, and the local store profiles include the same
-active bags shown by the marketplace. Joined and Status now share a single
-bottom divider in the store information grid without duplicating the next row.
-Unknown store IDs return `404`.
+active bags shown by the marketplace. The store-detail profile does not show the
+verification badge; its status is presented as `Open` or `Closed`. Joined and
+Status now share a single bottom divider in the store information grid without
+duplicating the next row. Unknown store IDs return `404`.
 
 Product and store links now use `/products`, `/stores`, `/stores/[id]`, and
 `/products?store=`, and `/product?bag=`. Store detail marketplace links use the
@@ -325,13 +348,16 @@ legacy Molla ElevateZoom selectors, so hovering the image does not inject the
 old zoom container or thumbnail UI. It displays up to three existing product
 gallery assets as vertical thumbnails, and selecting a thumbnail updates the
 main image. The detail summary now shows backend-aligned pickup timestamps,
-expiry time, status, category, and `quantity remaining of quantity total`
-availability. Its quantity control uses the same minus/value/plus stepper
-pattern as the Cart page. Summary field labels use a slightly larger type size
+expiry time, category, and `quantity remaining of quantity total`
+availability; the unnecessary Status field is omitted. Its quantity control uses
+the same minus/value/plus stepper pattern as the Cart page. Summary field labels
+use a slightly larger type size
 to improve scanning, and category links inherit the normal summary value size.
+The Add to Cart hover state uses a filled green button with both the label and
+cart icon in white.
 The previous pickup-day/discount footer row was removed. Product reviews now
 show static FE review data until the Store Service review endpoint is connected.
-The related-bag section uses the saved Product Detail design: four full
+The related-bag section uses the saved Product Detail design: five full
 `SurpriseBagCard` cards, same-category items first, and a link to more bags in
 the current category.
 
@@ -340,11 +366,14 @@ quantity stepper updates, quantity limits based on available bags, item removal,
 subtotal calculation, and a pickup-oriented checkout summary. Its initial data
 is still static; a real cart API or persisted cart state is not connected yet.
 Cart category labels link back to the filtered `/products?category=` listing,
-while bag names and images link to `/product?bag=`.
+while bag names and images link to `/product?bag=`. The `Continue browsing`
+action uses the same outlined button treatment as Home's `View Details` action.
 
 The header cart dropdown now uses the same surprise-bag data as the Cart page,
 including the shared bag names, images, item count, and VND total instead of
-the legacy clothing demo items.
+the legacy clothing demo items. Its storefront-specific dropdown offset keeps
+the popup visually closer to the cart trigger when opened, and its `1x` item
+quantity markers are emphasized for easier scanning.
 
 The Cart breadcrumb uses the shared compact storefront height instead of adding
 a second layer of vertical padding.
@@ -356,7 +385,11 @@ These screens still retain static storefront data and do not call commerce APIs:
   The previous implementation is retained in comments for possible future
   saved-store or notification functionality.
 - Checkout is authentication-gated and now uses Order/Payment-aligned FE fields,
-  but does not yet create an order or process payment.
+  but does not yet create an order or process payment. It also loads the
+  authenticated customer name, email, and phone into an editable customer
+  information section for the current checkout. Delivery now loads saved
+  addresses from the profile response, selects the default address when one is
+  available, and supports entering a new delivery address.
 
 The previous Molla checkout template is archived at
 `remove-later/CheckoutMain.tsx`.
@@ -556,7 +589,10 @@ At this handoff:
 - Forgot password is not implemented.
 - Remember Me has no behavior under the current memory-only access-token model.
 - Google/Facebook login is commented out.
-- Profile editing, including Add phone, is not implemented.
+- Profile phone/address edits are currently frontend-only until Account Service
+  update endpoints are connected.
+- The `Become a Seller` form is currently frontend-only until a seller
+  application workflow/API is implemented.
 - Client resend cooldowns do not replace backend OTP throttling.
 - `RequireAuth` is client-only and briefly renders nothing during session
   restoration.

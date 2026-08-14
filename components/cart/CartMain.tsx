@@ -258,7 +258,7 @@ export default function CartMain({
                 <Link href="/checkout" className="btn btn-primary btn-block">
                   Proceed to checkout
                 </Link>
-                <Link href="/products" className="cart-summary__continue">
+                <Link href="/products" className="btn btn-outline-primary-2 btn-block cart-summary__continue">
                   Continue browsing
                 </Link>
               </aside>
