@@ -6,12 +6,13 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { DashboardButton, DashboardCard, ProductImage, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast, DialogActions } from "@/components/dashboard/Dialog";
-import { DEMO_CUSTOMER_NAMES, useSellerDemo, type OrderStatus } from "@/components/seller/SellerDemoProvider";
+import { useSellerDemo, type OrderStatus } from "@/components/seller/SellerDemoProvider";
 import { updateOrderStatus } from "@/lib/api/order";
 
 const money = (value: number) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
 const dateTime = (value: string | null) => value ? new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "Not set";
 const tone = (status: string) => status === "Confirmed" ? "success" : status === "Pending" ? "warning" : "error";
+const provided = (value?: string | null) => value?.trim() || "Not provided";
 
 function OrderDetailsContent() {
   const id = useSearchParams().get("id");
@@ -64,7 +65,7 @@ function OrderDetailsContent() {
           </DashboardCard>
           <div className="space-y-6">
             <DashboardCard className="p-5"><h2 className="font-bold">Fulfillment</h2>{order.pickupCode && <div className="mt-4 rounded-2xl bg-primary-lighter p-5 text-center"><p className="text-xs font-semibold uppercase tracking-wide text-primary">Pickup code</p><p className="mt-2 text-3xl font-bold tracking-[0.3em]">{order.pickupCode}</p></div>}<dl className="mt-4 grid grid-cols-[110px_1fr] gap-3 text-sm"><dt className="text-light-secondary-text">Type</dt><dd>{order.deliveryType}</dd><dt className="text-light-secondary-text">Deadline</dt><dd>{dateTime(order.pickupDeadline)}</dd><dt className="text-light-secondary-text">Address</dt><dd>{order.deliveryAddress}</dd></dl></DashboardCard>
-            <DashboardCard className="p-5"><h2 className="font-bold">Record</h2><dl className="mt-4 grid grid-cols-[90px_1fr] gap-3 text-sm"><dt className="text-light-secondary-text">Customer</dt><dd>{DEMO_CUSTOMER_NAMES[order.userId] ?? "Unknown customer"}</dd><dt className="text-light-secondary-text">Created</dt><dd>{dateTime(order.createdAt)}</dd><dt className="text-light-secondary-text">Updated</dt><dd>{dateTime(order.updatedAt)}</dd></dl></DashboardCard>
+            <DashboardCard className="p-5"><h2 className="font-bold">Record</h2><dl className="mt-4 grid grid-cols-[90px_1fr] gap-3 text-sm"><dt className="text-light-secondary-text">Customer</dt><dd>{provided(order.contactNameSnapshot)}</dd><dt className="text-light-secondary-text">Phone</dt><dd>{provided(order.contactPhoneSnapshot)}</dd><dt className="text-light-secondary-text">Created</dt><dd>{dateTime(order.createdAt)}</dd><dt className="text-light-secondary-text">Updated</dt><dd>{dateTime(order.updatedAt)}</dd></dl></DashboardCard>
           </div>
         </div>
       </div>

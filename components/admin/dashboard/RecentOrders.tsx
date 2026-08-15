@@ -15,6 +15,8 @@ const ORDERS: OrderResponse[] = Array.from({ length: 12 }, (_, index) => {
     userId: `50000000-0000-0000-0000-${number}`,
     storeId: `20000000-0000-0000-0000-${number}`,
     storeNameSnapshot: ["Daily Basket", "Fresh Corner", "Sunrise Bakery"][index % 3],
+    contactNameSnapshot: ["Linh Nguyen", "Daniel Lee", "Mai Tran"][index % 3],
+    contactPhoneSnapshot: `+84 901 100 ${String(index + 1).padStart(3, "0")}`,
     deliveryFee: 0,
     voucherDiscount: index % 2 ? 10000 : 0,
     totalAmount: subtotal - (index % 2 ? 10000 : 0),

@@ -49,11 +49,30 @@ export type OrderItemResponse = {
   subtotal: number;
 };
 
+export type CreateOrderRequest = {
+  storeId: string;
+  storeNameSnapshot: string;
+  contactNameSnapshot: string;
+  contactPhoneSnapshot: string;
+  deliveryFee: number;
+  voucherDiscount: number;
+  deliveryType: string;
+  deliveryAddress: string;
+  items: Array<{
+    bagId: string;
+    bagNameSnapshot: string;
+    unitPriceSnapshot: number;
+    quantity: number;
+  }>;
+};
+
 export type OrderResponse = {
   id: string;
   userId: string;
   storeId: string;
   storeNameSnapshot: string;
+  contactNameSnapshot: string;
+  contactPhoneSnapshot: string;
   deliveryFee: number;
   voucherDiscount: number;
   totalAmount: number;

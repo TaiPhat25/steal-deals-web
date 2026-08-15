@@ -59,6 +59,27 @@ export default function CheckoutMain() {
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let active = true;
+
+    void getProfile(accessToken)
+      .then((profile) => {
+        if (!active) return;
+        setContactName(profile.fullName ?? "");
+        setContactPhone(profile.phone ?? "");
+      })
+      .catch(() => {
+        if (active) setError("Unable to load your contact details. Enter them below to continue.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -170,8 +191,8 @@ export default function CheckoutMain() {
             <section className="checkout-success" aria-live="polite">
               <span className="checkout-success__icon" aria-hidden="true">&#10003;</span>
               <p>Order details ready</p>
-              <h2>Your rescue order is ready to submit</h2>
-              <span>The checkout details have been collected. Order Service and payment integration will be connected next.</span>
+              <h2>Your rescue order has been placed</h2>
+              <span>The store now has your saved contact details for this order.</span>
               <div className="checkout-success__actions">
                 <Link href="/products" className="btn btn-primary">Continue browsing</Link>
                 <Link href="/" className="btn btn-outline-primary-2">Back to home</Link>
@@ -182,7 +203,7 @@ export default function CheckoutMain() {
               className="checkout-layout"
               onSubmit={(event) => {
                 event.preventDefault();
-                setSubmitted(true);
+                void submitOrders();
               }}
             >
               <div className="checkout-main-column">
@@ -246,6 +267,15 @@ export default function CheckoutMain() {
                     </div>
                     <span className="checkout-panel__step">2</span>
                   </div>
+
+                  <label className="checkout-field">
+                    <span>Contact name *</span>
+                    <input type="text" autoComplete="name" maxLength={256} required value={contactName} onChange={(event) => setContactName(event.target.value)} />
+                  </label>
+                  <label className="checkout-field">
+                    <span>Contact phone *</span>
+                    <input type="tel" autoComplete="tel" maxLength={20} required value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} />
+                  </label>
 
                   <div className="checkout-choice-grid">
                     <label className={`checkout-choice${deliveryType === "Pickup" ? " is-selected" : ""}`}>
@@ -360,7 +390,8 @@ export default function CheckoutMain() {
                 </div>
                 <div className="checkout-summary__row"><span>Voucher discount</span><strong>{voucherDiscount ? `- ${formatPrice(voucherDiscount)}` : "-"}</strong></div>
                 <div className="checkout-summary__total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
-                <button type="submit" className="btn btn-primary checkout-submit">Place order <span aria-hidden="true">&#8594;</span></button>
+                {error && <div className="alert alert-danger" role="alert">{error}</div>}
+                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting}>{submitting ? "Placing order..." : "Place order"} <span aria-hidden="true">&#8594;</span></button>
                 <p className="checkout-summary__note">By placing your order, you agree to collect the bags during the listed pickup window.</p>
               </aside>
             </form>

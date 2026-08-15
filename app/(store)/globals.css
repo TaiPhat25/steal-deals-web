@@ -2831,6 +2831,7 @@ img {
   font-weight: 600;
 }
 
+.checkout-field input,
 .checkout-field textarea,
 .checkout-field select,
 .checkout-voucher input {
