@@ -6,13 +6,15 @@ import { useMemo, useState } from "react";
 import NewStoreCard from "@/components/home/NewStoreCard";
 import { storeProfiles } from "@/components/stores/store-profile-data";
 
-type StoreFilter = "all" | "verified" | "new";
+type StoreFilter = "all" | "old" | "new";
 type StoreSort = "rating" | "bags" | "name";
+const STORES_PER_PAGE = 20;
 
 export default function StoreListing() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<StoreFilter>("all");
   const [sort, setSort] = useState<StoreSort>("rating");
+  const [page, setPage] = useState(1);
 
   const stores = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -20,7 +22,7 @@ export default function StoreListing() {
     return storeProfiles
       .filter((store) => store.isActive)
       .filter((store) => {
-        if (filter === "verified") return store.isVerify;
+        if (filter === "old") return store.isVerify;
         if (filter === "new") return !store.isVerify;
         return true;
       })
@@ -37,6 +39,34 @@ export default function StoreListing() {
         return right.ratingScore - left.ratingScore;
       });
   }, [filter, query, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(stores.length / STORES_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const visibleStores = stores.slice(
+    (currentPage - 1) * STORES_PER_PAGE,
+    currentPage * STORES_PER_PAGE,
+  );
+
+  function changeFilter(nextFilter: StoreFilter) {
+    setFilter(nextFilter);
+    setPage(1);
+  }
+
+  function changeQuery(nextQuery: string) {
+    setQuery(nextQuery);
+    setPage(1);
+  }
+
+  function changeSort(nextSort: StoreSort) {
+    setSort(nextSort);
+    setPage(1);
+  }
+
+  function clearFilters() {
+    setQuery("");
+    setFilter("all");
+    setPage(1);
+  }
 
   return (
     <main className="main store-listing-page">
@@ -82,20 +112,20 @@ export default function StoreListing() {
               <input
                 type="search"
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => changeQuery(event.target.value)}
                 placeholder="Search stores, areas, or food rescue partners"
               />
             </label>
 
             <div className="store-listing-toolbar">
               <div className="store-listing-filters" role="group" aria-label="Filter stores">
-                <button type="button" className={filter === "all" ? "is-active" : ""} onClick={() => setFilter("all")}>All stores</button>
-                <button type="button" className={filter === "verified" ? "is-active" : ""} onClick={() => setFilter("verified")}>Verified</button>
-                <button type="button" className={filter === "new" ? "is-active" : ""} onClick={() => setFilter("new")}>New stores</button>
+                <button type="button" className={filter === "all" ? "is-active" : ""} onClick={() => changeFilter("all")}>All stores</button>
+                <button type="button" className={filter === "old" ? "is-active" : ""} onClick={() => changeFilter("old")}>Old stores</button>
+                <button type="button" className={filter === "new" ? "is-active" : ""} onClick={() => changeFilter("new")}>New stores</button>
               </div>
               <label className="store-listing-sort">
                 <span>Sort by</span>
-                <select value={sort} onChange={(event) => setSort(event.target.value as StoreSort)}>
+                <select value={sort} onChange={(event) => changeSort(event.target.value as StoreSort)}>
                   <option value="rating">Highest rated</option>
                   <option value="bags">Most available bags</option>
                   <option value="name">Store name</option>
@@ -106,18 +136,40 @@ export default function StoreListing() {
 
           {stores.length ? (
             <section className="store-listing-grid" aria-label="Available stores">
-              {stores.map((store) => <NewStoreCard key={store.id} store={store} />)}
+              {visibleStores.map((store) => <NewStoreCard key={store.id} store={store} />)}
             </section>
           ) : (
             <section className="store-listing-empty" aria-live="polite">
               <i className="icon-search" aria-hidden="true" />
               <h2>No stores found</h2>
               <p>Try a different search term or clear the current filter.</p>
-              <button type="button" className="btn btn-outline-primary-2" onClick={() => { setQuery(""); setFilter("all"); }}>
+              <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
                 Clear filters
               </button>
             </section>
           )}
+
+          {totalPages > 1 ? (
+            <nav className="store-listing-pagination" aria-label="Store pages">
+              <button
+                type="button"
+                aria-label="Previous store page"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+              <span>Page {currentPage} of {totalPages}</span>
+              <button
+                type="button"
+                aria-label="Next store page"
+                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </nav>
+          ) : null}
         </div>
       </div>
     </main>

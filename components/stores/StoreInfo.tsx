@@ -30,7 +30,6 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
                 {store.name.charAt(0)}
               </div>
             )}
-            <span className="store-info__badge">{store.isVerify ? "Verified Store" : "New Store"}</span>
           </div>
 
           <div className="store-info__body">
@@ -59,7 +58,7 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
               </div>
               <div className="store-info__details-item--bordered store-info__details-item--row-end">
                 <dt>Status</dt>
-                <dd>{store.isActive ? "Active" : "Inactive"}</dd>
+                <dd>{store.isActive ? "Open" : "Closed"}</dd>
               </div>
               <div>
                 <dt>Coordinates</dt>

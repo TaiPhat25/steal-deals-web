@@ -8,7 +8,7 @@ export type RegisterRequest = {
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string | null;
+  phone: string;
 };
 
 export type AccessTokenResponse = {

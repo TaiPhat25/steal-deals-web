@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
 import { getProfile } from "@/lib/api/account";
-import { createOrder } from "@/lib/api/order";
+import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
+import type { UserAddress } from "@/lib/api/store-types";
 
 type DeliveryType = "Pickup" | "Delivery";
 
@@ -31,6 +31,10 @@ function formatPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
 }
 
+function formatAddress(address: UserAddress) {
+  return [address.address, address.district, address.city].filter(Boolean).join(", ");
+}
+
 function createInitialLines() {
   return defaultCheckoutSlugs.reduce<CheckoutLine[]>((lines, slug) => {
     const bag = surpriseBags.find((item) => item.slug === slug);
@@ -40,12 +44,17 @@ function createInitialLines() {
 }
 
 export default function CheckoutMain() {
-  const { accessToken } = useAuth();
+  const { accessToken, currentUser } = useAuth();
   const [lines, setLines] = useState(createInitialLines);
-  const [contactName, setContactName] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
+  const [customerInfo, setCustomerInfo] = useState({
+    fullName: currentUser?.name ?? "",
+    email: currentUser?.email ?? "",
+    phone: "",
+  });
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("Pickup");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("new");
   const [paymentMethod, setPaymentMethod] = useState("CashOnPickup");
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherDiscount, setVoucherDiscount] = useState(0);
@@ -65,6 +74,38 @@ export default function CheckoutMain() {
       })
       .catch(() => {
         if (active) setError("Unable to load your contact details. Enter them below to continue.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    let active = true;
+
+    void getProfile(accessToken)
+      .then((profile) => {
+        if (!active) return;
+
+        setCustomerInfo((current) => ({
+          ...current,
+          fullName: profile.fullName ?? current.fullName,
+          email: profile.email ?? current.email,
+          phone: profile.phone ?? current.phone,
+        }));
+
+        setSavedAddresses(profile.userAddresses);
+        const defaultAddress = profile.userAddresses.find((address) => address.isDefault);
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+          setDeliveryAddress(formatAddress(defaultAddress));
+        }
+      })
+      .catch(() => {
+        // The current-user response still provides the essential checkout fields.
       });
 
     return () => {
@@ -112,43 +153,16 @@ export default function CheckoutMain() {
     setVoucherDiscount(voucherCode.trim().toUpperCase() === "STEAL10" ? 10000 : 0);
   }
 
-  async function submitOrders() {
-    if (!accessToken) {
-      setError("Sign in before placing an order.");
-      return;
-    }
-    const normalizedName = contactName.trim();
-    const normalizedPhone = contactPhone.trim();
-    if (!normalizedName || !normalizedPhone) {
-      setError("Enter a contact name and phone number.");
+  function handleAddressSelection(addressId: string) {
+    setSelectedAddressId(addressId);
+
+    if (addressId === "new") {
+      setDeliveryAddress("");
       return;
     }
 
-    setSubmitting(true);
-    setError("");
-    try {
-      await Promise.all(groups.map((group, index) => createOrder(accessToken, {
-        storeId: group.storeId,
-        storeNameSnapshot: group.storeName,
-        contactNameSnapshot: normalizedName,
-        contactPhoneSnapshot: normalizedPhone,
-        deliveryFee: deliveryType === "Delivery" ? 25000 : 0,
-        voucherDiscount: index === 0 ? voucherDiscount : 0,
-        deliveryType,
-        deliveryAddress: deliveryType === "Delivery" ? deliveryAddress.trim() : "",
-        items: group.lines.map(({ bag, quantity }) => ({
-          bagId: bag.slug,
-          bagNameSnapshot: bag.name,
-          unitPriceSnapshot: bag.salePrice,
-          quantity,
-        })),
-      })));
-      setSubmitted(true);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to place your order.");
-    } finally {
-      setSubmitting(false);
-    }
+    const selectedAddress = savedAddresses.find((address) => address.id === addressId);
+    setDeliveryAddress(selectedAddress ? formatAddress(selectedAddress) : "");
   }
 
   return (
@@ -193,13 +207,65 @@ export default function CheckoutMain() {
               }}
             >
               <div className="checkout-main-column">
+                <section className="checkout-panel" aria-labelledby="customer-information-title">
+                  <div className="checkout-panel__heading">
+                    <div>
+                      <p>Customer information</p>
+                      <h2 id="customer-information-title">Who should we contact about this order?</h2>
+                    </div>
+                    <span className="checkout-panel__step">1</span>
+                  </div>
+
+                  <div className="checkout-customer-info__grid">
+                    <label className="checkout-field">
+                      <span>Full name *</span>
+                      <input
+                        type="text"
+                        value={customerInfo.fullName}
+                        onChange={(event) =>
+                          setCustomerInfo((current) => ({ ...current, fullName: event.target.value }))
+                        }
+                        autoComplete="name"
+                        required
+                      />
+                    </label>
+                    <label className="checkout-field">
+                      <span>Email address *</span>
+                      <input
+                        type="email"
+                        value={customerInfo.email}
+                        onChange={(event) =>
+                          setCustomerInfo((current) => ({ ...current, email: event.target.value }))
+                        }
+                        autoComplete="email"
+                        required
+                      />
+                    </label>
+                    <label className="checkout-field checkout-field--full">
+                      <span>Phone number</span>
+                      <input
+                        type="tel"
+                        value={customerInfo.phone}
+                        onChange={(event) =>
+                          setCustomerInfo((current) => ({ ...current, phone: event.target.value }))
+                        }
+                        autoComplete="tel"
+                        placeholder="Add a phone number"
+                      />
+                    </label>
+                  </div>
+                  <p className="checkout-customer-info__note">
+                    These details are used for this order and can be edited before you place it.
+                  </p>
+                </section>
+
                 <section className="checkout-panel" aria-labelledby="delivery-title">
                   <div className="checkout-panel__heading">
                     <div>
                       <p>Delivery details</p>
                       <h2 id="delivery-title">How would you like to receive your bags?</h2>
                     </div>
-                    <span className="checkout-panel__step">1</span>
+                    <span className="checkout-panel__step">2</span>
                   </div>
 
                   <label className="checkout-field">
@@ -223,10 +289,33 @@ export default function CheckoutMain() {
                   </div>
 
                   {deliveryType === "Delivery" ? (
-                    <label className="checkout-field checkout-field--full">
-                      <span>Delivery address *</span>
-                      <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="House number, street, district, city" required rows={3} />
-                    </label>
+                    <div className="checkout-delivery-address">
+                      {savedAddresses.length > 0 && (
+                        <label className="checkout-field checkout-field--full">
+                          <span>Saved address</span>
+                          <select value={selectedAddressId} onChange={(event) => handleAddressSelection(event.target.value)}>
+                            {savedAddresses.map((address) => (
+                              <option key={address.id} value={address.id}>
+                                {address.label || "Address"} - {formatAddress(address)}
+                              </option>
+                            ))}
+                            <option value="new">Enter a new address</option>
+                          </select>
+                        </label>
+                      )}
+
+                      {savedAddresses.length === 0 || selectedAddressId === "new" ? (
+                        <label className="checkout-field checkout-field--full">
+                          <span>Delivery address *</span>
+                          <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="House number, street, district, city" required rows={3} />
+                        </label>
+                      ) : (
+                        <div className="checkout-selected-address" aria-live="polite">
+                          <span>Delivering to</span>
+                          <strong>{deliveryAddress}</strong>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="checkout-pickup-note">
                       <span className="checkout-pickup-note__icon" aria-hidden="true">&#9906;</span>
@@ -238,7 +327,7 @@ export default function CheckoutMain() {
                 <section className="checkout-panel" aria-labelledby="bags-title">
                   <div className="checkout-panel__heading">
                     <div><p>Your rescue bags</p><h2 id="bags-title">Review your order</h2></div>
-                    <span className="checkout-panel__step">2</span>
+                    <span className="checkout-panel__step">3</span>
                   </div>
 
                   <div className="checkout-store-list">
@@ -270,7 +359,7 @@ export default function CheckoutMain() {
                 <section className="checkout-panel" aria-labelledby="payment-title">
                   <div className="checkout-panel__heading">
                     <div><p>Payment</p><h2 id="payment-title">Choose a payment method</h2></div>
-                    <span className="checkout-panel__step">3</span>
+                    <span className="checkout-panel__step">4</span>
                   </div>
                   <div className="checkout-payment-list">
                     <label className={`checkout-payment${paymentMethod === "CashOnPickup" ? " is-selected" : ""}`}>
