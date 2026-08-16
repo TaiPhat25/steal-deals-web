@@ -11,9 +11,6 @@ import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import LoginTabHashHandler from './LoginTabHashHandler';
 
 type LoginTab = "signin" | "register";
-type LoginRole = "User" | "Seller" | "Admin";
-
-const loginRoles: LoginRole[] = ["User", "Seller", "Admin"];
 
 type LoginMainProps = {
   initialTab?: LoginTab;
@@ -25,7 +22,6 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
   const { login, register, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginRole, setLoginRole] = useState<LoginRole>("User");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -163,31 +159,6 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       							    			<label htmlFor="singin-password-2">Password *</label>
       							    			<input type="password" className="form-control" id="singin-password-2" name="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
       							    		</div>
-
-                                        <div className="form-group">
-                                            <span className="d-block">Login as</span>
-                                            <div className="d-flex flex-wrap" role="radiogroup" aria-label="Login role">
-                                                {loginRoles.map((role) => (
-                                                    <div className="custom-control custom-radio mr-4" key={role}>
-                                                        <input
-                                                          type="radio"
-                                                          className="custom-control-input"
-                                                          id={`login-role-${role.toLowerCase()}`}
-                                                          name="loginRole"
-                                                          value={role}
-                                                          checked={loginRole === role}
-                                                          onChange={() => setLoginRole(role)}
-                                                        />
-                                                        <label className="custom-control-label" htmlFor={`login-role-${role.toLowerCase()}`}>
-                                                            {role}
-                                                        </label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <small className="form-text text-muted">
-                                                Role-based login selection will be connected to the backend later.
-                                            </small>
-                                        </div>
 
       							    		{loginError && (
       							    			<div className="alert alert-danger" role="alert" aria-live="polite">

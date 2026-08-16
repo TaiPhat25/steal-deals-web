@@ -16,6 +16,12 @@ import {
   refreshAccessToken as refreshAccessTokenRequest,
   register as registerRequest,
 } from "@/lib/api/auth";
+import {
+  adminLogin,
+  adminLogout,
+  getCurrentAdmin,
+  refreshAdminAccessToken,
+} from "@/lib/api/admin-auth";
 import { setAccessTokenRefreshHandler } from "@/lib/api/client";
 import type {
   AccessTokenResponse,
@@ -38,9 +44,17 @@ type AuthContextValue = {
   getCurrentUser: () => Promise<CurrentUser>;
 };
 
+export type AuthMode = "user" | "admin";
+
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
+export default function AuthProvider({
+  children,
+  mode = "user",
+}: {
+  children: React.ReactNode;
+  mode?: AuthMode;
+}) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -64,22 +78,24 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   const loadCurrentUser = useCallback(async (token: string) => {
     try {
-      const user = await getCurrentUser(token);
+      const user = mode === "admin" ? await getCurrentAdmin(token) : await getCurrentUser(token);
       setCurrentUser(user);
       return user;
     } catch {
       setCurrentUser(null);
       return null;
     }
-  }, []);
+  }, [mode]);
 
   const login = useCallback(
     async (request: LoginRequest) => {
-      const response = await runAuthRequest(() => loginRequest(request));
+      const response = await runAuthRequest(() =>
+        mode === "admin" ? adminLogin(request) : loginRequest(request),
+      );
       await loadCurrentUser(response.accessToken);
       return response;
     },
-    [loadCurrentUser, runAuthRequest],
+    [loadCurrentUser, mode, runAuthRequest],
   );
 
   const register = useCallback(
@@ -96,13 +112,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   );
 
   const refreshAccessToken = useCallback(
-    () => runAuthRequest(refreshAccessTokenRequest),
-    [runAuthRequest],
+    () =>
+      runAuthRequest(
+        mode === "admin" ? refreshAdminAccessToken : refreshAccessTokenRequest,
+      ),
+    [mode, runAuthRequest],
   );
 
   const refreshAccessTokenForRequest = useCallback(async () => {
     try {
-      const response = await refreshAccessTokenRequest();
+      const response =
+        mode === "admin"
+          ? await refreshAdminAccessToken()
+          : await refreshAccessTokenRequest();
       setAccessToken(response.accessToken);
       return response.accessToken;
     } catch {
@@ -110,7 +132,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       setCurrentUser(null);
       return null;
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     const restoreSession = async () => {
@@ -144,13 +166,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     setIsLoading(true);
 
     try {
-      await logoutRequest();
+      if (mode === "admin") {
+        await adminLogout();
+      } else {
+        await logoutRequest();
+      }
     } finally {
       setAccessToken(null);
       setCurrentUser(null);
       setIsLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   const getUser = useCallback(async () => {
     if (!accessToken) {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AuthProvider from "@/components/auth/AuthProvider";
+import RequireAuth from "@/components/auth/RequireAuth";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import "../dashboard.css";
 
@@ -24,8 +25,10 @@ export default function AdminRootLayout({
         />
       </head>
       <body className="min-h-screen antialiased">
-        <AuthProvider>
-          <DashboardShell role="admin">{children}</DashboardShell>
+        <AuthProvider mode="admin">
+          <RequireAuth loginPath="/admin/login">
+            <DashboardShell role="admin">{children}</DashboardShell>
+          </RequireAuth>
         </AuthProvider>
       </body>
     </html>
