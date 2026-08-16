@@ -32,13 +32,12 @@ foundation. The storefront was deliberately left untouched.
 The admin routes now behave as a usable prototype instead of a static theme:
 
 - `/admin/buyers`, `/admin/sellers`, and `/admin/admins` are the three account
-  management destinations. Buyers and admins reuse the Identity Service CRUD
-  screen with a fixed role filter; Seller Management adds Seller accounts to
-  its existing Stores and future Applications/contracts tabs. `/admin/users`
-  remains available as the unfiltered Identity screen but is no longer in the
-  sidebar. The header presents `SuperAdmin` as a frontend-only role; the API
-  still receives only the current backend roles.
-- Identity management uses the real API when it is reachable. A network-level
+  management destinations. Buyers and Seller accounts use `/api/user`; Admin
+  Management uses the separately stored `/api/admin` accounts and supports
+  both `Admin` and `SuperAdmin`. `/admin/users` remains available as the
+  unfiltered Customer/Seller Identity screen but is no longer in the sidebar.
+- Identity management uses the real `/api/user` or `/api/admin` flow when it is
+  reachable. A network-level
   fetch failure activates an in-memory fallback with
   backend-shaped user fields, filtering, pagination, details, create/edit, and
   delete behavior. The page displays a Demo data banner and API retry action.
@@ -81,9 +80,11 @@ The admin routes now behave as a usable prototype instead of a static theme:
 Admin category CRUD and the Seller Management Stores tab prefer the Store
 Service and fall back to local behavior when their initial lists cannot load.
 Applications, support, and overview records remain page-local; the overview's
-pending-seller summary does not share state with the seller workspace. User
-Accounts prefer the real API and use `lib/api/admin-demo.ts` only while Identity
-Service is unreachable.
+pending-seller summary does not share state with the seller workspace. Account
+management prefers the real API and uses `lib/api/admin-demo.ts` only while
+Identity Service is unreachable. Admin CRUD is wired to the separate admin
+endpoints, but the dashboard still receives its token from the existing user
+auth provider until the planned admin login/session work lands.
 There is no browser storage or fake latency. When backend endpoints are stable,
 remove the fallback and replace the remaining page-local mutation handlers with
 API calls while retaining controls, dialogs, validation, and feedback.
@@ -173,10 +174,9 @@ dashboard dummy data: categories, store profiles, surprise bags, orders, and
 order items. These types mirror the 2026-07-30 backend reference but do not add
 fetch functions or map endpoints into pages.
 
-Identity request/response types in `lib/api/admin-types.ts` and
-`lib/api/store-types.ts` were also corrected for nullable current-user fields,
-nullable request values, address fields, update email support, and optional
-pagination.
+Identity request/response types in `lib/api/admin-types.ts` separate
+Customer/Seller roles and requests from Admin/SuperAdmin roles and requests.
+`lib/api/store-types.ts` retains the Store Service request/response types.
 
 `lib/api/admin-demo.ts` is the Identity-specific API-unavailable fallback. It
 deliberately mirrors the existing admin user functions instead of introducing
@@ -211,8 +211,9 @@ These are temporary API-unavailable fallbacks, not permanent application data.
 Remove each one when its backend service and browser integration are stable:
 
 - Identity account management: `lib/api/admin-demo.ts`, used by Buyers,
-  Sellers, Admins, and the unfiltered Users route only after a network-level
-  Identity failure.
+  Sellers, Admins/SuperAdmins, and the unfiltered Users route only after a
+  network-level Identity failure. Demo users and admins remain separate just
+  like their backend stores.
 - Admin categories: `INITIAL_CATEGORIES` in `/admin/categories`; create, edit,
   and delete remain local only while its Demo data banner is visible.
 - Admin store management: `INITIAL_STORES` in `/admin/sellers`; verification

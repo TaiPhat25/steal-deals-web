@@ -1,8 +1,10 @@
 import type {
+  AccountRole,
   AdminCreateUserRequest,
-  AdminRole,
   AdminUpdateUserRequest,
+  CreateAdminRequest,
   PagedResult,
+  UpdateAdminRequest,
   UserDetail,
 } from "@/lib/api/admin-types";
 
@@ -12,11 +14,11 @@ const PEOPLE: Array<{
   name: string;
   email: string;
   phone: string | null;
-  roles: AdminRole[];
+  roles: AccountRole[];
   active: boolean;
   verified: boolean;
 }> = [
-  { name: "Demo Administrator", email: "admin@stealdeals.demo", phone: "+84 901 100 001", roles: ["Admin"], active: true, verified: true },
+  { name: "Demo Administrator", email: "admin@stealdeals.demo", phone: "+84 901 100 001", roles: ["SuperAdmin"], active: true, verified: true },
   { name: "Linh Nguyen", email: "linh.nguyen@example.com", phone: "+84 901 100 002", roles: ["Customer"], active: true, verified: true },
   { name: "Daniel Lee", email: "daniel.lee@example.com", phone: "+84 901 100 003", roles: ["Customer", "Seller"], active: true, verified: true },
   { name: "Mai Tran", email: "mai.tran@example.com", phone: null, roles: ["Customer"], active: true, verified: false },
@@ -63,6 +65,10 @@ let users: UserDetail[] = PEOPLE.map((person, index) => {
   };
 });
 
+function isAdminAccount(user: Pick<UserDetail, "roles">) {
+  return user.roles.some((role) => role === "Admin" || role === "SuperAdmin");
+}
+
 export function isApiUnavailable(error: unknown) {
   return error instanceof TypeError;
 }
@@ -73,8 +79,10 @@ export function listDemoAdminUsers(searchParams: URLSearchParams): PagedResult<U
   const accountStatus = searchParams.get("accountStatus");
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const pageSize = Math.max(1, Number(searchParams.get("pageSize")) || 10);
+  const adminAccounts = searchParams.get("accountType") === "admin";
   const filtered = users.filter((user) =>
-    (!search || `${user.fullName} ${user.email} ${user.phone ?? ""}`.toLowerCase().includes(search))
+    isAdminAccount(user) === adminAccounts
+    && (!search || `${user.fullName} ${user.email} ${user.phone ?? ""}`.toLowerCase().includes(search))
     && (!role || user.roles.includes(role))
     && (!accountStatus || user.isActive === (accountStatus === "active")),
   );
@@ -94,8 +102,9 @@ export function getDemoAdminUser(id: string) {
   return structuredClone(user);
 }
 
-export function createDemoAdminUser(request: AdminCreateUserRequest) {
-  if (users.some((user) => user.email.toLowerCase() === request.email.toLowerCase())) {
+export function createDemoAdminUser(request: AdminCreateUserRequest | CreateAdminRequest) {
+  const adminAccount = request.roles.some((role) => role === "Admin" || role === "SuperAdmin");
+  if (users.some((user) => isAdminAccount(user) === adminAccount && user.email.toLowerCase() === request.email.toLowerCase())) {
     throw new Error("A user with this email already exists.");
   }
   const user: UserDetail = {
@@ -104,7 +113,7 @@ export function createDemoAdminUser(request: AdminCreateUserRequest) {
     phone: request.phone ?? null,
     fullName: request.fullName,
     avatarUrl: null,
-    isEmailVerified: false,
+    isEmailVerified: adminAccount,
     isActive: true,
     createdAt: new Date().toISOString(),
     roles: request.roles,
@@ -115,10 +124,10 @@ export function createDemoAdminUser(request: AdminCreateUserRequest) {
   return structuredClone(user);
 }
 
-export function updateDemoAdminUser(id: string, request: AdminUpdateUserRequest) {
+export function updateDemoAdminUser(id: string, request: AdminUpdateUserRequest | UpdateAdminRequest) {
   const index = users.findIndex((user) => user.id === id);
   if (index < 0) throw new Error("This demo user no longer exists.");
-  if (request.email && users.some((user) => user.id !== id && user.email.toLowerCase() === request.email?.toLowerCase())) {
+  if (request.email && users.some((user) => user.id !== id && isAdminAccount(user) === isAdminAccount(users[index]) && user.email.toLowerCase() === request.email?.toLowerCase())) {
     throw new Error("A user with this email already exists.");
   }
   users[index] = {

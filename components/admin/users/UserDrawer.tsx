@@ -2,14 +2,21 @@
 
 import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import type {
+  AccountRole,
   AdminCreateUserRequest,
   AdminRole,
   AdminUpdateUserRequest,
+  CreateAdminRequest,
+  UpdateAdminRequest,
+  UserRole,
   UserDetail,
 } from "@/lib/api/admin-types";
 import {
+  createAdmin,
   createAdminUser,
+  getAdmin,
   getAdminUser,
+  updateAdmin,
   updateAdminUser,
 } from "@/lib/api/admin";
 import {
@@ -18,15 +25,17 @@ import {
   updateDemoAdminUser,
 } from "@/lib/api/admin-demo";
 
-const ROLES: AdminRole[] = ["Customer", "Seller", "Admin"];
+const USER_ROLES: UserRole[] = ["Customer", "Seller"];
+const ADMIN_ROLES: AdminRole[] = ["Admin", "SuperAdmin"];
 
 type UserDrawerProps = {
   mode: "create" | "edit";
   userId?: string;
   accessToken: string;
+  adminAccounts: boolean;
   demoMode: boolean;
   currentAdminId: string;
-  initialRole?: AdminRole;
+  initialRole?: UserRole;
   onClose: () => void;
   onSaved: (message: string) => void;
 };
@@ -39,12 +48,15 @@ export default function UserDrawer({
   mode,
   userId,
   accessToken,
+  adminAccounts,
   demoMode,
   currentAdminId,
   initialRole,
   onClose,
   onSaved,
 }: UserDrawerProps) {
+  const roleOptions: AccountRole[] = adminAccounts ? ADMIN_ROLES : USER_ROLES;
+  const accountLabel = adminAccounts ? "admin" : "user";
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [detail, setDetail] = useState<UserDetail | null>(null);
   const [email, setEmail] = useState("");
@@ -52,7 +64,7 @@ export default function UserDrawer({
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [roles, setRoles] = useState<AdminRole[]>([initialRole ?? "Customer"]);
+  const [roles, setRoles] = useState<AccountRole[]>([initialRole ?? (adminAccounts ? "Admin" : "Customer")]);
   const [loading, setLoading] = useState(mode === "edit");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +92,7 @@ export default function UserDrawer({
       setError(null);
       void (demoMode
         ? Promise.resolve().then(() => getDemoAdminUser(userId))
-        : getAdminUser(accessToken, userId))
+        : adminAccounts ? getAdmin(accessToken, userId) : getAdminUser(accessToken, userId))
       .then((user) => {
         if (!active) return;
         setDetail(user);
@@ -88,7 +100,7 @@ export default function UserDrawer({
         setFullName(user.fullName);
         setPhone(user.phone ?? "");
         setIsActive(user.isActive);
-        setRoles(user.roles.filter((role): role is AdminRole => ROLES.includes(role as AdminRole)));
+        setRoles(user.roles.filter((role): role is AccountRole => roleOptions.includes(role as AccountRole)));
       })
       .catch((caught) => {
         if (active) setError(messageFor(caught));
@@ -101,10 +113,10 @@ export default function UserDrawer({
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [accessToken, demoMode, mode, userId]);
+  }, [accessToken, adminAccounts, demoMode, mode, roleOptions, userId]);
 
-  function toggleRole(role: AdminRole) {
-    if (isSelf && role === "Admin") return;
+  function toggleRole(role: AccountRole) {
+    if (isSelf && detail?.roles.includes(role)) return;
     setRoles((current) =>
       current.includes(role) ? current.filter((item) => item !== role) : [...current, role],
     );
@@ -133,7 +145,7 @@ export default function UserDrawer({
     setSubmitting(true);
     try {
       if (mode === "create") {
-        const request: AdminCreateUserRequest = {
+        const request = {
           email: normalizedEmail,
           password,
           fullName: normalizedName,
@@ -141,22 +153,28 @@ export default function UserDrawer({
           ...(normalizedPhone ? { phone: normalizedPhone } : {}),
         };
         if (demoMode) {
-          createDemoAdminUser(request);
+          createDemoAdminUser(request as AdminCreateUserRequest | CreateAdminRequest);
+        } else if (adminAccounts) {
+          await createAdmin(accessToken, request as CreateAdminRequest);
         } else {
-          await createAdminUser(accessToken, request);
+          await createAdminUser(accessToken, request as AdminCreateUserRequest);
         }
         onSaved(`${normalizedName} was created successfully.`);
       } else if (userId && detail) {
-        const request: AdminUpdateUserRequest = {
+        const request = {
+          email: normalizedEmail,
           fullName: normalizedName,
+          phone: normalizedPhone || null,
           isActive,
-          roles: isSelf && !roles.includes("Admin") ? [...roles, "Admin"] : roles,
+          roles,
+          ...(adminAccounts && password ? { password } : {}),
         };
-        if (normalizedPhone) request.phone = normalizedPhone;
         if (demoMode) {
-          updateDemoAdminUser(userId, request);
+          updateDemoAdminUser(userId, request as AdminUpdateUserRequest | UpdateAdminRequest);
+        } else if (adminAccounts) {
+          await updateAdmin(accessToken, userId, request as UpdateAdminRequest);
         } else {
-          await updateAdminUser(accessToken, userId, request);
+          await updateAdminUser(accessToken, userId, request as AdminUpdateUserRequest);
         }
         onSaved(`${normalizedName} was updated successfully.`);
       }
@@ -184,7 +202,7 @@ export default function UserDrawer({
         <header className="px-5 sm:px-6 py-5 border-b border-gray-500/20 flex items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
-              User account
+              {adminAccounts ? "Admin account" : "User account"}
             </p>
             <h2
               id="user-drawer-title"
@@ -192,7 +210,7 @@ export default function UserDrawer({
               tabIndex={-1}
               className="text-xl font-bold text-light-primary-text focus:outline-none"
             >
-              {mode === "create" ? "Create user" : "Edit user"}
+              {mode === "create" ? `Create ${accountLabel}` : `Edit ${accountLabel}`}
             </h2>
           </div>
           <button
@@ -236,27 +254,25 @@ export default function UserDrawer({
                   type="email"
                   autoComplete="off"
                   required
-                  readOnly={mode === "edit"}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className="w-full h-10 px-3.5 rounded-xl bg-gray-100 ring ring-gray-500/20 border-none text-sm focus:outline-none focus:ring-2 focus:ring-primary read-only:text-light-secondary-text read-only:cursor-not-allowed"
+                  className="w-full h-10 px-3.5 rounded-xl bg-gray-100 ring ring-gray-500/20 border-none text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                {mode === "edit" && <p className="mt-1.5 text-xs text-light-secondary-text">Email editing is disabled until Identity validates updated addresses safely.</p>}
               </div>
-              {mode === "create" && (
+              {(mode === "create" || adminAccounts) && (
                 <div>
-                  <label htmlFor="drawer-password" className="block text-sm font-semibold text-light-primary-text mb-2">Temporary password *</label>
+                  <label htmlFor="drawer-password" className="block text-sm font-semibold text-light-primary-text mb-2">{mode === "create" ? "Temporary password *" : "New password"}</label>
                   <input
                     id="drawer-password"
                     type="password"
                     autoComplete="new-password"
-                    required
+                    required={mode === "create"}
                     minLength={8}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     className="w-full h-10 px-3.5 rounded-xl bg-gray-100 ring ring-gray-500/20 border-none text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  <p className="mt-1.5 text-xs text-light-secondary-text">At least 8 characters.</p>
+                  <p className="mt-1.5 text-xs text-light-secondary-text">{mode === "create" ? "At least 8 characters." : "Leave blank to keep the current password."}</p>
                 </div>
               )}
               <div>
@@ -268,17 +284,14 @@ export default function UserDrawer({
                   onChange={(event) => setPhone(event.target.value)}
                   className="w-full h-10 px-3.5 rounded-xl bg-gray-100 ring ring-gray-500/20 border-none text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-                {mode === "edit" && detail?.phone && (
-                  <p className="mt-1.5 text-xs text-light-secondary-text">Identity cannot clear an existing phone yet; leaving this blank keeps the current number.</p>
-                )}
               </div>
 
               <fieldset>
                 <legend className="block text-sm font-semibold text-light-primary-text mb-2">Roles *</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {ROLES.map((role) => {
+                  {roleOptions.map((role) => {
                     const checked = roles.includes(role);
-                    const locked = Boolean(isSelf && role === "Admin");
+                    const locked = Boolean(isSelf && detail?.roles.includes(role));
                     return (
                       <label key={role} className={`rounded-xl ring ring-gray-500/20 px-3 py-2.5 flex items-center gap-2 text-sm ${locked ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer hover:bg-gray-50"}`}>
                         <input
@@ -293,14 +306,14 @@ export default function UserDrawer({
                     );
                   })}
                 </div>
-                {isSelf && <p className="mt-1.5 text-xs text-light-secondary-text">Your own Admin role is locked to prevent account lockout.</p>}
+                {isSelf && <p className="mt-1.5 text-xs text-light-secondary-text">Your own roles are locked to prevent account lockout.</p>}
               </fieldset>
 
               {mode === "edit" && (
                 <label className="rounded-xl ring ring-gray-500/20 px-4 py-3 flex items-center justify-between gap-4 cursor-pointer">
                   <span>
                     <span className="block text-sm font-semibold text-light-primary-text">Active account</span>
-                    <span className="block text-xs text-light-secondary-text mt-0.5">Inactive users cannot sign in.</span>
+                    <span className="block text-xs text-light-secondary-text mt-0.5">Inactive {accountLabel}s cannot sign in.</span>
                   </span>
                   <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} className="size-5 accent-primary" />
                 </label>
@@ -316,7 +329,7 @@ export default function UserDrawer({
             <footer className="px-5 sm:px-6 py-4 border-t border-gray-500/20 flex justify-end gap-3">
               <button type="button" onClick={onClose} disabled={submitting} className="h-10 px-5 rounded-full ring ring-gray-500/20 text-sm font-semibold hover:bg-gray-100 disabled:opacity-50">Cancel</button>
               <button type="submit" disabled={submitting} className="h-10 px-5 rounded-full bg-primary hover:bg-primary-dark text-white text-sm font-bold disabled:opacity-60 disabled:cursor-not-allowed">
-                {submitting ? "Saving…" : mode === "create" ? "Create user" : "Save changes"}
+                {submitting ? "Saving…" : mode === "create" ? `Create ${accountLabel}` : "Save changes"}
               </button>
             </footer>
           </form>

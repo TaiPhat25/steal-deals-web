@@ -1,4 +1,6 @@
-export type AdminRole = "Customer" | "Seller" | "Admin";
+export type UserRole = "Customer" | "Seller";
+export type AdminRole = "Admin" | "SuperAdmin";
+export type AccountRole = UserRole | AdminRole;
 
 export type CurrentAdmin = {
   userId: string | null;
@@ -35,12 +37,12 @@ export type UserSummary = {
   isEmailVerified: boolean;
   isActive: boolean;
   createdAt: string;
-  userTrustScore: UserTrustScore | null;
+  userTrustScore?: UserTrustScore | null;
   roles: string[];
 };
 
 export type UserDetail = UserSummary & {
-  userAddresses: UserAddress[];
+  userAddresses?: UserAddress[];
 };
 
 export type PagedResult<T> = {
@@ -53,7 +55,7 @@ export type PagedResult<T> = {
 
 export type AdminUserQuery = {
   searchTerm?: string;
-  role?: AdminRole;
+  role?: AccountRole;
   accountStatus?: "active" | "inactive";
   page?: number;
   pageSize?: number;
@@ -64,13 +66,32 @@ export type AdminCreateUserRequest = {
   password: string;
   fullName: string;
   phone?: string | null;
-  roles: AdminRole[];
+  roles: UserRole[];
 };
 
 export type AdminUpdateUserRequest = {
   fullName?: string | null;
   email?: string | null;
   phone?: string | null;
+  isActive?: boolean | null;
+  roles?: UserRole[] | null;
+};
+
+export type CreateAdminRequest = {
+  email: string;
+  password: string;
+  fullName: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+  roles: AdminRole[];
+};
+
+export type UpdateAdminRequest = {
+  email?: string | null;
+  password?: string | null;
+  fullName?: string | null;
+  phone?: string | null;
+  avatarUrl?: string | null;
   isActive?: boolean | null;
   roles?: AdminRole[] | null;
 };

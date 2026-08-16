@@ -190,6 +190,7 @@ function Header({
     null,
   );
   const seller = role === "seller";
+  const roleLabel = seller ? "Store Owner" : currentUser?.roles.includes("SuperAdmin") ? "Super Admin" : "Admin";
   const toggle = (menu: NonNullable<typeof openMenu>) =>
     setOpenMenu((current) => (current === menu ? null : menu));
   const handleLogout = async () => {
@@ -270,7 +271,7 @@ function Header({
             <Avatar name={displayName} size="sm" />
             <span className="hidden text-left md:block">
               <span className="block font-semibold">{displayName}</span>
-              <span className="block text-xs text-gray-500" title={seller ? undefined : "Frontend role code: SuperAdmin"}>{seller ? "Store Owner" : "Super Admin"}</span>
+              <span className="block text-xs text-gray-500">{roleLabel}</span>
             </span>
             <span aria-hidden="true">⌄</span>
           </button>

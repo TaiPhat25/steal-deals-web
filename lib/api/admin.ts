@@ -2,7 +2,9 @@ import { apiRequest } from "@/lib/api/client";
 import type {
   AdminCreateUserRequest,
   AdminUpdateUserRequest,
+  CreateAdminRequest,
   PagedResult,
+  UpdateAdminRequest,
   UserDetail,
   UserSummary,
 } from "@/lib/api/admin-types";
@@ -58,6 +60,47 @@ export function updateAdminUser(
 
 export function deleteAdminUser(accessToken: string, id: string) {
   return apiRequest<null>(`/api/user/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: bearer(accessToken),
+  });
+}
+
+export function listAdmins(accessToken: string, searchParams: URLSearchParams) {
+  return apiRequest<PagedResult<UserSummary>>(
+    `/api/admin?${searchParams.toString()}`,
+    { method: "GET", headers: bearer(accessToken) },
+  );
+}
+
+export function getAdmin(accessToken: string, id: string) {
+  return apiRequest<UserDetail>(`/api/admin/${encodeURIComponent(id)}`, {
+    method: "GET",
+    headers: bearer(accessToken),
+  });
+}
+
+export function createAdmin(accessToken: string, request: CreateAdminRequest) {
+  return apiRequest<UserDetail>("/api/admin", {
+    method: "POST",
+    headers: bearer(accessToken),
+    body: request,
+  });
+}
+
+export function updateAdmin(
+  accessToken: string,
+  id: string,
+  request: UpdateAdminRequest,
+) {
+  return apiRequest<null>(`/api/admin/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: bearer(accessToken),
+    body: request,
+  });
+}
+
+export function deleteAdmin(accessToken: string, id: string) {
+  return apiRequest<null>(`/api/admin/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: bearer(accessToken),
   });

@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import UserDrawer from "@/components/admin/users/UserDrawer";
 import DeleteUserDialog from "@/components/admin/users/DeleteUserDialog";
 import { Avatar, DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
-import { deleteAdminUser, listAdminUsers } from "@/lib/api/admin";
+import { deleteAdmin, deleteAdminUser, listAdmins, listAdminUsers } from "@/lib/api/admin";
 import {
   deleteDemoAdminUser,
   DEMO_CURRENT_ADMIN_ID,
@@ -15,19 +15,22 @@ import {
 } from "@/lib/api/admin-demo";
 import { ApiClientError } from "@/lib/api/client";
 import type {
+  AccountRole,
   AdminRole,
   PagedResult,
+  UserRole,
   UserSummary,
 } from "@/lib/api/admin-types";
 
-const ROLES: AdminRole[] = ["Customer", "Seller", "Admin"];
+const USER_ROLES: UserRole[] = ["Customer", "Seller"];
+const ADMIN_ROLES: AdminRole[] = ["Admin", "SuperAdmin"];
 const PAGE_SIZES = [10, 20, 50] as const;
 
 type AdminUsersPageProps = {
+  adminAccounts?: boolean;
   basePath?: string;
   baseQuery?: string;
-  fixedRole?: AdminRole;
-  notice?: string;
+  fixedRole?: UserRole;
   title?: string;
 };
 
@@ -37,7 +40,7 @@ function positiveInteger(value: string | null, fallback: number) {
 }
 
 function roleClass(role: string) {
-  if (role === "Admin") return "bg-error-alpha-16 text-error-dark";
+  if (role === "Admin" || role === "SuperAdmin") return "bg-error-alpha-16 text-error-dark";
   if (role === "Seller") return "bg-warning-alpha-16 text-warning-dark";
   return "bg-success-alpha-16 text-success-dark";
 }
@@ -52,20 +55,20 @@ function formatDate(value: string) {
   }).format(date);
 }
 
-function loadErrorMessage(error: unknown) {
+function loadErrorMessage(error: unknown, adminAccounts: boolean) {
   if (error instanceof ApiClientError) {
-    if (error.status === 401) return "Your access token is missing or expired. Sign in again from the normal login page.";
-    if (error.status === 403) return "Your account no longer has permission to manage users.";
+    if (error.status === 401) return `Your ${adminAccounts ? "admin " : ""}access token is missing or expired.`;
+    if (error.status === 403) return `Your account no longer has permission to manage ${adminAccounts ? "admins" : "users"}.`;
     return error.message;
   }
-  return "Unable to load users. Check that Identity Service is available and try again.";
+  return `Unable to load ${adminAccounts ? "admins" : "users"}. Check that Identity Service is available and try again.`;
 }
 
 export default function AdminUsersPage({
+  adminAccounts = false,
   basePath = "/admin/users",
   baseQuery = "",
   fixedRole,
-  notice,
   title = "User accounts",
 }: AdminUsersPageProps = {}) {
   const router = useRouter();
@@ -87,10 +90,12 @@ export default function AdminUsersPage({
   const [currentAdminId, setCurrentAdminId] = useState("");
   const [demoMode, setDemoMode] = useState(false);
   const effectiveCurrentAdminId = demoMode ? DEMO_CURRENT_ADMIN_ID : currentAdminId;
+  const roles: AccountRole[] = adminAccounts ? ADMIN_ROLES : USER_ROLES;
+  const accountLabel = adminAccounts ? "admin" : "user";
 
   const search = searchParams.get("search")?.trim() ?? "";
   const rawRole = searchParams.get("role");
-  const role = fixedRole ?? (ROLES.includes(rawRole as AdminRole) ? (rawRole as AdminRole) : "");
+  const role = fixedRole ?? (roles.includes(rawRole as AccountRole) ? (rawRole as AccountRole) : "");
   const rawStatus = searchParams.get("status");
   const status = rawStatus === "active" || rawStatus === "inactive" ? rawStatus : "";
   const page = positiveInteger(searchParams.get("page"), 1);
@@ -159,6 +164,8 @@ export default function AdminUsersPage({
     if (search) apiQuery.set("searchTerm", search);
     if (role) apiQuery.set("role", role);
     if (status) apiQuery.set("accountStatus", status);
+    const demoQuery = new URLSearchParams(apiQuery);
+    if (adminAccounts) demoQuery.set("accountType", "admin");
 
     const timeout = window.setTimeout(() => {
       setLoading(true);
@@ -171,11 +178,11 @@ export default function AdminUsersPage({
         setResult(data);
       };
       if (demoMode) {
-        acceptResult(listDemoAdminUsers(apiQuery));
+        acceptResult(listDemoAdminUsers(demoQuery));
         setLoading(false);
         return;
       }
-      void listAdminUsers(accessToken ?? "", apiQuery)
+      void (adminAccounts ? listAdmins : listAdminUsers)(accessToken ?? "", apiQuery)
       .then((data) => {
         if (!active) return;
         acceptResult(data);
@@ -184,9 +191,9 @@ export default function AdminUsersPage({
         if (!active) return;
         if (isApiUnavailable(error)) {
           setDemoMode(true);
-          acceptResult(listDemoAdminUsers(apiQuery));
+          acceptResult(listDemoAdminUsers(demoQuery));
         } else {
-          setLoadError(loadErrorMessage(error));
+          setLoadError(loadErrorMessage(error, adminAccounts));
         }
       })
       .finally(() => {
@@ -198,7 +205,7 @@ export default function AdminUsersPage({
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [accessToken, demoMode, isInitialized, page, pageSize, reloadVersion, role, search, status, updateQuery]);
+  }, [accessToken, adminAccounts, demoMode, isInitialized, page, pageSize, reloadVersion, role, search, status, updateQuery]);
 
   useEffect(() => {
     if (!toast) return;
@@ -211,11 +218,11 @@ export default function AdminUsersPage({
   const currentPage = result?.page ?? page;
   const totalPages = result?.totalPages ?? 0;
   const rangeLabel = useMemo(() => {
-    if (!result || result.totalCount === 0) return "0 users";
+    if (!result || result.totalCount === 0) return `0 ${accountLabel}s`;
     const start = (result.page - 1) * result.pageSize + 1;
     const end = Math.min(result.page * result.pageSize, result.totalCount);
-    return `${start}–${end} of ${result.totalCount} users`;
-  }, [result]);
+    return `${start}–${end} of ${result.totalCount} ${accountLabel}s`;
+  }, [accountLabel, result]);
 
   function restoreActionFocus() {
     window.setTimeout(() => lastActionRef.current?.focus(), 0);
@@ -264,7 +271,7 @@ export default function AdminUsersPage({
       if (demoMode) {
         deleteDemoAdminUser(deleteTarget.id);
       } else {
-        await deleteAdminUser(accessToken!, deleteTarget.id);
+        await (adminAccounts ? deleteAdmin : deleteAdminUser)(accessToken!, deleteTarget.id);
       }
       setToast(`${deleteTarget.fullName} was deleted.`);
       setDeleteTarget(null);
@@ -276,7 +283,7 @@ export default function AdminUsersPage({
       restoreActionFocus();
     } catch (error) {
       setDeleteError(
-        error instanceof Error ? error.message : "Unable to delete this user.",
+        error instanceof Error ? error.message : `Unable to delete this ${accountLabel}.`,
       );
     } finally {
       setDeleting(false);
@@ -291,12 +298,6 @@ export default function AdminUsersPage({
         </div>
       )}
 
-      {notice && (
-        <p className="mb-4 rounded-xl bg-warning/15 px-4 py-3 text-sm text-warning-dark">
-          {notice}
-        </p>
-      )}
-
       <DashboardCard className="w-full overflow-hidden">
         <div className="p-4 sm:p-6 pb-4">
           <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
@@ -308,14 +309,14 @@ export default function AdminUsersPage({
               ref={createButtonRef}
               onClick={openCreate}
             >
-              <span className="text-lg mr-1" aria-hidden="true">+</span> Create user
+              <span className="text-lg mr-1" aria-hidden="true">+</span> Create {accountLabel}
             </DashboardButton>
           </div>
 
           <div className="flex flex-col lg:flex-row justify-between gap-4 lg:items-center">
             <div className="relative w-full" style={{ width: "200px", minWidth: "200px", flexShrink: 0 }}>
               <span className="absolute text-light-secondary-text left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true">⌕</span>
-              <label htmlFor="user-search" className="sr-only">Search users by name or email</label>
+              <label htmlFor="user-search" className="sr-only">Search {accountLabel}s by name or email</label>
               <input
                 id="user-search"
                 className="pl-9 w-full pr-3.5 ring h-9 ring-gray-500/20 py-2 bg-gray-100 border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -331,7 +332,7 @@ export default function AdminUsersPage({
                   <label htmlFor="role-filter" className="sr-only">Filter by role</label>
                   <select id="role-filter" value={role} onChange={(event) => updateQuery({ role: event.target.value || null, page: null })} className="h-9 ring ring-gray-500/20 rounded-full bg-gray-100 px-3 text-sm text-light-primary-text border-none focus:outline-none focus:ring-2 focus:ring-primary" style={{ minWidth: "120px" }}>
                     <option value="">All roles</option>
-                    {ROLES.map((item) => <option key={item} value={item}>{item}</option>)}
+                    {roles.map((item) => <option key={item} value={item}>{item}</option>)}
                   </select>
                 </div>
               )}
@@ -360,19 +361,19 @@ export default function AdminUsersPage({
         {loadError ? (
           <div className="border-t border-gray-500/20 px-4 py-14 text-center">
             <div className="mx-auto size-11 rounded-full bg-error-alpha-16 text-error-dark flex items-center justify-center font-bold" aria-hidden="true">!</div>
-            <h2 className="mt-4 font-bold text-light-primary-text">Users could not be loaded</h2>
+            <h2 className="mt-4 font-bold text-light-primary-text">{adminAccounts ? "Admins" : "Users"} could not be loaded</h2>
             <p className="mt-2 text-sm text-light-secondary-text max-w-md mx-auto">{loadError}</p>
             <button type="button" onClick={() => setReloadVersion((version) => version + 1)} className="mt-5 h-9 px-5 rounded-full bg-primary text-white text-sm font-bold hover:bg-primary-dark">Try again</button>
           </div>
         ) : loading && !result ? (
-          <div className="border-t border-gray-500/20 p-6 space-y-3" role="status" aria-label="Loading users">
+          <div className="border-t border-gray-500/20 p-6 space-y-3" role="status" aria-label={`Loading ${accountLabel}s`}>
             {Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-12 rounded-xl bg-gray-100 animate-pulse" />)}
           </div>
         ) : result?.items.length === 0 ? (
           <div className="border-t border-gray-500/20 px-4 py-16 text-center">
             <div className="mx-auto size-12 rounded-full bg-primary-lighter text-primary-dark flex items-center justify-center text-xl" aria-hidden="true">◎</div>
-            <h2 className="mt-4 font-bold text-light-primary-text">{hasFilters ? "No matching users" : "No users yet"}</h2>
-            <p className="mt-2 text-sm text-light-secondary-text">{hasFilters ? "Try changing or clearing the current filters." : "Create the first Identity user from this panel."}</p>
+            <h2 className="mt-4 font-bold text-light-primary-text">{hasFilters ? `No matching ${accountLabel}s` : `No ${accountLabel}s yet`}</h2>
+            <p className="mt-2 text-sm text-light-secondary-text">{hasFilters ? "Try changing or clearing the current filters." : `Create the first Identity ${accountLabel} from this panel.`}</p>
             {hasFilters && <button type="button" onClick={() => { setSearchInput(""); router.replace(clearHref, { scroll: false }); }} className="mt-5 h-9 px-5 rounded-full ring ring-gray-500/20 text-primary text-sm font-bold hover:bg-gray-100">Clear filters</button>}
           </div>
         ) : (
@@ -392,7 +393,7 @@ export default function AdminUsersPage({
               </thead>
               <tbody>
                 {result?.items.map((user, index) => {
-                  const isCurrentAdmin = user.id === effectiveCurrentAdminId;
+                  const isCurrentAdmin = adminAccounts && user.id === effectiveCurrentAdminId;
                   return (
                     <tr key={user.id} className="border-b last:border-0 border-gray-500/20 hover:bg-gray-50/50">
                       <td className="px-3 py-3.5 pl-5 whitespace-nowrap text-light-secondary-text">{(currentPage - 1) * pageSize + index + 1}</td>
@@ -454,7 +455,7 @@ export default function AdminUsersPage({
                 {PAGE_SIZES.map((size) => <option key={size} value={size}>{size} / page</option>)}
               </select>
             </div>
-            <nav className="flex items-center gap-1 justify-end" aria-label="User pagination">
+            <nav className="flex items-center gap-1 justify-end" aria-label={`${adminAccounts ? "Admin" : "User"} pagination`}>
               <button type="button" onClick={() => updateQuery({ page: null })} disabled={currentPage <= 1 || loading} className="h-8 px-2 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed" aria-label="First page">First</button>
               <button type="button" onClick={() => updateQuery({ page: currentPage - 1 })} disabled={currentPage <= 1 || loading} className="size-8 rounded-lg text-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed" aria-label="Previous page">‹</button>
               <span className="px-3 text-sm font-semibold text-light-primary-text" aria-current="page">Page {currentPage} of {totalPages}</span>
@@ -470,8 +471,9 @@ export default function AdminUsersPage({
           mode={drawer.mode}
           userId={drawer.userId}
           accessToken={accessToken ?? ""}
+          adminAccounts={adminAccounts}
           demoMode={demoMode}
-          currentAdminId={effectiveCurrentAdminId}
+          currentAdminId={adminAccounts ? effectiveCurrentAdminId : ""}
           initialRole={fixedRole}
           onClose={closeDrawer}
           onSaved={handleSaved}
