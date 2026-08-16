@@ -3,7 +3,7 @@ export type AdminRole = "Admin" | "SuperAdmin";
 export type AccountRole = UserRole | AdminRole;
 
 export type CurrentAdmin = {
-  userId: string | null;
+  adminId: string | null;
   email: string | null;
   name: string | null;
   roles: string[];

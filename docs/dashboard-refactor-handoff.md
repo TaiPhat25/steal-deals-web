@@ -29,6 +29,10 @@ foundation. The storefront was deliberately left untouched.
 
 ## Admin functionality
 
+The `/admin/login` page reuses the dashboard's `/dashboard/favicon0a4b.ico`
+branding icon and the `StealDeal Admin` wordmark used by the sidebar. The same
+icon is also registered as the admin login page favicon.
+
 The admin routes now behave as a usable prototype instead of a static theme:
 
 - `/admin/buyers`, `/admin/sellers`, and `/admin/admins` are the three account
@@ -83,8 +87,12 @@ Applications, support, and overview records remain page-local; the overview's
 pending-seller summary does not share state with the seller workspace. Account
 management prefers the real API and uses `lib/api/admin-demo.ts` only while
 Identity Service is unreachable. Admin CRUD is wired to the separate admin
-endpoints, but the dashboard still receives its token from the existing user
-auth provider until the planned admin login/session work lands.
+endpoints, and the dashboard now uses the separate admin authentication session
+through `/admin/login`, `/api/admin-auth/login`, `/api/admin-auth/refresh`, and
+`/api/admin-auth/me`. Seller routes continue using the user authentication
+session. Admin dashboard routes use client-side `RequireAuth` protection and
+redirect unauthenticated visitors to `/admin/login`; backend authorization
+remains mandatory for every protected API request.
 There is no browser storage or fake latency. When backend endpoints are stable,
 remove the fallback and replace the remaining page-local mutation handlers with
 API calls while retaining controls, dialogs, validation, and feedback.
@@ -177,6 +185,11 @@ fetch functions or map endpoints into pages.
 Identity request/response types in `lib/api/admin-types.ts` separate
 Customer/Seller roles and requests from Admin/SuperAdmin roles and requests.
 `lib/api/store-types.ts` retains the Store Service request/response types.
+
+`lib/api/admin-auth.ts` contains the admin login, refresh, logout, and current
+admin requests. `AuthProvider` accepts `mode="user"` or `mode="admin"` so the
+admin dashboard and `/admin/login` use the `admin_refresh_token` cookie without
+mixing it with the storefront's `refresh_token` cookie.
 
 `lib/api/admin-demo.ts` is the Identity-specific API-unavailable fallback. It
 deliberately mirrors the existing admin user functions instead of introducing

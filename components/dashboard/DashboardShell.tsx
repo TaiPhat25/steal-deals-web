@@ -197,7 +197,7 @@ function Header({
     try {
       await logout();
     } finally {
-      window.location.assign("/login");
+      window.location.assign(role === "admin" ? "/admin/login" : "/login");
     }
   };
 

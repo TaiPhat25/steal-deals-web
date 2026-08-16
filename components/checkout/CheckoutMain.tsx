@@ -64,25 +64,6 @@ export default function CheckoutMain() {
 
   useEffect(() => {
     if (!accessToken) return;
-    let active = true;
-
-    void getProfile(accessToken)
-      .then((profile) => {
-        if (!active) return;
-        setContactName(profile.fullName ?? "");
-        setContactPhone(profile.phone ?? "");
-      })
-      .catch(() => {
-        if (active) setError("Unable to load your contact details. Enter them below to continue.");
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [accessToken]);
-
-  useEffect(() => {
-    if (!accessToken) return;
 
     let active = true;
 
@@ -151,6 +132,19 @@ export default function CheckoutMain() {
 
   function applyVoucher() {
     setVoucherDiscount(voucherCode.trim().toUpperCase() === "STEAL10" ? 10000 : 0);
+  }
+
+  function submitOrders() {
+    setError("");
+
+    if (lines.length === 0) {
+      setError("Your cart is empty. Add a surprise bag before placing an order.");
+      return;
+    }
+
+    setSubmitting(true);
+    setSubmitted(true);
+    setSubmitting(false);
   }
 
   function handleAddressSelection(addressId: string) {
@@ -267,15 +261,6 @@ export default function CheckoutMain() {
                     </div>
                     <span className="checkout-panel__step">2</span>
                   </div>
-
-                  <label className="checkout-field">
-                    <span>Contact name *</span>
-                    <input type="text" autoComplete="name" maxLength={256} required value={contactName} onChange={(event) => setContactName(event.target.value)} />
-                  </label>
-                  <label className="checkout-field">
-                    <span>Contact phone *</span>
-                    <input type="tel" autoComplete="tel" maxLength={20} required value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} />
-                  </label>
 
                   <div className="checkout-choice-grid">
                     <label className={`checkout-choice${deliveryType === "Pickup" ? " is-selected" : ""}`}>

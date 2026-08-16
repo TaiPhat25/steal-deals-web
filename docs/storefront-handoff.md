@@ -24,6 +24,11 @@ admin and seller dashboards.
 - Identity Service integration is implemented for registration, login, access
   token refresh, logout, current-user lookup, profile loading, email
   verification, and OTP resend.
+- Customer/Seller login remains at `/login` and uses `/api/auth/login`.
+  Admin login is intentionally separate at `/admin/login` and belongs to the
+  dashboard auth flow; it uses `/api/admin-auth/login` and does not change the
+  storefront login contract. The shared `RequireAuth` component now accepts a
+  custom login path so admin routes can redirect to `/admin/login`.
 - Catalog, product, cart, wishlist, checkout, order history, and shipping content
   is still static demo data. Product-listing filters work against local data,
   but those screens do not yet use commerce backend services.
@@ -173,10 +178,10 @@ Successful login stores the access token in memory, loads `/api/auth/me`, and
 navigates to `/`. The header then displays `Welcome, <name>` with Profile and
 Logout actions.
 
-The sign-in form also displays `User`, `Seller`, and `Admin` radio options,
-with `User` selected by default. This selection is currently UI-only because
-`POST /api/auth/login` accepts only email and password; the selected role is
-not sent to the backend until a role-aware login contract is implemented.
+The sign-in form does not ask the visitor to select a role. Customer and Seller
+accounts both use `POST /api/auth/login`; the backend determines access from
+the roles assigned to the account. Admin and SuperAdmin accounts use the
+separate `/admin/login` flow instead.
 
 Registration sends first name, last name, email, password, and required phone.
 It does not authenticate the new account. When email verification is required,
@@ -390,6 +395,10 @@ These screens still retain static storefront data and do not call commerce APIs:
   information section for the current checkout. Delivery now loads saved
   addresses from the profile response, selects the default address when one is
   available, and supports entering a new delivery address.
+- Checkout keeps the customer information fields as the single source of truth
+  for contact details; the delivery section no longer contains duplicate contact
+  state. Its current submit action remains frontend-only until the order API is
+  connected.
 
 The previous Molla checkout template is archived at
 `remove-later/CheckoutMain.tsx`.
