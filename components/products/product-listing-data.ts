@@ -1,6 +1,8 @@
 import type { SurpriseBag } from "@/components/home/SurpriseBagCard";
+import type { SurpriseBagResponse } from "@/lib/api/dashboard-types";
 
 export type ListingBag = SurpriseBag & {
+  backendId?: string;
   pickupDay: "today" | "tomorrow";
   pickupStartTime: string;
   pickupEndTime: string;
@@ -16,7 +18,9 @@ export type ListingFilters = {
   query: string;
   categories: string[];
   pickupDay: "all" | ListingBag["pickupDay"];
+  minPrice: number;
   maxPrice: number;
+  minDistance: number;
   maxDistance: number;
   sort: string;
   storeSlug?: string;
@@ -329,6 +333,78 @@ export const storeNames = Object.fromEntries(
   surpriseBags.map((bag) => [bag.storeSlug, bag.storeName]),
 ) as Record<string, string>;
 
+const presentationByName = new Map(
+  surpriseBags.map((bag) => [bag.name.trim().toLowerCase(), bag]),
+);
+
+function toSlug(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function getPickupDay(startTime: string): ListingBag["pickupDay"] {
+  const start = new Date(startTime);
+  const now = new Date();
+  const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return startDate.getTime() === today.getTime() ? "today" : "tomorrow";
+}
+
+function formatPickupWindow(startTime: string, endTime: string) {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const dateLabel = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(start);
+  const timeFormatter = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  return `${dateLabel}, ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`;
+}
+
+export function toListingBag(bag: SurpriseBagResponse): ListingBag {
+  const presentation = presentationByName.get(bag.name.trim().toLowerCase());
+  const category = bag.categories[0]?.name ?? presentation?.category ?? "Surprise Bags";
+  const pickupDay = getPickupDay(bag.pickupStartTime);
+  const discountPercent = bag.originalPrice > 0
+    ? Math.round((1 - bag.salePrice / bag.originalPrice) * 100)
+    : 0;
+
+  return {
+    backendId: bag.id,
+    slug: presentation?.slug ?? `${toSlug(bag.name)}-${bag.id.slice(0, 8)}`,
+    imageSrc: presentation?.imageSrc ?? "/assets/images/demos/demo-28/flash/1.jpg",
+    imageAlt: presentation?.imageAlt ?? bag.name,
+    name: bag.name,
+    storeName: bag.storeName,
+    storeSlug: presentation?.storeSlug ?? toSlug(bag.storeName),
+    category,
+    originalPrice: bag.originalPrice,
+    salePrice: bag.salePrice,
+    discountPercent,
+    pickupWindow: formatPickupWindow(bag.pickupStartTime, bag.pickupEndTime),
+    pickupStartTime: bag.pickupStartTime,
+    pickupEndTime: bag.pickupEndTime,
+    expiryDate: bag.expiryDate,
+    status: bag.status,
+    pickupDay,
+    distance: presentation?.distance ?? "Store pickup",
+    distanceKm: presentation?.distanceKm ?? 0,
+    remainingQuantity: bag.quantityRemaining,
+    quantityTotal: bag.quantityTotal,
+    availabilityLabel: pickupDay === "today" ? "Pickup today" : "Pickup tomorrow",
+    popularity: presentation?.popularity ?? 0,
+    createdOrder: Date.parse(bag.createdAt) || 0,
+  };
+}
+
 export function normalizeSort(sort?: string) {
   if (sort === "distance") return "distance";
   if (sort === "near-expiry" || sort === "pickup") return "pickup";
@@ -348,7 +424,9 @@ export function filterBags(bags: ListingBag[], filters: ListingFilters) {
         (!query || searchableText.includes(query)) &&
         (!filters.categories.length || filters.categories.includes(bag.category)) &&
         (filters.pickupDay === "all" || bag.pickupDay === filters.pickupDay) &&
+        bag.salePrice >= filters.minPrice &&
         bag.salePrice <= filters.maxPrice &&
+        bag.distanceKm >= filters.minDistance &&
         bag.distanceKm <= filters.maxDistance
       );
     })

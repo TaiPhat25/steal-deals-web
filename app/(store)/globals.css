@@ -1192,9 +1192,95 @@ img {
   background: transparent;
 }
 
-.category-price-range {
+.filter-range {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.filter-range-fields {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filter-range-input {
+  align-items: center;
+  border: 1px solid #d9d9d9;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 0.6rem;
+}
+
+.filter-range-input span {
+  color: #777;
+  font-size: 1.1rem;
+  margin-right: 0.35rem;
+}
+
+.filter-range-input input {
+  border: 0;
+  color: #555;
+  font-size: 1.2rem;
+  height: 3.6rem;
+  min-width: 0;
+  outline: 0;
+  padding: 0;
   width: 100%;
-  accent-color: #61ab00;
+}
+
+.filter-range-stepper {
+  background: transparent;
+  border: 0;
+  color: #555;
+  flex: 0 0 auto;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0 0.35rem;
+}
+
+.filter-range-stepper:hover,
+.filter-range-stepper:focus {
+  color: #61ab00;
+}
+
+.filter-range-input input::placeholder {
+  color: #777;
+  opacity: 1;
+}
+
+.filter-range-input input::-webkit-inner-spin-button,
+.filter-range-input input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.filter-range-input input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.filter-range-separator {
+  color: #999;
+  flex: 0 0 auto;
+}
+
+.filter-range-apply {
+  align-self: stretch;
+  background: transparent;
+  border: 1px solid #61ab00;
+  color: #61ab00;
+  font-size: 1.2rem;
+  min-height: 3.6rem;
+  padding: 0.6rem 1.2rem;
+  text-transform: uppercase;
+}
+
+.filter-range-apply:hover,
+.filter-range-apply:focus {
+  background: #4d8b00;
+  border-color: #4d8b00;
+  color: #fff;
 }
 
 @media (max-width: 767px) {

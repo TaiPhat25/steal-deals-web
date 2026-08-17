@@ -20,6 +20,22 @@ export function createOrder(accessToken: string, request: CreateOrderRequest) {
   );
 }
 
+export function getOrder(accessToken: string, id: string) {
+  return apiRequest<OrderResponse>(
+    `/api/orders/${encodeURIComponent(id)}`,
+    { method: "GET", headers: bearer(accessToken) },
+    orderApiBaseUrl(),
+  );
+}
+
+export function listMyOrders(accessToken: string) {
+  return apiRequest<OrderResponse[]>(
+    "/api/orders/my-orders",
+    { method: "GET", headers: bearer(accessToken) },
+    orderApiBaseUrl(),
+  );
+}
+
 export function listStoreOrders(accessToken: string, storeId: string) {
   return apiRequest<OrderResponse[]>(
     `/api/orders/store/${encodeURIComponent(storeId)}`,

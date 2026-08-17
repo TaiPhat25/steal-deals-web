@@ -77,6 +77,22 @@ export function listPendingStores(accessToken: string) {
   );
 }
 
+export function listBags() {
+  return apiRequest<SurpriseBagResponse[]>(
+    "/api/bags",
+    { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function getBag(id: string) {
+  return apiRequest<SurpriseBagResponse>(
+    `/api/bags/${encodeURIComponent(id)}`,
+    { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
 export function createCategory(
   accessToken: string,
   request: CreateCategoryRequest,

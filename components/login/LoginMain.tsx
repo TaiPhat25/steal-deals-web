@@ -40,8 +40,9 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
     setLoginError(null);
 
     try {
-      await login({ email, password });
-      router.push("/");
+      const response = await login({ email, password });
+      const isSeller = response.user?.roles.some((role) => role.toLowerCase() === "seller");
+      router.replace(isSeller ? "/seller" : "/");
     } catch (error) {
       setLoginError(
         error instanceof ApiClientError
