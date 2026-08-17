@@ -22,6 +22,10 @@ export type StoreProfileResponse = {
   createdAt: string;
 };
 
+export type PendingStoreResponse = Omit<StoreProfileResponse, "ratingScore"> & {
+  licenseUrl: string | null;
+};
+
 export type SurpriseBagResponse = {
   id: string;
   storeId: string;
