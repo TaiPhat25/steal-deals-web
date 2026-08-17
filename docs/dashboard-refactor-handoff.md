@@ -92,9 +92,10 @@ Identity Service is unreachable. Admin CRUD is wired to the separate admin
 endpoints, and the dashboard now uses the separate admin authentication session
 through `/admin/login`, `/api/admin-auth/login`, `/api/admin-auth/refresh`, and
 `/api/admin-auth/me`. Seller routes continue using the user authentication
-session. Admin dashboard routes use client-side `RequireAuth` protection and
-redirect unauthenticated visitors to `/admin/login`; backend authorization
-remains mandatory for every protected API request.
+session and redirect unauthenticated visitors to `/login`. Admin dashboard
+routes use client-side `RequireAuth` protection and redirect unauthenticated
+visitors to `/admin/login`; backend authorization remains mandatory for every
+protected API request.
 There is no browser storage or fake latency. When backend endpoints are stable,
 remove the fallback and replace the remaining page-local mutation handlers with
 API calls while retaining controls, dialogs, validation, and feedback.
