@@ -37,7 +37,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isInitialized: boolean;
   isLoading: boolean;
-  login: (request: LoginRequest) => Promise<AccessTokenResponse>;
+  login: (request: LoginRequest) => Promise<AccessTokenResponse & { user: CurrentUser | null }>;
   register: (request: RegisterRequest) => Promise<RegistrationResponse>;
   refreshAccessToken: () => Promise<AccessTokenResponse>;
   logout: () => Promise<void>;
@@ -92,8 +92,8 @@ export default function AuthProvider({
       const response = await runAuthRequest(() =>
         mode === "admin" ? adminLogin(request) : loginRequest(request),
       );
-      await loadCurrentUser(response.accessToken);
-      return response;
+      const user = await loadCurrentUser(response.accessToken);
+      return { ...response, user };
     },
     [loadCurrentUser, mode, runAuthRequest],
   );
