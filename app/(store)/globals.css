@@ -3261,6 +3261,15 @@ img {
   line-height: 1.6;
 }
 
+.checkout-success__orders {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1.25rem;
+  color: #61ab00;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
 .checkout-success__actions {
   display: flex;
   justify-content: center;

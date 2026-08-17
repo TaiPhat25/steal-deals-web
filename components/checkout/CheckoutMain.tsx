@@ -4,28 +4,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { cartBagKey, useCart } from "@/components/cart/CartProvider";
 import { getProfile } from "@/lib/api/account";
-import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
+import { createOrder } from "@/lib/api/order";
+import type { CreateOrderRequest, OrderResponse } from "@/lib/api/dashboard-types";
 import type { UserAddress } from "@/lib/api/store-types";
 
 type DeliveryType = "Pickup" | "Delivery";
 
-type CheckoutLine = {
-  bag: ListingBag;
-  quantity: number;
-};
-
 type CheckoutStoreGroup = {
-  storeId: string;
+  storeId: string | null;
   storeName: string;
-  lines: CheckoutLine[];
+  lines: ReturnType<typeof useCart>["items"];
 };
-
-const defaultCheckoutSlugs = [
-  "bakery-breakfast-box",
-  "bakery-mix-bag",
-  "fresh-produce-box",
-];
 
 function formatPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
@@ -35,17 +26,9 @@ function formatAddress(address: UserAddress) {
   return [address.address, address.district, address.city].filter(Boolean).join(", ");
 }
 
-function createInitialLines() {
-  return defaultCheckoutSlugs.reduce<CheckoutLine[]>((lines, slug) => {
-    const bag = surpriseBags.find((item) => item.slug === slug);
-    if (bag) lines.push({ bag, quantity: 1 });
-    return lines;
-  }, []);
-}
-
 export default function CheckoutMain() {
   const { accessToken, currentUser } = useAuth();
-  const [lines, setLines] = useState(createInitialLines);
+  const { items: lines, itemCount, subtotal, updateQuantity, clearCart } = useCart();
   const [customerInfo, setCustomerInfo] = useState({
     fullName: currentUser?.name ?? "",
     email: currentUser?.email ?? "",
@@ -59,6 +42,7 @@ export default function CheckoutMain() {
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [createdOrders, setCreatedOrders] = useState<OrderResponse[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -98,43 +82,29 @@ export default function CheckoutMain() {
     const grouped = new Map<string, CheckoutStoreGroup>();
 
     lines.forEach((line) => {
-      const storeId = line.bag.storeSlug ?? line.bag.storeName;
-      const group = grouped.get(storeId) ?? {
+      const storeId = line.bag.storeId ?? null;
+      const groupKey = storeId ?? line.bag.storeSlug ?? line.bag.storeName;
+      const group = grouped.get(groupKey) ?? {
         storeId,
         storeName: line.bag.storeName,
         lines: [],
       };
 
       group.lines.push(line);
-      grouped.set(storeId, group);
+      grouped.set(groupKey, group);
     });
 
     return [...grouped.values()];
   }, [lines]);
 
-  const subtotal = lines.reduce((total, line) => total + line.bag.salePrice * line.quantity, 0);
   const deliveryFee = deliveryType === "Delivery" ? groups.length * 25000 : 0;
   const total = Math.max(0, subtotal + deliveryFee - voucherDiscount);
-  const itemCount = lines.reduce((count, line) => count + line.quantity, 0);
-
-  function updateQuantity(slug: string, quantity: number) {
-    setLines((current) =>
-      current.map((line) => {
-        if (line.bag.slug !== slug) return line;
-
-        return {
-          ...line,
-          quantity: Math.min(line.bag.remainingQuantity, Math.max(1, Math.floor(quantity) || 1)),
-        };
-      }),
-    );
-  }
 
   function applyVoucher() {
     setVoucherDiscount(voucherCode.trim().toUpperCase() === "STEAL10" ? 10000 : 0);
   }
 
-  function submitOrders() {
+  async function submitOrders() {
     setError("");
 
     if (lines.length === 0) {
@@ -142,9 +112,62 @@ export default function CheckoutMain() {
       return;
     }
 
+    if (!accessToken) {
+      setError("Your session has expired. Please log in again before placing an order.");
+      return;
+    }
+
+    if (!customerInfo.fullName.trim() || !customerInfo.phone.trim()) {
+      setError("Enter your full name and phone number before placing an order.");
+      return;
+    }
+
+    if (deliveryType === "Delivery" && !deliveryAddress.trim()) {
+      setError("Enter a delivery address before placing an order.");
+      return;
+    }
+
+    if (groups.some((group) => !group.storeId || group.lines.some((line) => !line.bag.backendId))) {
+      setError("This cart contains a demo bag without backend details. Add a bag from the Products page and try again.");
+      return;
+    }
+
     setSubmitting(true);
-    setSubmitted(true);
-    setSubmitting(false);
+
+    try {
+      const requests = groups.map<CreateOrderRequest>((group, groupIndex) => ({
+        storeId: group.storeId as string,
+        storeNameSnapshot: group.storeName,
+        contactNameSnapshot: customerInfo.fullName.trim(),
+        contactPhoneSnapshot: customerInfo.phone.trim(),
+        deliveryFee: deliveryType === "Delivery" ? 25000 : 0,
+        voucherDiscount: groupIndex === 0 ? voucherDiscount : 0,
+        deliveryType,
+        deliveryAddress: deliveryType === "Delivery" ? deliveryAddress.trim() : "",
+        items: group.lines.map(({ bag, quantity }) => ({
+          bagId: bag.backendId as string,
+          bagNameSnapshot: bag.name,
+          unitPriceSnapshot: bag.salePrice,
+          quantity,
+        })),
+      }));
+
+      const orders = await Promise.all(
+        requests.map((request) => createOrder(accessToken, request)),
+      );
+
+      setCreatedOrders(orders);
+      clearCart();
+      setSubmitted(true);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to place the order. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function handleAddressSelection(addressId: string) {
@@ -187,6 +210,11 @@ export default function CheckoutMain() {
               <p>Order details ready</p>
               <h2>Your rescue order has been placed</h2>
               <span>The store now has your saved contact details for this order.</span>
+              <div className="checkout-success__orders">
+                {createdOrders.map((order) => (
+                  <span key={order.id}>Order #{order.id.slice(0, 8)} · {order.status}</span>
+                ))}
+              </div>
               <div className="checkout-success__actions">
                 <Link href="/products" className="btn btn-primary">Continue browsing</Link>
                 <Link href="/" className="btn btn-outline-primary-2">Back to home</Link>
@@ -213,7 +241,7 @@ export default function CheckoutMain() {
                   <div className="checkout-customer-info__grid">
                     <label className="checkout-field">
                       <span>Full name *</span>
-                      <input
+                        <input
                         type="text"
                         value={customerInfo.fullName}
                         onChange={(event) =>
@@ -245,6 +273,7 @@ export default function CheckoutMain() {
                         }
                         autoComplete="tel"
                         placeholder="Add a phone number"
+                        required
                       />
                     </label>
                   </div>
@@ -317,20 +346,20 @@ export default function CheckoutMain() {
 
                   <div className="checkout-store-list">
                     {groups.map((group) => (
-                      <section className="checkout-store" key={group.storeId}>
+                      <section className="checkout-store" key={group.storeId ?? group.storeName}>
                         <header><span>Store</span><h3>{group.storeName}</h3></header>
                         {group.lines.map((line) => (
                           <div className="checkout-line" key={line.bag.slug}>
                             <Image src={line.bag.imageSrc} width={88} height={68} sizes="88px" alt={line.bag.imageAlt} />
                             <div className="checkout-line__details">
-                              <Link href={`/product?bag=${encodeURIComponent(line.bag.slug)}`}>{line.bag.name}</Link>
+                              <Link href={`/product?bag=${encodeURIComponent(cartBagKey(line.bag))}`}>{line.bag.name}</Link>
                               <span>{line.bag.pickupWindow}</span>
                               <strong>{formatPrice(line.bag.salePrice)}</strong>
                             </div>
                             <div className="checkout-line__quantity">
-                              <button type="button" aria-label={`Decrease quantity of ${line.bag.name}`} onClick={() => updateQuantity(line.bag.slug, line.quantity - 1)} disabled={line.quantity <= 1}>-</button>
-                              <input aria-label={`Quantity of ${line.bag.name}`} type="number" min="1" max={line.bag.remainingQuantity} value={line.quantity} onChange={(event) => updateQuantity(line.bag.slug, Number(event.target.value))} />
-                              <button type="button" aria-label={`Increase quantity of ${line.bag.name}`} onClick={() => updateQuantity(line.bag.slug, line.quantity + 1)} disabled={line.quantity >= line.bag.remainingQuantity}>+</button>
+                              <button type="button" aria-label={`Decrease quantity of ${line.bag.name}`} onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity - 1)} disabled={line.quantity <= 1}>-</button>
+                              <input aria-label={`Quantity of ${line.bag.name}`} type="text" inputMode="numeric" pattern="[0-9]*" value={line.quantity} onChange={(event) => updateQuantity(cartBagKey(line.bag), Number(event.target.value.replace(/\D/g, "") || 1))} />
+                              <button type="button" aria-label={`Increase quantity of ${line.bag.name}`} onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity + 1)} disabled={line.quantity >= line.bag.remainingQuantity}>+</button>
                             </div>
                             <strong className="checkout-line__total">{formatPrice(line.bag.salePrice * line.quantity)}</strong>
                           </div>

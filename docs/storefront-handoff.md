@@ -40,8 +40,9 @@ admin and seller dashboards.
   `/seller`; customer-only accounts continue to go to `/`.
 - The `/products` catalog now loads active bags from the Store Service and runs
   its existing client-side filters and sorting against the API response.
-- Product detail, cart, checkout, order history, and shipping content still use
-  static demo data until their page-level integrations are completed.
+- Product detail now loads the selected bag from the Store Service. Cart and
+  checkout share an in-memory cart state, while order history and shipping
+  still use static demo data until their page-level integrations are completed.
 
 The storefront currently exposes 16 routes or route patterns:
 
@@ -49,13 +50,13 @@ The storefront currently exposes 16 routes or route patterns:
 | --- | --- | --- |
 | `/` | Home sections under `components/home` | Static demo-28 content with client-side carousel, countdown, and drag scrolling |
 | `/about` | `components/about/AboutMain.tsx` | StealDeals purpose, principles, and three-step food-rescue explanation using local assets |
-| `/cart` | `components/cart/CartMain.tsx` | Static cart markup; no cart state or API |
-| `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected checkout UI with pickup/delivery, grouped bags, payment selection, and local summary state |
+| `/cart` | `components/cart/CartMain.tsx` | Client-side shared cart state with store grouping, quantity controls, removal, and subtotal; no cart API or browser persistence |
+| `/checkout` | `components/checkout/CheckoutMain.tsx` | Client-auth protected checkout UI consuming the shared cart with pickup/delivery, grouped bags, payment selection, and local summary state |
 | `/contact` | `components/contact/ContactMain.tsx` | StealDeals support details and frontend-only contact form |
 | `/faq` | `components/faq/FaqMain.tsx` | Native accessible FAQ groups for food rescue, pickup/orders, and accounts |
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
 | `/orders` | `components/orders/OrderHistoryMain.tsx` | Authenticated order history with search and status filters |
-| `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using shared static listing data |
+| `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using Store Service data with static presentation fallbacks |
 | `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
@@ -143,8 +144,8 @@ existing local image metadata is used only as a temporary fallback because the
 current `SurpriseBagResponse` does not contain an image URL.
 
 The Order Service client exposes `createOrder`, `getOrder`, `listMyOrders`, and
-seller order methods. The customer pages have not been connected to those order
-methods yet.
+seller order methods. Checkout now calls `createOrder` once per store in the
+cart and shows the returned order IDs after all requests succeed.
 
 The frontend contracts expect:
 
@@ -374,17 +375,22 @@ written back to the URL and no catalog API is connected yet.
 
 ### Product, cart, wishlist, and checkout
 
-The Product Detail page reads the `bag` query parameter and uses the shared
-`components/products/product-listing-data.ts` records for every listing item.
-It renders StealDeals-specific pricing, store, pickup, availability, and
-related-bag information. Missing or unknown bag slugs return `404`. Add to Cart
-passes the bag slug and selected quantity to Cart.
+The Product Detail page reads the `bag` query parameter and loads API-backed
+items through `getBag(id)` from the Store Service. API listing cards pass the
+backend bag ID; older static Home links can still pass a known slug, which is
+resolved through `listBags()` during the transition. The response is adapted
+through `toListingBag` and renders backend pricing, store, pickup, expiry,
+category, and availability data. Missing or unknown bags return `404`. Add to
+Cart currently passes the bag slug and selected quantity to the static Cart
+screen.
 
 The Product Detail image gallery uses storefront-owned markup and avoids the
 legacy Molla ElevateZoom selectors, so hovering the image does not inject the
 old zoom container or thumbnail UI. It displays up to three existing product
 gallery assets as vertical thumbnails, and selecting a thumbnail updates the
-main image. The detail summary now shows backend-aligned pickup timestamps,
+main image. Thumbnail keys include their position so repeated fallback assets
+do not trigger React duplicate-key errors. The detail summary now shows
+backend-aligned pickup timestamps,
 expiry time, category, and `quantity remaining of quantity total`
 availability; the unnecessary Status field is omitted. Its quantity control uses
 the same minus/value/plus stepper pattern as the Cart page. Summary field labels
@@ -398,16 +404,18 @@ The related-bag section uses the saved Product Detail design: five full
 `SurpriseBagCard` cards, same-category items first, and a link to more bags in
 the current category.
 
-The Cart page now groups frontend cart lines by store and supports custom
-quantity stepper updates, quantity limits based on available bags, item removal,
-subtotal calculation, and a pickup-oriented checkout summary. Its initial data
-is still static; a real cart API or persisted cart state is not connected yet.
+The Cart page now consumes the shared in-memory `CartProvider`, groups cart
+lines by store, supports custom quantity stepper updates, clamps quantities to
+each bag's available amount, removes items, and calculates the subtotal. The
+header dropdown, Product Detail, listing cards, Cart, and Checkout all use the
+same cart state. A real cart API and browser persistence are not connected yet,
+so a full browser refresh clears the cart.
 Cart category labels link back to the filtered `/products?category=` listing,
 while bag names and images link to `/product?bag=`. The `Continue browsing`
 action uses the same outlined button treatment as Home's `View Details` action.
 
-The header cart dropdown now uses the same surprise-bag data as the Cart page,
-including the shared bag names, images, item count, and VND total instead of
+The header cart dropdown now reads from the shared cart state, including the
+current bag names, images, quantities, item count, and VND total instead of
 the legacy clothing demo items. Its storefront-specific dropdown offset keeps
 the popup visually closer to the cart trigger when opened, and its `1x` item
 quantity markers are emphasized for easier scanning.
@@ -421,16 +429,18 @@ These screens still retain static storefront data and do not call commerce APIs:
   short-lived near-expiry surprise bags are not suitable for long-term saving.
   The previous implementation is retained in comments for possible future
   saved-store or notification functionality.
-- Checkout is authentication-gated and now uses Order/Payment-aligned FE fields,
-  but does not yet create an order or process payment. It also loads the
-  authenticated customer name, email, and phone into an editable customer
-  information section for the current checkout. Delivery now loads saved
+- Checkout is authentication-gated and submits one Order Service request per
+  store in the cart. It validates the backend-required contact fields, shows
+  returned order IDs, and clears the shared cart only after every request
+  succeeds. Payment selection remains UI-only because no payment request is
+  sent yet. It also loads the authenticated customer name, email, and phone
+  into an editable customer information section. Delivery loads saved
   addresses from the profile response, selects the default address when one is
   available, and supports entering a new delivery address.
 - Checkout keeps the customer information fields as the single source of truth
   for contact details; the delivery section no longer contains duplicate contact
-  state. Its current submit action remains frontend-only until the order API is
-  connected.
+  state. Static/demo cart items without backend IDs are rejected before order
+  submission so the frontend does not send invalid order payloads.
 
 The previous Molla checkout template is archived at
 `remove-later/CheckoutMain.tsx`.
@@ -625,9 +635,9 @@ At this handoff:
 ## Known gaps and risks
 
 - Most commerce screens are still mock/static and should not be described as
-  fully backend integrated. The `/products` listing calls the Store Service,
-  while product detail, cart, checkout, order history, and shipping still need
-  page-level integration.
+  fully backend integrated. The `/products` listing and product detail call the
+  Store Service, while cart and checkout currently share client-side state;
+  order creation, order history, and shipping still need page-level integration.
 - Listing filters use local client state and are not persisted in the URL or
   sent to a catalog service.
 - Forgot password is not implemented.
@@ -661,18 +671,15 @@ At this handoff:
    authentication path.
 4. Implement forgot-password and profile-edit flows using Identity/Account
    endpoints.
-5. Replace the remaining static product-detail data with `getBag(id)` and keep
-   fetch logic at the page/component boundary rather than in visual cards.
+5. Connect order history and shipping to their backend endpoints, then finish
+   the seller application workflow.
 6. Decide whether to add saved-store or availability-notification state; do not
    restore wishlist state for short-lived surprise bags without a clear product
    requirement.
-7. Connect checkout to the existing `lib/api/order.ts` order methods and real
-   cart/payment contracts while retaining both
-   frontend route protection and backend authorization.
-8. Replace obsolete `.html`/hash links as each destination becomes available.
-9. Incrementally replace legacy jQuery widgets with React-owned components,
+7. Replace obsolete `.html`/hash links as each destination becomes available.
+8. Incrementally replace legacy jQuery widgets with React-owned components,
    then remove unused scripts and styles.
-10. Add browser tests for registration/OTP, login/session restoration,
+9. Add browser tests for registration/OTP, login/session restoration,
     refresh-and-retry, logout, protected-route redirects, profile verification,
     and responsive product/store listings.
 

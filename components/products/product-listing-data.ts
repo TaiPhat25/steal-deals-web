@@ -379,6 +379,7 @@ export function toListingBag(bag: SurpriseBagResponse): ListingBag {
 
   return {
     backendId: bag.id,
+    storeId: bag.storeId,
     slug: presentation?.slug ?? `${toSlug(bag.name)}-${bag.id.slice(0, 8)}`,
     imageSrc: presentation?.imageSrc ?? "/assets/images/demos/demo-28/flash/1.jpg",
     imageAlt: presentation?.imageAlt ?? bag.name,

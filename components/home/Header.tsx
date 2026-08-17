@@ -3,20 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { surpriseBags } from "@/components/products/product-listing-data";
-
-const headerCartSlugs = [
-  "bakery-breakfast-box",
-  "bakery-mix-bag",
-  "fresh-produce-box",
-];
-
-const headerCartItems = headerCartSlugs.flatMap((slug) => {
-  const bag = surpriseBags.find((item) => item.slug === slug);
-  return bag ? [bag] : [];
-});
-
-const headerCartTotal = headerCartItems.reduce((total, bag) => total + bag.salePrice, 0);
+import { cartBagKey, useCart } from "@/components/cart/CartProvider";
 
 function formatHeaderPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
@@ -24,6 +11,7 @@ function formatHeaderPrice(value: number) {
 
 export default function Header() {
   const { currentUser, isAuthenticated, logout } = useAuth();
+  const { items: headerCartItems, itemCount: headerCartCount, subtotal: headerCartTotal } = useCart();
 
   const handleLogout = async () => {
     try {
@@ -993,31 +981,31 @@ export default function Header() {
                 >
                   <div className="icon position-relative">
                     <i className="icon-shopping-cart"></i>
-                    <span className="cart-count">{headerCartItems.length}</span>
+                    <span className="cart-count">{headerCartCount}</span>
                   </div>
                   <span className="cart-txt font-weight-normal">{formatHeaderPrice(headerCartTotal)}</span>
                 </a>
 
                 <div className="dropdown-menu dropdown-menu-right store-cart-dropdown-menu">
                   <div className="dropdown-cart-products">
-                    {headerCartItems.map((bag) => (
-                      <div className="product mb-0 rounded-0 w-100" key={bag.slug}>
+                    {headerCartItems.map(({ bag, quantity }) => (
+                      <div className="product mb-0 rounded-0 w-100" key={cartBagKey(bag)}>
                         <div className="product-cart-details">
                           <h4 className="product-title overflow-hidden letter-spacing-normal">
-                            <Link href={`/product?bag=${encodeURIComponent(bag.slug)}`}>
+                            <Link href={`/product?bag=${encodeURIComponent(cartBagKey(bag))}`}>
                               {bag.name}
                             </Link>
                           </h4>
 
                           <span className="cart-product-info">
-                            <span className="cart-product-qty store-cart-product-quantity">1x</span>{" "}
+                            <span className="cart-product-qty store-cart-product-quantity">{quantity}x</span>{" "}
                             {formatHeaderPrice(bag.salePrice)}
                           </span>
                         </div>
 
                         <figure className="product-image-container">
                           <Link
-                            href={`/product?bag=${encodeURIComponent(bag.slug)}`}
+                            href={`/product?bag=${encodeURIComponent(cartBagKey(bag))}`}
                             className="product-image"
                           >
                             <Image src={bag.imageSrc} width={80} height={80} alt={bag.imageAlt} />
