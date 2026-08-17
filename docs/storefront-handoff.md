@@ -7,6 +7,13 @@ change should update the relevant sections in this document in the same work:
 routes, components, behavior, API contracts, authentication, styling, assets,
 configuration, validation results, known gaps, and continuation points.
 
+For a cross-project summary and the complete customer-to-seller demo plan, see
+[`project-progress-summary.md`](./project-progress-summary.md).
+
+The local frontend environment uses HTTP service URLs: Identity `5158`, Store
+`5169`, and Order `5165`. Payment port `5155` is optional until online payment
+integration is started.
+
 ## Current state
 
 The `(store)` route group is a Next.js App Router conversion of the Molla
@@ -29,9 +36,12 @@ admin and seller dashboards.
   dashboard auth flow; it uses `/api/admin-auth/login` and does not change the
   storefront login contract. The shared `RequireAuth` component now accepts a
   custom login path so admin routes can redirect to `/admin/login`.
-- Catalog, product, cart, wishlist, checkout, order history, and shipping content
-  is still static demo data. Product-listing filters work against local data,
-  but those screens do not yet use commerce backend services.
+- A successful storefront login now sends accounts with the `Seller` role to
+  `/seller`; customer-only accounts continue to go to `/`.
+- The `/products` catalog now loads active bags from the Store Service and runs
+  its existing client-side filters and sorting against the API response.
+- Product detail, cart, checkout, order history, and shipping content still use
+  static demo data until their page-level integrations are completed.
 
 The storefront currently exposes 16 routes or route patterns:
 
@@ -46,7 +56,7 @@ The storefront currently exposes 16 routes or route patterns:
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
 | `/orders` | `components/orders/OrderHistoryMain.tsx` | Authenticated order history with search and status filters |
 | `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using shared static listing data |
-| `/products` | `components/products/ProductListing.tsx` | Searchable/filterable static surprise-bag marketplace listing |
+| `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
 | `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable store directory using local store profiles |
@@ -86,6 +96,12 @@ Store API code lives under `lib/api`:
 - `auth.ts` contains Identity Service authentication and email-verification
   requests.
 - `account.ts` contains account/profile requests.
+- `store.ts` contains public catalog/store reads and seller/admin store
+  management requests. Customer catalog reads include `listBags()` and
+  `getBag(id)`.
+- `order.ts` contains authenticated order requests. Customer order reads now
+  include `listMyOrders(accessToken)` and `getOrder(accessToken, id)` in
+  addition to order creation and seller order management.
 - `store-types.ts` contains storefront request and response contracts.
 - `admin.ts` and `admin-types.ts` are dashboard-specific and should not be
   mixed into storefront code.
@@ -117,6 +133,18 @@ a clear configuration error when it is missing.
 | `verifyEmail` | `POST /api/auth/verify-email` | Verifies a six-digit OTP |
 | `resendVerificationOtp` | `POST /api/auth/resend-otp` | Requests a replacement OTP |
 | `getProfile` | `GET /api/account/profile` | Loads profile, roles, addresses, and trust score |
+
+### Commerce API methods
+
+The Store Service catalog client exposes `listBags()` and `getBag(id)`. The
+product listing uses `listBags()` and filters out bags whose backend status is
+not `Active`. Backend pickup timestamps are formatted for the card UI and the
+existing local image metadata is used only as a temporary fallback because the
+current `SurpriseBagResponse` does not contain an image URL.
+
+The Order Service client exposes `createOrder`, `getOrder`, `listMyOrders`, and
+seller order methods. The customer pages have not been connected to those order
+methods yet.
 
 The frontend contracts expect:
 
@@ -310,10 +338,14 @@ not affect application type-checking.
 
 ### Product listings
 
-`/products` is the marketplace-wide surprise-bag listing. It renders 12 static
-food bags using the same `SurpriseBagCard` used by Home and food imagery from
-`public/assets/images/demos/demo-28/flash`. Search, category, price, distance,
-and sorting controls work against client-side demo data. The sidebar no longer
+`/products` is the marketplace-wide surprise-bag listing. It renders active
+Store Service bags using the same `SurpriseBagCard` used by Home and local food
+imagery from `public/assets/images/demos/demo-28/flash` when the API does not
+provide media. Search, category, price, distance, and sorting controls work
+against the Store Service response. Price and
+Distance now use min/max numeric fields with functional storefront-owned
+minus/plus steppers and an Apply button instead of sliders; blank bounds mean
+no lower or upper limit. The sidebar no longer
 shows the pickup-day radio filter; pickup timing remains available through the
 `Sort by` dropdown's `Pickup Soonest` option. Size, colour, brand, compare,
 thumbnails, fake layout controls, and presentation-only
@@ -456,7 +488,8 @@ Store-specific fixes and additions live in `app/(store)/globals.css`, including:
 - authenticated account dropdown alignment and hover colors;
 - profile action styling;
 - OTP boxes and verification footer layout; and
-- product-listing search, card grid, filters, ranges, and responsive rules.
+- product-listing search, card grid, filters, min/max range fields, and
+  responsive rules.
 
 `InteractiveHandlers` handles search toggling, mobile-menu opening/closing, and
 the scroll-to-top button using DOM event listeners. When replacing legacy
@@ -591,8 +624,10 @@ At this handoff:
 
 ## Known gaps and risks
 
-- Commerce screens are mock/static and should not be described as backend
-  integrated.
+- Most commerce screens are still mock/static and should not be described as
+  fully backend integrated. The `/products` listing calls the Store Service,
+  while product detail, cart, checkout, order history, and shipping still need
+  page-level integration.
 - Listing filters use local client state and are not persisted in the URL or
   sent to a catalog service.
 - Forgot password is not implemented.
@@ -626,13 +661,13 @@ At this handoff:
    authentication path.
 4. Implement forgot-password and profile-edit flows using Identity/Account
    endpoints.
-5. Add catalog API modules under `lib/api`, replace static product-listing data,
-   and move filtering/pagination to request parameters without putting fetch
-   logic into visual components.
+5. Replace the remaining static product-detail data with `getBag(id)` and keep
+   fetch logic at the page/component boundary rather than in visual cards.
 6. Decide whether to add saved-store or availability-notification state; do not
    restore wishlist state for short-lived surprise bags without a clear product
    requirement.
-7. Connect checkout to real cart/order/payment contracts while retaining both
+7. Connect checkout to the existing `lib/api/order.ts` order methods and real
+   cart/payment contracts while retaining both
    frontend route protection and backend authorization.
 8. Replace obsolete `.html`/hash links as each destination becomes available.
 9. Incrementally replace legacy jQuery widgets with React-owned components,
