@@ -60,10 +60,11 @@ The admin routes now behave as a usable prototype instead of a static theme:
   `GET /api/stores` and uses the Store Service verification and active-state
   endpoints. A failed list request restores backend-shaped dummy stores with a
   Demo data banner and retry action; verification and active-state changes stay
-  local only while that fallback is active. Its Applications tab retains the
-  searchable seller onboarding review, approval, and reasoned rejection flow,
-  but is visibly labeled as a future-only contract because seller onboarding
-  has no backend DTO.
+  local only while that fallback is active. Its Pending verification tab loads
+  authenticated `GET /api/stores/pending`, supports local search and
+  pagination, shows the pending-store details and license URL, and verifies a
+  store through `PATCH /api/stores/{id}/verify`. Successful verification
+  removes the store from the pending list immediately.
 - `/admin/support` separates Support tickets and Reports in tabs. Support
   tickets retain search/filter/pagination, conversation replies, and
   resolve/reopen actions. Reports cover food listings, stores, and users with
@@ -73,19 +74,20 @@ The admin routes now behave as a usable prototype instead of a static theme:
   conversations now stay attached to their tickets instead of a separate admin
   chat inbox.
 - `/admin` uses four period-aware summary blocks with a per-day/per-month
-  switch. It also lists pending seller applications and links directly to
-  `/admin/sellers?tab=applications`; these onboarding records remain
-  future-only dummy data. Order status and recent-order dummy data use backend
-  field names, snapshot fields, UUID-shaped IDs, ISO timestamps, VND amounts,
-  and current backend-created/handled status spellings.
+  switch. It also loads pending stores from the Store Service, supports direct
+  verification, and links to `/admin/sellers?tab=applications` for detailed
+  review. Order status and recent-order dummy data use backend field names,
+  snapshot fields, UUID-shaped IDs, ISO timestamps, VND amounts, and current
+  backend-created/handled status spellings.
 - GUIDs remain record keys and mutation identifiers, but account, store, and
   recent-order tables display page-aware row numbers instead.
 
 Admin category CRUD and the Seller Management Stores tab prefer the Store
 Service and fall back to local behavior when their initial lists cannot load.
-Applications, support, and overview records remain page-local; the overview's
-pending-seller summary does not share state with the seller workspace. Account
-management prefers the real API and uses `lib/api/admin-demo.ts` only while
+Support and overview order records remain page-local. The overview and Seller
+Management pending-store lists make independent requests to the same Store
+Service endpoint rather than sharing client state. Account management prefers
+the real API and uses `lib/api/admin-demo.ts` only while
 Identity Service is unreachable. Admin CRUD is wired to the separate admin
 endpoints, and the dashboard now uses the separate admin authentication session
 through `/admin/login`, `/api/admin-auth/login`, `/api/admin-auth/refresh`, and
@@ -210,7 +212,6 @@ Future-only dashboard data remains local and explicit:
 
 - bag image filename;
 - store cover/avatar filename and operating hours;
-- seller applications;
 - support tickets, reports, and seller inbox conversations.
 - seller store reviews and review moderation state;
 - dashboard notification counts and menu content.
@@ -238,10 +239,10 @@ Remove each one when its backend service and browser integration are stable:
   fallback orders. Remove it when the seller-safe order response supplies the
   customer display field.
 
-Do not confuse those fallbacks with future-only prototypes. Seller
-applications, support/reports, inbox, reviews, notifications, media, and
-operating hours have no complete approved contract and must remain explicitly
-local until the backend work is complete.
+Do not confuse those fallbacks with future-only prototypes. Support/reports,
+inbox, reviews, notifications, media, and operating hours have no complete
+approved contract and must remain explicitly local until the backend work is
+complete.
 
 ## Styling conventions
 
@@ -300,10 +301,9 @@ about 4 KB instead of 1.96 MB across 370 files.
   host and Next image policy are known.
 - Keep search/filter state page-specific until three pages share the same real
   backend query contract; the current controls have different domain behavior.
-- Connect seller applications, support/reports, and admin overview orders at
-  their existing local mutation boundaries once complete backend contracts
-  exist. Do not preserve the disposable in-memory transformation code after an
-  endpoint replaces it.
+- Connect support/reports and admin overview orders at their existing local
+  mutation boundaries once complete backend contracts exist. Do not preserve
+  the disposable in-memory transformation code after an endpoint replaces it.
 - Browser-level visual regression coverage is not present. Before a design
   overhaul, capture desktop and mobile baselines for the dashboard, tables,
   inbox, product forms, and user dialogs.

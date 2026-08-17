@@ -1,6 +1,7 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
   CategoryResponse,
+  PendingStoreResponse,
   StoreProfileResponse,
   SurpriseBagResponse,
 } from "@/lib/api/dashboard-types";
@@ -64,6 +65,14 @@ export function listStores() {
   return apiRequest<StoreProfileResponse[]>(
     "/api/stores",
     { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function listPendingStores(accessToken: string) {
+  return apiRequest<PendingStoreResponse[]>(
+    "/api/stores/pending",
+    { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
 }
