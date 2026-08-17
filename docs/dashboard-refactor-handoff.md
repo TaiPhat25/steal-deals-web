@@ -120,8 +120,8 @@ storage, fake latency, notification integration, or speculative API layer.
   data. Search/filter/pagination stays client-side. Single and bulk status
   changes call the single-record status endpoint, and deletion calls the
   single-record delete endpoint for each selected bag. Those mutations remain
-  local only in visible fallback mode. Inline `quantityRemaining` edits remain
-  local because the current API has no inventory-adjustment request.
+  local only in visible fallback mode. `quantityRemaining` is read-only in the
+  listing because the current API has no inventory-adjustment request.
 - `/seller/products/add`, `/seller/products/edit`, and
   `/seller/products/details` share the backend-shaped surprise-bag model:
   `salePrice`, `quantityTotal`, `quantityRemaining`, category objects, ISO pickup
