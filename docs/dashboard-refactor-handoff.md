@@ -92,9 +92,10 @@ Identity Service is unreachable. Admin CRUD is wired to the separate admin
 endpoints, and the dashboard now uses the separate admin authentication session
 through `/admin/login`, `/api/admin-auth/login`, `/api/admin-auth/refresh`, and
 `/api/admin-auth/me`. Seller routes continue using the user authentication
-session. Admin dashboard routes use client-side `RequireAuth` protection and
-redirect unauthenticated visitors to `/admin/login`; backend authorization
-remains mandatory for every protected API request.
+session and redirect unauthenticated visitors to `/login`. Admin dashboard
+routes use client-side `RequireAuth` protection and redirect unauthenticated
+visitors to `/admin/login`; backend authorization remains mandatory for every
+protected API request.
 There is no browser storage or fake latency. When backend endpoints are stable,
 remove the fallback and replace the remaining page-local mutation handlers with
 API calls while retaining controls, dialogs, validation, and feedback.
@@ -120,8 +121,8 @@ storage, fake latency, notification integration, or speculative API layer.
   data. Search/filter/pagination stays client-side. Single and bulk status
   changes call the single-record status endpoint, and deletion calls the
   single-record delete endpoint for each selected bag. Those mutations remain
-  local only in visible fallback mode. Inline `quantityRemaining` edits remain
-  local because the current API has no inventory-adjustment request.
+  local only in visible fallback mode. `quantityRemaining` is read-only in the
+  listing because the current API has no inventory-adjustment request.
 - `/seller/products/add`, `/seller/products/edit`, and
   `/seller/products/details` share the backend-shaped surprise-bag model:
   `salePrice`, `quantityTotal`, `quantityRemaining`, category objects, ISO pickup
