@@ -1,16 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useMemo, useState } from "react";
 import {
+  demoOrders,
   formatOrderDate,
   formatOrderPrice,
 } from "@/components/orders/order-data";
-import { listMyOrders } from "@/lib/api/order";
 import type { OrderResponse } from "@/lib/api/dashboard-types";
 
 type OrderFilter = "all" | OrderResponse["status"];
+
+const staticOrders: OrderResponse[] = demoOrders.map((order) => ({
+  ...order,
+  contactNameSnapshot: "Demo Buyer",
+  contactPhoneSnapshot: "+84 90 000 0000",
+}));
 
 function getOrderStatusLabel(status: string) {
   if (status === "ReadyForPickup") return "Ready for pickup";
@@ -20,40 +25,13 @@ function getOrderStatusLabel(status: string) {
 }
 
 export default function OrderHistoryMain() {
-  const { accessToken } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<OrderFilter>("all");
-  const [orders, setOrders] = useState<OrderResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const loadOrders = useCallback(async () => {
-    if (!accessToken) return;
-
-    setLoading(true);
-    setError("");
-
-    try {
-      setOrders(await listMyOrders(accessToken));
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Unable to load your order history.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [accessToken]);
-
-  useEffect(() => {
-    void Promise.resolve().then(loadOrders);
-  }, [loadOrders]);
 
   const visibleOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return orders.filter((order) => {
+    return staticOrders.filter((order) => {
       const matchesFilter = filter === "all" || order.status === filter;
       const matchesQuery = !normalizedQuery
         || order.id.toLowerCase().includes(normalizedQuery)
@@ -62,7 +40,7 @@ export default function OrderHistoryMain() {
 
       return matchesFilter && matchesQuery;
     });
-  }, [filter, orders, query]);
+  }, [filter, query]);
 
   return (
     <main className="main order-history-page">
@@ -110,26 +88,10 @@ export default function OrderHistoryMain() {
           </section>
 
           <div className="order-history-result-count">
-            {loading
-              ? "Loading your orders..."
-              : `Showing ${visibleOrders.length} ${visibleOrders.length === 1 ? "order" : "orders"}`}
+            Showing {visibleOrders.length} {visibleOrders.length === 1 ? "order" : "orders"}
           </div>
 
-          {error ? (
-            <section className="order-history-empty" aria-live="polite">
-              <i className="icon-warning" aria-hidden="true" />
-              <h2>Unable to load orders</h2>
-              <p>{error}</p>
-              <button type="button" className="btn btn-outline-primary-2" onClick={() => void loadOrders()}>
-                Try again
-              </button>
-            </section>
-          ) : loading ? (
-            <section className="order-history-empty" aria-live="polite">
-              <h2>Loading orders...</h2>
-              <p>We are retrieving your latest rescue orders.</p>
-            </section>
-          ) : visibleOrders.length ? (
+          {visibleOrders.length ? (
             <section className="order-history-list" aria-label="Orders">
               {visibleOrders.map((order) => (
                 <article className="order-history-card" key={order.id}>

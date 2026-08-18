@@ -3,15 +3,21 @@ import type { StoreProfile } from "@/components/stores/store-profile-data";
 
 export type NewStore = StoreProfile;
 
-export default function NewStoreCard({ store }: { store: NewStore }) {
+export default function NewStoreCard({
+  store,
+  imageSrc,
+}: {
+  store: NewStore;
+  imageSrc?: string;
+}) {
   const storeHref = `/stores/${encodeURIComponent(store.id)}`;
   const productCount = store.surpriseBags.length;
 
   return (
     <article className="new-store-card">
       <Link href={storeHref} className="new-store-card__media" aria-label={`View ${store.name}`}>
-        {store.avatarUrl ? (
-          <img src={store.avatarUrl} width="300" height="200" alt={`${store.name} storefront`} />
+        {imageSrc ?? store.avatarUrl ? (
+          <img src={imageSrc ?? store.avatarUrl!} width="300" height="200" alt={`${store.name} storefront`} />
         ) : (
           <span className="new-store-card__placeholder" aria-hidden="true">
             {store.name.charAt(0)}

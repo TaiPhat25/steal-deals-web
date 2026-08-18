@@ -1,6 +1,8 @@
 import type { SurpriseBag } from "@/components/home/SurpriseBagCard";
 import type { SurpriseBagResponse } from "@/lib/api/dashboard-types";
 
+export const PRODUCT_LISTING_IMAGE = "/assets/images/demos/demo-28/flash/13.png";
+
 export type ListingBag = SurpriseBag & {
   backendId?: string;
   pickupDay: "today" | "tomorrow";
@@ -381,7 +383,7 @@ export function toListingBag(bag: SurpriseBagResponse): ListingBag {
     backendId: bag.id,
     storeId: bag.storeId,
     slug: presentation?.slug ?? `${toSlug(bag.name)}-${bag.id.slice(0, 8)}`,
-    imageSrc: presentation?.imageSrc ?? "/assets/images/demos/demo-28/flash/1.jpg",
+    imageSrc: PRODUCT_LISTING_IMAGE,
     imageAlt: presentation?.imageAlt ?? bag.name,
     name: bag.name,
     storeName: bag.storeName,

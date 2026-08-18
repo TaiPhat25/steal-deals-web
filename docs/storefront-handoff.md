@@ -70,7 +70,7 @@ The storefront currently exposes 16 routes or route patterns:
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
 | `/orders` | `components/orders/OrderHistoryMain.tsx` | Authenticated order history with search and status filters |
 | `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using Store Service data with static presentation fallbacks |
-| `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing |
+| `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing; all mapped listing cards currently use `/assets/images/demos/demo-28/flash/13.png` |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
 | `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable Store Service-backed store directory with pagination |
@@ -367,14 +367,19 @@ pagination were removed.
 
 `/stores` renders the Store Service-backed store directory with a half-width
 desktop search field, old/new store filters, and rating, bag-count, or name
-sorting. Store cards use a four-column desktop grid and link to `/stores/[id]`.
-Client-side pagination is implemented at 20 stores per page. The listing loads
-store profiles and available bags from `GET /api/stores` and `GET /api/bags`.
+sorting. Store cards use a four-column desktop grid, use the shared
+`/assets/images/demos/demo-28/banners/store.jpg` listing image, and link to
+`/stores/[id]`. Client-side pagination is implemented at 20 stores per page.
+The listing loads store profiles and available bags from `GET /api/stores` and
+`GET /api/bags`.
 
 `/stores/[id]` renders the Store Service-backed profile, active surprise bags,
 and reviews. It loads `GET /api/stores/{id}`, `GET /api/bags/store/{id}`, and
 `GET /api/reviews/store/{id}`. Store bag cards map backend-shaped bag records to
 the shared listing slugs so product and cart links remain compatible. The
+store detail profile uses `/assets/images/demos/demo-28/banners/store.jpg` as
+its main store image, and the `Bags From` cards use the same
+`/assets/images/demos/demo-28/flash/13.png` image as `/products`. The
 store-detail profile does not show the verification badge; its status is
 presented as `Open` or `Closed`. Joined and Status now share a single bottom
 divider in the store information grid without duplicating the next row. Unknown

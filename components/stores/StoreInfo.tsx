@@ -1,5 +1,7 @@
 import type { StoreProfile } from "@/components/stores/store-profile-data";
 
+const STORE_DETAIL_IMAGE = "/assets/images/demos/demo-28/banners/store.jpg";
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -23,13 +25,12 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
       <div className="container">
         <article className="store-info">
           <div className="store-info__media">
-            {store.avatarUrl ? (
-              <img src={store.avatarUrl} width="570" height="380" alt={`${store.name} storefront`} />
-            ) : (
-              <div className="store-info__placeholder" aria-hidden="true">
-                {store.name.charAt(0)}
-              </div>
-            )}
+            <img
+              src={STORE_DETAIL_IMAGE}
+              width="570"
+              height="380"
+              alt={`${store.name} storefront`}
+            />
           </div>
 
           <div className="store-info__body">
