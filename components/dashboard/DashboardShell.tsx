@@ -48,7 +48,7 @@ const navigation: Record<
     brand: "StealDeal Seller",
     items: [
       { label: "Dashboard", href: "/seller", icon: "dashboard" },
-      { label: "Surplus Bags", href: "/seller/products", icon: "products" },
+      { label: "Surprise Bags", href: "/seller/products", icon: "products" },
       { label: "Orders", href: "/seller/orders", icon: "orders" },
       { label: "Store Reviews", href: "/seller/store-reviews", icon: "reviews" },
       { label: "Store Profile", href: "/seller/settings", icon: "settings" },

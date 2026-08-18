@@ -522,7 +522,7 @@ export default function StoreReviews() {
                     Customer feedback
                   </p>
                   <h2 className="mt-1 text-lg font-bold">
-                    {activeProduct?.name ?? "Unknown surplus bag"}
+                    {activeProduct?.name ?? "Unknown surprise bag"}
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
