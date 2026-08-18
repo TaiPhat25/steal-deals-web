@@ -43,6 +43,12 @@ admin and seller dashboards.
 - Product detail now loads the selected bag from the Store Service. Cart and
   checkout share an in-memory cart state, while order history and shipping
   still use static demo data until their page-level integrations are completed.
+- The `Become a Seller` profile form now collects required latitude and
+  longitude values and validates them against the Store Service coordinate
+  ranges (`-90..90` and `-180..180`). It submits authenticated applications to
+  `POST /api/stores`, which creates an unverified store for admin approval.
+  Profile edit modals are constrained to the viewport with an internal scroll
+  area for longer forms.
 
 The storefront currently exposes 16 routes or route patterns:
 
@@ -445,10 +451,11 @@ These screens still retain static storefront data and do not call commerce APIs:
 The previous Molla checkout template is archived at
 `remove-later/CheckoutMain.tsx`.
 
-`OrderHistoryMain` and `ShippingMain` share `components/orders/order-data.ts`,
-whose static records mirror the backend `OrderResponse` shape. The pages are
-ready for `/api/orders/my-orders` and order-detail integration, but currently
-use local data and do not call the Order or Payment services.
+`OrderHistoryMain` now loads the authenticated user's orders through
+`listMyOrders(accessToken)`, then applies its existing search and status
+filters to the API response. It includes loading, error, retry, and empty
+states. `ShippingMain` still uses `components/orders/order-data.ts` and is the
+remaining customer order page to connect to the Order Service.
 
 Treat their current markup as UI scaffolding. Replace static arrays and submit
 handlers at page/component boundaries when commerce endpoints are available.
@@ -636,8 +643,9 @@ At this handoff:
 
 - Most commerce screens are still mock/static and should not be described as
   fully backend integrated. The `/products` listing and product detail call the
-  Store Service, while cart and checkout currently share client-side state;
-  order creation, order history, and shipping still need page-level integration.
+  Store Service, checkout creates Order Service records, and order history reads
+  the current user's orders; shipping, payment processing, and other commerce
+  workflows still need page-level integration.
 - Listing filters use local client state and are not persisted in the URL or
   sent to a catalog service.
 - Forgot password is not implemented.
@@ -645,8 +653,10 @@ At this handoff:
 - Google/Facebook login is commented out.
 - Profile phone/address edits are currently frontend-only until Account Service
   update endpoints are connected.
-- The `Become a Seller` form is currently frontend-only until a seller
-  application workflow/API is implemented.
+- The `Become a Seller` form submits to `POST /api/stores`, but the form does
+  not yet refresh the profile or seller role after admin approval. The backend
+  approval/event flow must complete before the account can use seller-only
+  screens.
 - Client resend cooldowns do not replace backend OTP throttling.
 - `RequireAuth` is client-only and briefly renders nothing during session
   restoration.
@@ -671,7 +681,7 @@ At this handoff:
    authentication path.
 4. Implement forgot-password and profile-edit flows using Identity/Account
    endpoints.
-5. Connect order history and shipping to their backend endpoints, then finish
+5. Connect shipping to the Order Service and order-detail endpoint, then finish
    the seller application workflow.
 6. Decide whether to add saved-store or availability-notification state; do not
    restore wishlist state for short-lived surprise bags without a clear product

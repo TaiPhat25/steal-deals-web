@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { ApiClientError } from "@/lib/api/client";
 import { getProfile } from "@/lib/api/account";
 import { verifyEmail } from "@/lib/api/auth";
+import { createStore } from "@/lib/api/store";
 import OtpInput from "@/components/auth/OtpInput";
 import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import type { UserProfile, UserAddress } from "@/lib/api/store-types";
@@ -19,6 +20,8 @@ type SellerApplicationForm = {
   storeName: string;
   description: string;
   address: string;
+  latitude: string;
+  longitude: string;
   phone: string;
 };
 
@@ -34,6 +37,8 @@ const emptySellerApplication: SellerApplicationForm = {
   storeName: "",
   description: "",
   address: "",
+  latitude: "",
+  longitude: "",
   phone: "",
 };
 
@@ -59,6 +64,7 @@ export default function ProfileMain() {
   const [sellerApplication, setSellerApplication] = useState<SellerApplicationForm>(emptySellerApplication);
   const [sellerApplicationError, setSellerApplicationError] = useState<string | null>(null);
   const [sellerApplicationSubmitted, setSellerApplicationSubmitted] = useState(false);
+  const [isSubmittingSellerApplication, setIsSubmittingSellerApplication] = useState(false);
 
   const showVerificationModal = searchParams.get("verify") === "email" && profile !== null && !profile.isEmailVerified;
   const editTarget = searchParams.get("edit");
@@ -153,6 +159,7 @@ export default function ProfileMain() {
     setSellerApplication(emptySellerApplication);
     setSellerApplicationError(null);
     setSellerApplicationSubmitted(false);
+    setIsSubmittingSellerApplication(false);
     router.replace("/profile", { scroll: false });
   };
 
@@ -161,23 +168,71 @@ export default function ProfileMain() {
     setSellerApplicationError(null);
   };
 
-  const handleSubmitSellerApplication = (event: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmitSellerApplication = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSellerApplicationError(null);
 
     const normalizedApplication = {
       storeName: sellerApplication.storeName.trim(),
       description: sellerApplication.description.trim(),
       address: sellerApplication.address.trim(),
+      latitude: sellerApplication.latitude.trim(),
+      longitude: sellerApplication.longitude.trim(),
       phone: sellerApplication.phone.trim(),
     };
+
+    const latitude = Number(normalizedApplication.latitude);
+    const longitude = Number(normalizedApplication.longitude);
 
     if (!normalizedApplication.storeName || !normalizedApplication.address || !normalizedApplication.phone) {
       setSellerApplicationError("Store name, address, and contact phone are required.");
       return;
     }
 
-    setSellerApplication(normalizedApplication);
-    setSellerApplicationSubmitted(true);
+    if (
+      !normalizedApplication.latitude ||
+      !normalizedApplication.longitude ||
+      !Number.isFinite(latitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      !Number.isFinite(longitude) ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      setSellerApplicationError(
+        "Enter a valid latitude between -90 and 90 and longitude between -180 and 180.",
+      );
+      return;
+    }
+
+    if (!accessToken) {
+      setSellerApplicationError("Your session has expired. Please log in again.");
+      return;
+    }
+
+    setIsSubmittingSellerApplication(true);
+
+    try {
+      await createStore(accessToken, {
+        name: normalizedApplication.storeName,
+        description: normalizedApplication.description || null,
+        address: normalizedApplication.address,
+        latitude,
+        longitude,
+        phone: normalizedApplication.phone,
+      });
+
+      setSellerApplication(normalizedApplication);
+      setSellerApplicationSubmitted(true);
+    } catch (requestError) {
+      setSellerApplicationError(
+        requestError instanceof ApiClientError
+          ? requestError.message
+          : "Unable to submit your seller application. Please try again.",
+      );
+    } finally {
+      setIsSubmittingSellerApplication(false);
+    }
   };
 
   const handleSavePhone = (event: SubmitEvent<HTMLFormElement>) => {
@@ -651,7 +706,7 @@ export default function ProfileMain() {
                       {sellerApplicationSubmitted ? (
                         <div className="text-center">
                           <p className="mb-3">
-                            Your seller application is ready. Backend submission will be connected later.
+                            Your store application has been submitted and is waiting for admin approval.
                           </p>
                           <button type="button" className="btn btn-outline-primary-2" onClick={closeSellerModal}>
                             <span>BACK TO PROFILE</span>
@@ -712,6 +767,38 @@ export default function ProfileMain() {
                                 required
                               />
                             </div>
+                            <div className="form-group">
+                              <label htmlFor="seller-store-latitude">Latitude *</label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                id="seller-store-latitude"
+                                value={sellerApplication.latitude}
+                                onChange={(event) => handleSellerApplicationChange("latitude", event.target.value)}
+                                inputMode="decimal"
+                                min="-90"
+                                max="90"
+                                step="any"
+                                placeholder="e.g. 10.7769"
+                                required
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="seller-store-longitude">Longitude *</label>
+                              <input
+                                type="number"
+                                className="form-control"
+                                id="seller-store-longitude"
+                                value={sellerApplication.longitude}
+                                onChange={(event) => handleSellerApplicationChange("longitude", event.target.value)}
+                                inputMode="decimal"
+                                min="-180"
+                                max="180"
+                                step="any"
+                                placeholder="e.g. 106.7009"
+                                required
+                              />
+                            </div>
 
                             {sellerApplicationError && (
                               <div className="alert alert-danger" role="alert" aria-live="polite">
@@ -720,8 +807,12 @@ export default function ProfileMain() {
                             )}
 
                             <div className="form-footer profile-edit-modal__footer">
-                              <button type="submit" className="btn btn-outline-primary-2">
-                                <span>SUBMIT APPLICATION</span>
+                              <button
+                                type="submit"
+                                className="btn btn-outline-primary-2"
+                                disabled={isSubmittingSellerApplication}
+                              >
+                                <span>{isSubmittingSellerApplication ? "SUBMITTING..." : "SUBMIT APPLICATION"}</span>
                                 <i className="icon-long-arrow-right"></i>
                               </button>
                               <button type="button" className="btn btn-link" onClick={closeSellerModal}>

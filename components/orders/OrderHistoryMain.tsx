@@ -1,25 +1,59 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
-  demoOrders,
   formatOrderDate,
   formatOrderPrice,
-  getOrderStatusLabel,
-  type StoreOrder,
 } from "@/components/orders/order-data";
+import { listMyOrders } from "@/lib/api/order";
+import type { OrderResponse } from "@/lib/api/dashboard-types";
 
-type OrderFilter = "all" | StoreOrder["status"];
+type OrderFilter = "all" | OrderResponse["status"];
+
+function getOrderStatusLabel(status: string) {
+  if (status === "ReadyForPickup") return "Ready for pickup";
+  if (status === "InventoryReservationFailed") return "Inventory unavailable";
+  if (status === "PaymentFailed") return "Payment failed";
+  return status;
+}
 
 export default function OrderHistoryMain() {
+  const { accessToken } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<OrderFilter>("all");
+  const [orders, setOrders] = useState<OrderResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const orders = useMemo(() => {
+  const loadOrders = useCallback(async () => {
+    if (!accessToken) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      setOrders(await listMyOrders(accessToken));
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to load your order history.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    void Promise.resolve().then(loadOrders);
+  }, [loadOrders]);
+
+  const visibleOrders = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return demoOrders.filter((order) => {
+    return orders.filter((order) => {
       const matchesFilter = filter === "all" || order.status === filter;
       const matchesQuery = !normalizedQuery
         || order.id.toLowerCase().includes(normalizedQuery)
@@ -28,7 +62,7 @@ export default function OrderHistoryMain() {
 
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query]);
+  }, [filter, orders, query]);
 
   return (
     <main className="main order-history-page">
@@ -66,20 +100,38 @@ export default function OrderHistoryMain() {
               <span>Filter by status</span>
               <select value={filter} onChange={(event) => setFilter(event.target.value as OrderFilter)}>
                 <option value="all">All orders</option>
-                <option value="ReadyForPickup">Ready for pickup</option>
-                <option value="Completed">Completed</option>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="InventoryReservationFailed">Inventory unavailable</option>
+                <option value="PaymentFailed">Payment failed</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
             </label>
           </section>
 
           <div className="order-history-result-count">
-            Showing {orders.length} {orders.length === 1 ? "order" : "orders"}
+            {loading
+              ? "Loading your orders..."
+              : `Showing ${visibleOrders.length} ${visibleOrders.length === 1 ? "order" : "orders"}`}
           </div>
 
-          {orders.length ? (
+          {error ? (
+            <section className="order-history-empty" aria-live="polite">
+              <i className="icon-warning" aria-hidden="true" />
+              <h2>Unable to load orders</h2>
+              <p>{error}</p>
+              <button type="button" className="btn btn-outline-primary-2" onClick={() => void loadOrders()}>
+                Try again
+              </button>
+            </section>
+          ) : loading ? (
+            <section className="order-history-empty" aria-live="polite">
+              <h2>Loading orders...</h2>
+              <p>We are retrieving your latest rescue orders.</p>
+            </section>
+          ) : visibleOrders.length ? (
             <section className="order-history-list" aria-label="Orders">
-              {orders.map((order) => (
+              {visibleOrders.map((order) => (
                 <article className="order-history-card" key={order.id}>
                   <header className="order-history-card__header">
                     <div>
