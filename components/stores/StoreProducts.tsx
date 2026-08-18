@@ -1,6 +1,9 @@
 import Link from "next/link";
 import SurpriseBagCard, { type SurpriseBag } from "@/components/home/SurpriseBagCard";
-import { surpriseBags as listingBags } from "@/components/products/product-listing-data";
+import {
+  PRODUCT_LISTING_IMAGE,
+  surpriseBags as listingBags,
+} from "@/components/products/product-listing-data";
 import type { StoreProfile, StoreSurpriseBag } from "@/components/stores/store-profile-data";
 
 function formatPickupWindow(start: string, end: string) {
@@ -37,7 +40,7 @@ function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
   return {
     // Store APIs use GUIDs; storefront product flows use the shared listing slug.
     slug: listingBag?.slug ?? bag.id,
-    imageSrc: listingBag?.imageSrc ?? "/assets/images/demos/demo-28/flash/1.jpg",
+    imageSrc: PRODUCT_LISTING_IMAGE,
     imageAlt: bag.name,
     name: bag.name,
     storeName: store.name,

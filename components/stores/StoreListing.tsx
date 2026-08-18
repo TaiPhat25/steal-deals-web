@@ -12,6 +12,7 @@ import type { StoreProfile } from "@/components/stores/store-profile-data";
 type StoreFilter = "all" | "old" | "new";
 type StoreSort = "rating" | "bags" | "name";
 const STORES_PER_PAGE = 20;
+const STORE_LISTING_IMAGE = "/assets/images/demos/demo-28/banners/store.jpg";
 
 export default function StoreListing() {
   const [query, setQuery] = useState("");
@@ -200,7 +201,13 @@ export default function StoreListing() {
             </section>
           ) : stores.length ? (
             <section className="store-listing-grid" aria-label="Available stores">
-              {visibleStores.map((store) => <NewStoreCard key={store.id} store={store} />)}
+              {visibleStores.map((store) => (
+                <NewStoreCard
+                  key={store.id}
+                  store={store}
+                  imageSrc={STORE_LISTING_IMAGE}
+                />
+              ))}
             </section>
           ) : (
             <section className="store-listing-empty" aria-live="polite">
