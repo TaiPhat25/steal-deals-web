@@ -2,9 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ApiClientError } from "@/lib/api/client";
+import { listBags, listStores } from "@/lib/api/store";
 import NewStoreCard from "@/components/home/NewStoreCard";
-import { storeProfiles } from "@/components/stores/store-profile-data";
+import { mapStoreResponse } from "@/components/stores/store-api-mappers";
+import type { StoreProfile } from "@/components/stores/store-profile-data";
 
 type StoreFilter = "all" | "old" | "new";
 type StoreSort = "rating" | "bags" | "name";
@@ -15,6 +18,40 @@ export default function StoreListing() {
   const [filter, setFilter] = useState<StoreFilter>("all");
   const [sort, setSort] = useState<StoreSort>("rating");
   const [page, setPage] = useState(1);
+  const [storeProfiles, setStoreProfiles] = useState<StoreProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadVersion, setReloadVersion] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    void Promise.all([listStores(), listBags()])
+      .then(([storesResponse, bagsResponse]) => {
+        if (!active) return;
+
+        setStoreProfiles(
+          storesResponse.map((store) => mapStoreResponse(store, bagsResponse)),
+        );
+        setPage(1);
+      })
+      .catch((requestError) => {
+        if (!active) return;
+
+        setLoadError(
+          requestError instanceof ApiClientError
+            ? requestError.message
+            : "Unable to load stores. Please try again.",
+        );
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [reloadVersion]);
 
   const stores = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -38,7 +75,7 @@ export default function StoreListing() {
         if (sort === "name") return left.name.localeCompare(right.name);
         return right.ratingScore - left.ratingScore;
       });
-  }, [filter, query, sort]);
+  }, [filter, query, sort, storeProfiles]);
 
   const totalPages = Math.max(1, Math.ceil(stores.length / STORES_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -66,6 +103,12 @@ export default function StoreListing() {
     setQuery("");
     setFilter("all");
     setPage(1);
+  }
+
+  function retryLoadingStores() {
+    setIsLoading(true);
+    setLoadError(null);
+    setReloadVersion((current) => current + 1);
   }
 
   return (
@@ -103,7 +146,11 @@ export default function StoreListing() {
                 <p>Browse the community</p>
                 <h2>Local stores</h2>
               </div>
-              <span>{stores.length} {stores.length === 1 ? "store" : "stores"} available</span>
+              <span>
+                {isLoading
+                  ? "Loading stores..."
+                  : `${stores.length} ${stores.length === 1 ? "store" : "stores"} available`}
+              </span>
             </div>
 
             <label className="store-listing-search">
@@ -134,7 +181,24 @@ export default function StoreListing() {
             </div>
           </section>
 
-          {stores.length ? (
+          {isLoading ? (
+            <section className="store-listing-empty" aria-live="polite">
+              <h2>Loading stores</h2>
+              <p>Finding active food rescue partners near you.</p>
+            </section>
+          ) : loadError ? (
+            <section className="store-listing-empty" aria-live="assertive">
+              <h2>Unable to load stores</h2>
+              <p>{loadError}</p>
+              <button
+                type="button"
+                className="btn btn-outline-primary-2"
+                onClick={retryLoadingStores}
+              >
+                Try again
+              </button>
+            </section>
+          ) : stores.length ? (
             <section className="store-listing-grid" aria-label="Available stores">
               {visibleStores.map((store) => <NewStoreCard key={store.id} store={store} />)}
             </section>

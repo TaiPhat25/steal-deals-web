@@ -1,6 +1,26 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function MobileMenu() {
+  const pathname = usePathname();
+
+  const isNavItemActive = (item: "home" | "products" | "stores" | "about" | "contact") => {
+    switch (item) {
+      case "home":
+        return pathname === "/";
+      case "products":
+        return pathname === "/products" || pathname === "/product" || pathname.startsWith("/product/");
+      case "stores":
+        return pathname === "/stores" || pathname.startsWith("/stores/");
+      case "about":
+        return pathname === "/about";
+      case "contact":
+        return pathname === "/contact";
+    }
+  };
+
   return (
     <>
       <div className="mobile-menu-overlay"></div>
@@ -30,8 +50,10 @@ export default function MobileMenu() {
 
           <nav className="mobile-nav">
             <ul className="mobile-menu">
-              <li className="active">
-                <Link href="/">Home</Link>
+              <li className={isNavItemActive("home") ? "active" : undefined}>
+                <Link href="/" className={isNavItemActive("home") ? "active" : undefined}>
+                  Home
+                </Link>
 
                 {/* <ul>
                   <li>
@@ -108,8 +130,13 @@ export default function MobileMenu() {
                   </li>
                 </ul> */}
               </li>
-              <li>
-                <Link href="/products">Surprise Bags</Link>
+              <li className={isNavItemActive("products") ? "active" : undefined}>
+                <Link
+                  href="/products"
+                  className={isNavItemActive("products") ? "active" : undefined}
+                >
+                  Surprise Bags
+                </Link>
                 {/* <ul>
                   <li>
                     <a href="category-list.html">Shop List</a>
@@ -157,8 +184,13 @@ export default function MobileMenu() {
                   </li>
                 </ul> */}
               </li>
-              <li>
-                <Link href="/stores">Stores</Link>
+              <li className={isNavItemActive("stores") ? "active" : undefined}>
+                <Link
+                  href="/stores"
+                  className={isNavItemActive("stores") ? "active" : undefined}
+                >
+                  Stores
+                </Link>
                 {/* <ul>
                   <li>
                     <a href="product.html">Default</a>
@@ -190,11 +222,21 @@ export default function MobileMenu() {
                   </li>
                 </ul> */}
               </li>
-              <li>
-                <Link href="/about">About Us</Link>
+              <li className={isNavItemActive("about") ? "active" : undefined}>
+                <Link
+                  href="/about"
+                  className={isNavItemActive("about") ? "active" : undefined}
+                >
+                  About Us
+                </Link>
               </li>
-              <li>
-                <Link href="/contact">Contact Us</Link>
+              <li className={isNavItemActive("contact") ? "active" : undefined}>
+                <Link
+                  href="/contact"
+                  className={isNavItemActive("contact") ? "active" : undefined}
+                >
+                  Contact Us
+                </Link>
               </li>
               {/* <li>
                 <a href="#">Pages</a>

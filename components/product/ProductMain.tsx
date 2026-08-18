@@ -242,8 +242,10 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                     <div>
                       <dt>Store</dt>
                       <dd>
-                        {bag.storeSlug ? (
-                          <Link href={`/stores/${encodeURIComponent(bag.storeSlug)}`}>{bag.storeName}</Link>
+                        {bag.storeId || bag.storeSlug ? (
+                          <Link href={`/stores/${encodeURIComponent(bag.storeId ?? bag.storeSlug ?? "")}`}>
+                            {bag.storeName}
+                          </Link>
                         ) : bag.storeName}
                       </dd>
                     </div>

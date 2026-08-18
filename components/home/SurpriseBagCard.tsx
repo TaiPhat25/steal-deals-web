@@ -53,9 +53,9 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
         </h3>
         <div className="surprise-bag-card__store-row">
           <p className="surprise-bag-card__store">{bag.storeName}</p>
-          {bag.storeSlug ? (
+          {bag.storeId || bag.storeSlug ? (
             <Link
-              href={`/stores/${encodeURIComponent(bag.storeSlug)}`}
+              href={`/stores/${encodeURIComponent(bag.storeId ?? bag.storeSlug ?? "")}`}
               className="surprise-bag-card__store-link"
             >
               View Store

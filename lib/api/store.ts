@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api/client";
 import type {
   CategoryResponse,
   PendingStoreResponse,
+  PublicStoreReviewResponse,
   StoreProfileResponse,
   SurpriseBagResponse,
 } from "@/lib/api/dashboard-types";
@@ -75,6 +76,14 @@ export function listCategories() {
 export function listStores() {
   return apiRequest<StoreProfileResponse[]>(
     "/api/stores",
+    { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function getStore(id: string) {
+  return apiRequest<StoreProfileResponse>(
+    `/api/stores/${encodeURIComponent(id)}`,
     { method: "GET" },
     storeApiBaseUrl(),
   );
@@ -157,6 +166,14 @@ export function createBag(accessToken: string, request: CreateBagRequest) {
 export function listStoreBags(storeId: string) {
   return apiRequest<SurpriseBagResponse[]>(
     `/api/bags/store/${encodeURIComponent(storeId)}`,
+    { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function listStoreReviews(storeId: string) {
+  return apiRequest<PublicStoreReviewResponse[]>(
+    `/api/reviews/store/${encodeURIComponent(storeId)}`,
     { method: "GET" },
     storeApiBaseUrl(),
   );

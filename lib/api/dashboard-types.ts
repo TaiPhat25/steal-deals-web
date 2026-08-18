@@ -103,6 +103,16 @@ export type StoreReviewResponse = {
   createdAt: string;
 };
 
+export type PublicStoreReviewResponse = {
+  id: string;
+  orderId: string;
+  buyerId: string;
+  ratingScore: number;
+  comment: string | null;
+  storeReply: string | null;
+  createdAt: string;
+};
+
 export const CURRENT_ORDER_STATUSES = [
   "Pending",
   "InventoryReservationFailed",

@@ -49,6 +49,13 @@ admin and seller dashboards.
   `POST /api/stores`, which creates an unverified store for admin approval.
   Profile edit modals are constrained to the viewport with an internal scroll
   area for longer forms.
+- The shared storefront header and mobile navigation derive their active item
+  from the current pathname. Product and store detail routes keep their parent
+  item highlighted, and active navigation uses the storefront green theme
+  color.
+- Product-detail and shared surprise-bag store links prefer the backend
+  `storeId` when building `/stores/[id]` URLs; presentation slugs remain only
+  as a fallback for legacy static data.
 
 The storefront currently exposes 16 routes or route patterns:
 
@@ -66,8 +73,8 @@ The storefront currently exposes 16 routes or route patterns:
 | `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
-| `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable store directory using local store profiles |
-| `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store profile, active surprise bags, and reviews |
+| `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable Store Service-backed store directory with pagination |
+| `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store Service-backed profile, active surprise bags, and reviews |
 | `/shipping` | `components/shipping/ShippingMain.tsx` | Authenticated order progress, pickup/delivery details, and order summary |
 | `/wishlist` | `components/wishlist/WishlistMain.tsx` | Temporarily disabled; previous static template retained in comments |
 
@@ -358,20 +365,20 @@ shows the pickup-day radio filter; pickup timing remains available through the
 thumbnails, fake layout controls, and presentation-only
 pagination were removed.
 
-`/stores` renders the store directory with a half-width desktop search field,
-old/new store filters, and rating, bag-count, or name sorting. Store cards use a
-four-column desktop grid and link to `/stores/[id]`. Client-side pagination is
-implemented at 20 stores per page; the current static dataset has fewer than 20
-stores, so pagination controls appear when additional store data is available.
+`/stores` renders the Store Service-backed store directory with a half-width
+desktop search field, old/new store filters, and rating, bag-count, or name
+sorting. Store cards use a four-column desktop grid and link to `/stores/[id]`.
+Client-side pagination is implemented at 20 stores per page. The listing loads
+store profiles and available bags from `GET /api/stores` and `GET /api/bags`.
 
-`/stores/[id]` renders the selected store profile, active surprise bags, and
-reviews. Store bag cards map backend-shaped bag records to the shared listing
-slugs so product and cart links remain compatible. Category names are normalized
-for the current listing data, and the local store profiles include the same
-active bags shown by the marketplace. The store-detail profile does not show the
-verification badge; its status is presented as `Open` or `Closed`. Joined and
-Status now share a single bottom divider in the store information grid without
-duplicating the next row. Unknown store IDs return `404`.
+`/stores/[id]` renders the Store Service-backed profile, active surprise bags,
+and reviews. It loads `GET /api/stores/{id}`, `GET /api/bags/store/{id}`, and
+`GET /api/reviews/store/{id}`. Store bag cards map backend-shaped bag records to
+the shared listing slugs so product and cart links remain compatible. The
+store-detail profile does not show the verification badge; its status is
+presented as `Open` or `Closed`. Joined and Status now share a single bottom
+divider in the store information grid without duplicating the next row. Unknown
+or inactive store IDs return `404`.
 
 Product and store links now use `/products`, `/stores`, `/stores/[id]`, and
 `/products?store=`, and `/product?bag=`. Store detail marketplace links use the
@@ -636,6 +643,12 @@ At this handoff:
   `/stores/[id]` routes.
 - Local HTTP checks return `200` for `/products`, category-filtered products,
   a known store, and all 12 listing images; unknown stores return `404`.
+- The public `/stores` listing now loads stores and their available bags from
+  the Store Service, maps them into the existing card model, and retains local
+  search/filter/sort/pagination behavior.
+- `/stores/[id]` now loads the store profile, store bags, and store reviews from
+  the Store Service and maps them into the existing detail components. The
+  route remains dynamic and returns `404` for missing or inactive stores.
 - The new listings were not visually checked through an automated browser in
   this environment; review desktop and mobile presentation before merging.
 

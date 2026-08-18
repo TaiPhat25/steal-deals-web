@@ -1,27 +1,39 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import StoreInfo from "@/components/stores/StoreInfo";
 import StoreProducts from "@/components/stores/StoreProducts";
 import StoreReviews from "@/components/stores/StoreReviews";
-import {
-  getStoreProfileByRouteId,
-  storeProfiles,
-} from "@/components/stores/store-profile-data";
+import { mapStoreResponse } from "@/components/stores/store-api-mappers";
+import { ApiClientError } from "@/lib/api/client";
+import { getStore, listStoreBags, listStoreReviews } from "@/lib/api/store";
 
 type StoreDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export function generateStaticParams() {
-  return storeProfiles.map((store) => ({
-    id: store.id,
-  }));
-}
+const loadStorePageData = cache(async (id: string) => {
+  try {
+    const [store, bags, reviews] = await Promise.all([
+      getStore(id),
+      listStoreBags(id),
+      listStoreReviews(id),
+    ]);
+
+    return mapStoreResponse(store, bags, reviews);
+  } catch (error) {
+    if (error instanceof ApiClientError && error.status === 404) {
+      return null;
+    }
+
+    throw error;
+  }
+});
 
 export async function generateMetadata({ params }: StoreDetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const store = getStoreProfileByRouteId(id);
+  const store = await loadStorePageData(id);
 
   if (!store) {
     return {
@@ -37,7 +49,7 @@ export async function generateMetadata({ params }: StoreDetailPageProps): Promis
 
 export default async function StoreDetailPage({ params }: StoreDetailPageProps) {
   const { id } = await params;
-  const store = getStoreProfileByRouteId(id);
+  const store = await loadStorePageData(id);
 
   if (!store || !store.isActive) notFound();
 

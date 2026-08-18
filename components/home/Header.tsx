@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cartBagKey, useCart } from "@/components/cart/CartProvider";
 
@@ -10,8 +11,24 @@ function formatHeaderPrice(value: number) {
 }
 
 export default function Header() {
+  const pathname = usePathname();
   const { currentUser, isAuthenticated, logout } = useAuth();
   const { items: headerCartItems, itemCount: headerCartCount, subtotal: headerCartTotal } = useCart();
+
+  const isNavItemActive = (item: "home" | "products" | "stores" | "about" | "contact") => {
+    switch (item) {
+      case "home":
+        return pathname === "/";
+      case "products":
+        return pathname === "/products" || pathname === "/product" || pathname.startsWith("/product/");
+      case "stores":
+        return pathname === "/stores" || pathname.startsWith("/stores/");
+      case "about":
+        return pathname === "/about";
+      case "contact":
+        return pathname === "/contact";
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -150,8 +167,12 @@ export default function Header() {
               </Link>
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
-                  <li className="megamenu-container active megamenu-list">
-                    <Link href="/" className="active">
+                  <li
+                    className={`megamenu-container megamenu-list${
+                      isNavItemActive("home") ? " active" : ""
+                    }`}
+                  >
+                    <Link href="/" className={isNavItemActive("home") ? "active" : undefined}>
                       Home
                     </Link>
                     {/* <div className="megamenu demo">
@@ -597,8 +618,11 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
-                  <li>
-                    <Link href="/products">
+                  <li className={isNavItemActive("products") ? "active" : undefined}>
+                    <Link
+                      href="/products"
+                      className={isNavItemActive("products") ? "active" : undefined}
+                    >
                       Surprise Bags
                     </Link>
                     {/* <div className="megamenu megamenu-md">
@@ -703,8 +727,13 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
-                  <li>
-                    <Link href="/stores">Stores</Link>
+                  <li className={isNavItemActive("stores") ? "active" : undefined}>
+                    <Link
+                      href="/stores"
+                      className={isNavItemActive("stores") ? "active" : undefined}
+                    >
+                      Stores
+                    </Link>
                     {/* <div className="megamenu megamenu-sm">
                       <div className="row no-gutters">
                         <div className="col-md-6">
@@ -761,11 +790,21 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
-                  <li>
-                    <Link href="/about">About Us</Link>
+                  <li className={isNavItemActive("about") ? "active" : undefined}>
+                    <Link
+                      href="/about"
+                      className={isNavItemActive("about") ? "active" : undefined}
+                    >
+                      About Us
+                    </Link>
                   </li>
-                  <li>
-                    <Link href="/contact">Contact Us</Link>
+                  <li className={isNavItemActive("contact") ? "active" : undefined}>
+                    <Link
+                      href="/contact"
+                      className={isNavItemActive("contact") ? "active" : undefined}
+                    >
+                      Contact Us
+                    </Link>
                   </li>
                   {/* <li className="megamenu-list">
                     <a href="#" className="sf-with-ul">

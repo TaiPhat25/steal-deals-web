@@ -12,6 +12,13 @@ body {
   font-family: var(--font-poppins), sans-serif;
 }
 
+/* Keep the shared template navigation aligned with the storefront palette. */
+.page-wrapper .header .main-nav .menu > li.active > a,
+.page-wrapper .header .main-nav .menu > li.active > a:hover,
+.page-wrapper .header .main-nav .menu > li.active > a:focus {
+  color: #61ab00;
+}
+
 .page-wrapper--home .page-content {
   padding-top: 0;
 }
