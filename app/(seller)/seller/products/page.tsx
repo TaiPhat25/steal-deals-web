@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useSellerDemo, type BagStatus, type SurplusBag } from "@/components/seller/SellerDemoProvider";
 import { DashboardButton, DashboardCard, PageHeader, ProductImage, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast, DialogActions } from "@/components/dashboard/Dialog";
-import { deleteBag, updateBagStatus } from "@/lib/api/store";
+import { deleteBag, listCategories, updateBagStatus } from "@/lib/api/store";
+import type { CategoryResponse } from "@/lib/api/dashboard-types";
 
 const PAGE_SIZE = 4;
 const statusTone = (status: string) => status === "Active" ? "success" : status === "Sold out" ? "error" : "warning";
@@ -26,6 +27,7 @@ export default function SellerProducts() {
   const [now] = useState(Date.now);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<CategoryResponse[] | null>(null);
   const [status, setStatus] = useState<BagStatus | "">("");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<string[]>([]);
@@ -33,11 +35,23 @@ export default function SellerProducts() {
   const [toast, setToast] = useState("");
   const [mutating, setMutating] = useState(false);
   const [actionError, setActionError] = useState("");
-  const categories = [...new Set(products.flatMap((product) => product.categories.map((item) => item.name)))];
+  useEffect(() => {
+    let active = true;
+    void listCategories()
+      .then((items) => {
+        if (active) setCategories(items.filter((item) => item.isActive));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const categoryOptions = categories ?? [...new Map(products.flatMap((product) => product.categories).map((item) => [item.id, item])).values()];
   const filtered = useMemo(() => products.filter((product) => {
     const query = search.trim().toLowerCase();
     return (!query || `${product.name} ${product.categories.map((item) => item.name).join(" ")}`.toLowerCase().includes(query))
-      && (!category || product.categories.some((item) => item.name === category))
+      && (!category || product.categories.some((item) => item.id === category))
       && (!status || product.status === status);
   }), [category, products, search, status]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -96,11 +110,11 @@ export default function SellerProducts() {
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
       <DashboardCard className="w-full overflow-hidden">
         <div className="p-4 sm:p-6">
-          <PageHeader title="Surplus Bags" action={<Link href="/seller/products/add" className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark">+ Create bag</Link>} />
+          <PageHeader title="Surprise Bags" action={<Link href="/seller/products/add" className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark">+ Create bag</Link>} />
           <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <label className="relative w-full lg:w-72"><span className="sr-only">Search surplus bags</span><span className="absolute left-3 top-1/2 -translate-y-1/2 text-light-secondary-text">⌕</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); resetPage(); }} placeholder="Search bags..." className="h-9 w-full rounded-full border-none bg-gray-100 pl-9 pr-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label>
+            <label className="relative w-full lg:w-72"><span className="sr-only">Search surprise bags</span><span className="absolute left-3 top-1/2 -translate-y-1/2 text-light-secondary-text">⌕</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); resetPage(); }} placeholder="Search bags..." className="h-9 w-full rounded-full border-none bg-gray-100 pl-9 pr-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label>
             <div className="flex flex-wrap gap-3">
-              <select aria-label="Food category" value={category} onChange={(event) => { setCategory(event.target.value); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"><option value="">All categories</option>{categories.map((item) => <option key={item}>{item}</option>)}</select>
+              <select aria-label="Food category" value={category} onChange={(event) => { setCategory(event.target.value); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"><option value="">All categories</option>{categoryOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
               <select aria-label="Bag status" value={status} onChange={(event) => { setStatus(event.target.value as BagStatus | ""); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"><option value="">All statuses</option><option>Active</option><option>Draft</option><option>Sold out</option></select>
               {(search || category || status) && <button type="button" onClick={() => { setSearch(""); setCategory(""); setStatus(""); resetPage(); }} className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter">Clear</button>}
             </div>
@@ -109,7 +123,7 @@ export default function SellerProducts() {
         </div>
         {demoReason && <div className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6" role="status"><p><strong>Demo data active.</strong> {demoReason}</p><button type="button" onClick={retryApi} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
         {actionError && <div role="alert" className="border-t border-error/30 bg-error-alpha-16 px-4 py-3 text-sm text-error-dark sm:px-6">{actionError}</div>}
-        {loading ? <div className="border-t border-gray-500/20 px-4 py-14 text-center text-sm text-light-secondary-text" role="status">Loading surplus bags…</div> : <>
+        {loading ? <div className="border-t border-gray-500/20 px-4 py-14 text-center text-sm text-light-secondary-text" role="status">Loading surprise bags…</div> : <>
         <div className="overflow-x-auto border-t border-gray-500/20">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-left"><tr><th className="p-3 pl-5"><input type="checkbox" aria-label="Select visible bags" checked={allVisibleSelected} onChange={() => setSelected(allVisibleSelected ? selected.filter((id) => !rows.some((row) => row.id === id)) : [...new Set([...selected, ...rows.map((row) => row.id)])])} className="size-4 accent-primary" /></th><th className="p-3">Bag</th><th className="p-3">Category</th><th className="p-3">Price</th><th className="p-3">Remaining</th><th className="p-3">Pickup</th><th className="p-3">Status</th><th className="p-3 pr-5 text-right">Actions</th></tr></thead>
@@ -124,7 +138,7 @@ export default function SellerProducts() {
               <td className="p-3 pr-5 text-right whitespace-nowrap"><Link href={`/seller/products/details?id=${product.id}`} className="inline-flex h-8 items-center rounded-lg px-2 font-semibold text-primary hover:bg-primary-lighter">View</Link><Link href={`/seller/products/edit?id=${product.id}`} className="inline-flex h-8 items-center rounded-lg px-2 font-semibold text-primary hover:bg-primary-lighter">Edit</Link><button type="button" onClick={() => setDeleting(product)} className="h-8 rounded-lg px-2 font-semibold text-error-dark hover:bg-error-alpha-16">Delete</button></td>
             </tr>)}</tbody>
           </table>
-          {rows.length === 0 && <div className="px-4 py-14 text-center text-sm text-light-secondary-text">No surplus bags match these filters.</div>}
+          {rows.length === 0 && <div className="px-4 py-14 text-center text-sm text-light-secondary-text">No surprise bags match these filters.</div>}
         </div>
         <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6"><span className="text-sm text-light-secondary-text">{filtered.length} bags</span><div className="flex items-center gap-2"><button type="button" aria-label="Previous page" disabled={page === 1} onClick={() => setPage(page - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">‹</button><span className="text-sm font-semibold">Page {page} of {totalPages}</span><button type="button" aria-label="Next page" disabled={page === totalPages} onClick={() => setPage(page + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">›</button></div></div>
         </>}

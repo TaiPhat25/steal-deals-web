@@ -21,8 +21,8 @@ function ProductDetailsContent() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const product = products.find((item) => item.id === id);
-  if (productsLoading) return <DashboardCard className="p-8 text-center text-sm text-light-secondary-text" role="status">Loading surplus bag…</DashboardCard>;
-  if (!product) return <DashboardCard className="p-8 text-center"><h1 className="text-xl font-bold">Surplus bag not found</h1><p className="mt-2 text-sm text-light-secondary-text">The selected bag does not exist or was deleted.</p><Link href="/seller/products" className="mt-5 inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white">Back to bags</Link></DashboardCard>;
+  if (productsLoading) return <DashboardCard className="p-8 text-center text-sm text-light-secondary-text" role="status">Loading surprise bag…</DashboardCard>;
+  if (!product) return <DashboardCard className="p-8 text-center"><h1 className="text-xl font-bold">Surprise bag not found</h1><p className="mt-2 text-sm text-light-secondary-text">The selected bag does not exist or was deleted.</p><Link href="/seller/products" className="mt-5 inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white">Back to bags</Link></DashboardCard>;
   const currentProduct = product;
   const tone = currentProduct.status === "Active" ? "success" : currentProduct.status === "Sold out" ? "error" : "warning";
 
@@ -81,7 +81,7 @@ function ProductDetailsContent() {
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
       <div className="space-y-6">
         {productsDemoReason && <div role="status" className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><p><strong>Demo data active.</strong> {productsDemoReason}</p><button type="button" onClick={retryApi} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><Link href="/seller/products" className="text-sm font-semibold text-primary hover:underline">← Back to bags</Link><h1 className="mt-2 text-xl font-bold">Surplus Bag Details</h1></div><div className="flex flex-wrap gap-3"><DashboardButton disabled={busy} variant="secondary" onClick={duplicate}>Duplicate as draft</DashboardButton><DashboardButton disabled={busy} variant="secondary" onClick={toggleStatus}>{product.status === "Active" ? "Move to draft" : "Activate"}</DashboardButton><Link href={`/seller/products/edit?id=${product.id}`} className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark">Edit bag</Link></div></div>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><Link href="/seller/products" className="text-sm font-semibold text-primary hover:underline">← Back to bags</Link><h1 className="mt-2 text-xl font-bold">Surprise Bag Details</h1></div><div className="flex flex-wrap gap-3"><DashboardButton disabled={busy} variant="secondary" onClick={duplicate}>Duplicate as draft</DashboardButton><DashboardButton disabled={busy} variant="secondary" onClick={toggleStatus}>{product.status === "Active" ? "Move to draft" : "Activate"}</DashboardButton><Link href={`/seller/products/edit?id=${product.id}`} className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark">Edit bag</Link></div></div>
         {error && <div role="alert" className="rounded-xl bg-error-alpha-16 px-4 py-3 text-sm text-error-dark">{error}</div>}
         <DashboardCard className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[280px_1fr]">
           <div className="overflow-hidden rounded-2xl bg-gray-100"><ProductImage alt={product.name} /></div>

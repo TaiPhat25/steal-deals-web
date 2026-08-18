@@ -132,12 +132,14 @@ export function createBag(accessToken: string, request: CreateBagRequest) {
   );
 }
 
-export function listStoreBags(storeId: string) {
-  return apiRequest<SurpriseBagResponse[]>(
+export async function listStoreBags(storeId: string) {
+  const bags = await apiRequest<SurpriseBagResponse[]>(
     `/api/bags/store/${encodeURIComponent(storeId)}`,
     { method: "GET" },
     storeApiBaseUrl(),
   );
+  // ponytail: the store-list response omits categories; remove these detail requests when the backend includes them.
+  return Promise.all(bags.map((bag) => bag.categories.length ? bag : getBag(bag.id)));
 }
 
 export function updateBag(

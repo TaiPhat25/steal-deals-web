@@ -69,7 +69,7 @@ export default function SellerDashboard() {
     <>
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
       <div className="space-y-6">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm text-light-secondary-text">Welcome back to</p><h1 className="text-2xl font-bold">{settings.name}</h1></div><Link href="/seller/products/add" className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark">+ Create surplus bag</Link></div>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm text-light-secondary-text">Welcome back to</p><h1 className="text-2xl font-bold">{settings.name}</h1></div><Link href="/seller/products/add" className="inline-flex h-9 items-center rounded-full bg-primary px-4 text-sm font-bold text-white hover:bg-primary-dark">+ Create surprise bag</Link></div>
         {loading && <div role="status" className="rounded-xl bg-white px-4 py-3 text-sm text-light-secondary-text">Loading seller dashboard…</div>}
         {demoReason && <div role="status" className="flex flex-col gap-3 rounded-xl bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><p><strong>Demo data active.</strong> {demoReason}</p><button type="button" onClick={retryApi} className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15">Retry API</button></div>}
         {error && <div role="alert" className="rounded-xl bg-error-alpha-16 px-4 py-3 text-sm text-error-dark">{error}</div>}

@@ -54,6 +54,7 @@ export default function ProductForm({
   title: string;
 }) {
   const [imageName, setImageName] = useState(initial?.imageName ?? "");
+  const [categoryId, setCategoryId] = useState(initial?.categories[0]?.id ?? "");
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -145,7 +146,7 @@ export default function ProductForm({
           <fieldset className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             <legend className="mb-4 text-base font-bold">Bag details</legend>
             <label className="block text-sm font-semibold sm:col-span-2 xl:col-span-3">Bag name *<input name="name" required defaultValue={initial?.name} className={inputClass} /></label>
-            <label className="block text-sm font-semibold">Category *<select name="categoryId" required disabled={categoriesLoading} defaultValue={initial?.categories[0]?.id ?? ""} className={inputClass}><option value="" disabled>{categoriesLoading ? "Loading categories…" : "Select category"}</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+            <label className="block text-sm font-semibold">Category *<select name="categoryId" required disabled={categoriesLoading} value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className={inputClass}><option value="" disabled>{categoriesLoading ? "Loading categories…" : "Select category"}</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
             <label className="block text-sm font-semibold">Status *<select name="status" defaultValue={initial?.status ?? "Draft"} className={inputClass}><option>Draft</option><option>Active</option><option>Sold out</option></select></label>
             <label className="block text-sm font-semibold">Total quantity *<input name="quantityTotal" type="number" required min="1" defaultValue={initial?.quantityTotal ?? 1} className={inputClass} /></label>
           </fieldset>
