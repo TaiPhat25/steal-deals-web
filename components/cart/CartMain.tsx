@@ -2,54 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
-
-type CartLine = {
-  bag: ListingBag;
-  quantity: number;
-};
+import { useMemo } from "react";
+import { cartBagKey, useCart } from "@/components/cart/CartProvider";
 
 type StoreGroup = {
   storeName: string;
   storeSlug?: string;
-  lines: CartLine[];
+  lines: ReturnType<typeof useCart>["items"];
 };
-
-const defaultCartSlugs = [
-  "bakery-breakfast-box",
-  "bakery-mix-bag",
-  "fresh-produce-box",
-];
 
 function formatPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
 }
 
-function createInitialCart(initialBagSlug?: string, initialQuantity?: number) {
-  const slugs = initialBagSlug ? [initialBagSlug] : defaultCartSlugs;
-
-  return slugs.reduce<CartLine[]>((lines, slug) => {
-    const bag = surpriseBags.find((item) => item.slug === slug);
-    if (!bag || lines.some((line) => line.bag.slug === bag.slug)) return lines;
-
-    const quantity = initialBagSlug === slug && Number.isFinite(initialQuantity)
-      ? Math.min(bag.remainingQuantity, Math.max(1, Math.floor(initialQuantity as number)))
-      : 1;
-
-    lines.push({ bag, quantity });
-    return lines;
-  }, []);
-}
-
-export default function CartMain({
-  initialBagSlug,
-  initialQuantity,
-}: {
-  initialBagSlug?: string;
-  initialQuantity?: number;
-}) {
-  const [lines, setLines] = useState(() => createInitialCart(initialBagSlug, initialQuantity));
+export default function CartMain() {
+  const { items: lines, itemCount, subtotal, updateQuantity, removeItem } = useCart();
 
   const groups = useMemo(() => {
     const grouped = new Map<string, StoreGroup>();
@@ -68,27 +35,6 @@ export default function CartMain({
 
     return [...grouped.values()];
   }, [lines]);
-
-  const subtotal = lines.reduce((total, line) => total + line.bag.salePrice * line.quantity, 0);
-  const itemCount = lines.reduce((total, line) => total + line.quantity, 0);
-
-  function updateQuantity(slug: string, nextQuantity: number) {
-    setLines((current) =>
-      current.map((line) => {
-        if (line.bag.slug !== slug) return line;
-
-        const safeQuantity = Number.isFinite(nextQuantity)
-          ? Math.min(line.bag.remainingQuantity, Math.max(1, Math.floor(nextQuantity)))
-          : 1;
-
-        return { ...line, quantity: safeQuantity };
-      }),
-    );
-  }
-
-  function removeItem(slug: string) {
-    setLines((current) => current.filter((line) => line.bag.slug !== slug));
-  }
 
   return (
     <main className="main cart-page">
@@ -162,9 +108,9 @@ export default function CartMain({
                       </div>
 
                       {group.lines.map((line) => (
-                        <div className="cart-line" role="row" key={line.bag.slug}>
+                        <div className="cart-line" role="row" key={cartBagKey(line.bag)}>
                           <div className="cart-line__product" role="cell">
-                            <Link href={`/product?bag=${encodeURIComponent(line.bag.slug)}`}>
+                            <Link href={`/product?bag=${encodeURIComponent(cartBagKey(line.bag))}`}>
                               <Image
                                 src={line.bag.imageSrc}
                                 width={112}
@@ -181,7 +127,7 @@ export default function CartMain({
                                 {line.bag.category}
                               </Link>
                               <h3>
-                                <Link href={`/product?bag=${encodeURIComponent(line.bag.slug)}`}>
+                                  <Link href={`/product?bag=${encodeURIComponent(cartBagKey(line.bag))}`}>
                                   {line.bag.name}
                                 </Link>
                               </h3>
@@ -195,7 +141,7 @@ export default function CartMain({
                             <button
                               type="button"
                               aria-label={`Decrease quantity of ${line.bag.name}`}
-                              onClick={() => updateQuantity(line.bag.slug, line.quantity - 1)}
+                              onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity - 1)}
                               disabled={line.quantity <= 1}
                             >
                               -
@@ -208,13 +154,13 @@ export default function CartMain({
                               value={line.quantity}
                               onChange={(event) => {
                                 const digits = event.target.value.replace(/\D/g, "");
-                                updateQuantity(line.bag.slug, Number(digits || 1));
+                                updateQuantity(cartBagKey(line.bag), Number(digits || 1));
                               }}
                             />
                             <button
                               type="button"
                               aria-label={`Increase quantity of ${line.bag.name}`}
-                              onClick={() => updateQuantity(line.bag.slug, line.quantity + 1)}
+                              onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity + 1)}
                               disabled={line.quantity >= line.bag.remainingQuantity}
                             >
                               +
@@ -227,7 +173,7 @@ export default function CartMain({
                             type="button"
                             className="cart-line__remove"
                             aria-label={`Remove ${line.bag.name}`}
-                            onClick={() => removeItem(line.bag.slug)}
+                            onClick={() => removeItem(cartBagKey(line.bag))}
                           >
                             <i className="icon-close" aria-hidden="true"></i>
                           </button>

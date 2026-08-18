@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useCart } from "@/components/cart/CartProvider";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
 
@@ -125,6 +127,8 @@ function getRelatedBags(current: ListingBag) {
 }
 
 export default function ProductMain({ bag }: { bag: ListingBag }) {
+  const router = useRouter();
+  const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImageState, setSelectedImageState] = useState({
     bagSlug: bag.slug,
@@ -149,13 +153,17 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
       .filter((item) => item.slug !== bag.slug && item.category !== bag.category)
       .map((item) => item.imageSrc),
   ].slice(0, 3);
-  const cartHref = `/cart?bag=${encodeURIComponent(bag.slug)}&quantity=${quantity}`;
   // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
 
   const selectedImage = selectedImageState.bagSlug === bag.slug ? selectedImageState.imageSrc : bag.imageSrc;
 
   function updateQuantity(value: number) {
     setQuantity(clampQuantity(value, bag.remainingQuantity));
+  }
+
+  function addToCart() {
+    addItem(bag, quantity);
+    router.push("/cart");
   }
 
   return (
@@ -191,7 +199,7 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                     <div className="product-detail-page__thumbnail-list" aria-label="Product images">
                       {galleryImages.map((image, index) => (
                         <button
-                          key={image}
+                          key={`${image}-${index}`}
                           type="button"
                           className={`product-detail-page__thumbnail${selectedImage === image ? " active" : ""}`}
                           aria-label={`View product image ${index + 1}`}
@@ -234,8 +242,10 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                     <div>
                       <dt>Store</dt>
                       <dd>
-                        {bag.storeSlug ? (
-                          <Link href={`/stores/${encodeURIComponent(bag.storeSlug)}`}>{bag.storeName}</Link>
+                        {bag.storeId || bag.storeSlug ? (
+                          <Link href={`/stores/${encodeURIComponent(bag.storeId ?? bag.storeSlug ?? "")}`}>
+                            {bag.storeName}
+                          </Link>
                         ) : bag.storeName}
                       </dd>
                     </div>
@@ -286,7 +296,7 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
 
                   <div className="product-details-action">
                     {isAvailable ? (
-                      <Link href={cartHref} className="btn-product btn-cart product-detail-page__cart"><span>Add to cart</span></Link>
+                      <button type="button" onClick={addToCart} className="btn-product btn-cart product-detail-page__cart"><span>Add to cart</span></button>
                     ) : (
                       <span className="btn-product btn-cart disabled" aria-disabled="true"><span>Sold out</span></span>
                     )}

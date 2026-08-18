@@ -6,7 +6,9 @@ const defaults = {
   query: "",
   categories: [],
   pickupDay: "all",
+  minPrice: 0,
   maxPrice: 300000,
+  minDistance: 0,
   maxDistance: 10,
   sort: "popularity",
 };

@@ -2,28 +2,33 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { surpriseBags } from "@/components/products/product-listing-data";
-
-const headerCartSlugs = [
-  "bakery-breakfast-box",
-  "bakery-mix-bag",
-  "fresh-produce-box",
-];
-
-const headerCartItems = headerCartSlugs.flatMap((slug) => {
-  const bag = surpriseBags.find((item) => item.slug === slug);
-  return bag ? [bag] : [];
-});
-
-const headerCartTotal = headerCartItems.reduce((total, bag) => total + bag.salePrice, 0);
+import { cartBagKey, useCart } from "@/components/cart/CartProvider";
 
 function formatHeaderPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
 }
 
 export default function Header() {
+  const pathname = usePathname();
   const { currentUser, isAuthenticated, logout } = useAuth();
+  const { items: headerCartItems, itemCount: headerCartCount, subtotal: headerCartTotal } = useCart();
+
+  const isNavItemActive = (item: "home" | "products" | "stores" | "about" | "contact") => {
+    switch (item) {
+      case "home":
+        return pathname === "/";
+      case "products":
+        return pathname === "/products" || pathname === "/product" || pathname.startsWith("/product/");
+      case "stores":
+        return pathname === "/stores" || pathname.startsWith("/stores/");
+      case "about":
+        return pathname === "/about";
+      case "contact":
+        return pathname === "/contact";
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -162,8 +167,12 @@ export default function Header() {
               </Link>
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
-                  <li className="megamenu-container active megamenu-list">
-                    <Link href="/" className="active">
+                  <li
+                    className={`megamenu-container megamenu-list${
+                      isNavItemActive("home") ? " active" : ""
+                    }`}
+                  >
+                    <Link href="/" className={isNavItemActive("home") ? "active" : undefined}>
                       Home
                     </Link>
                     {/* <div className="megamenu demo">
@@ -609,8 +618,11 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
-                  <li>
-                    <Link href="/products">
+                  <li className={isNavItemActive("products") ? "active" : undefined}>
+                    <Link
+                      href="/products"
+                      className={isNavItemActive("products") ? "active" : undefined}
+                    >
                       Surprise Bags
                     </Link>
                     {/* <div className="megamenu megamenu-md">
@@ -715,8 +727,13 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
-                  <li>
-                    <Link href="/stores">Stores</Link>
+                  <li className={isNavItemActive("stores") ? "active" : undefined}>
+                    <Link
+                      href="/stores"
+                      className={isNavItemActive("stores") ? "active" : undefined}
+                    >
+                      Stores
+                    </Link>
                     {/* <div className="megamenu megamenu-sm">
                       <div className="row no-gutters">
                         <div className="col-md-6">
@@ -773,11 +790,21 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
-                  <li>
-                    <Link href="/about">About Us</Link>
+                  <li className={isNavItemActive("about") ? "active" : undefined}>
+                    <Link
+                      href="/about"
+                      className={isNavItemActive("about") ? "active" : undefined}
+                    >
+                      About Us
+                    </Link>
                   </li>
-                  <li>
-                    <Link href="/contact">Contact Us</Link>
+                  <li className={isNavItemActive("contact") ? "active" : undefined}>
+                    <Link
+                      href="/contact"
+                      className={isNavItemActive("contact") ? "active" : undefined}
+                    >
+                      Contact Us
+                    </Link>
                   </li>
                   {/* <li className="megamenu-list">
                     <a href="#" className="sf-with-ul">
@@ -993,31 +1020,31 @@ export default function Header() {
                 >
                   <div className="icon position-relative">
                     <i className="icon-shopping-cart"></i>
-                    <span className="cart-count">{headerCartItems.length}</span>
+                    <span className="cart-count">{headerCartCount}</span>
                   </div>
                   <span className="cart-txt font-weight-normal">{formatHeaderPrice(headerCartTotal)}</span>
                 </a>
 
                 <div className="dropdown-menu dropdown-menu-right store-cart-dropdown-menu">
                   <div className="dropdown-cart-products">
-                    {headerCartItems.map((bag) => (
-                      <div className="product mb-0 rounded-0 w-100" key={bag.slug}>
+                    {headerCartItems.map(({ bag, quantity }) => (
+                      <div className="product mb-0 rounded-0 w-100" key={cartBagKey(bag)}>
                         <div className="product-cart-details">
                           <h4 className="product-title overflow-hidden letter-spacing-normal">
-                            <Link href={`/product?bag=${encodeURIComponent(bag.slug)}`}>
+                            <Link href={`/product?bag=${encodeURIComponent(cartBagKey(bag))}`}>
                               {bag.name}
                             </Link>
                           </h4>
 
                           <span className="cart-product-info">
-                            <span className="cart-product-qty store-cart-product-quantity">1x</span>{" "}
+                            <span className="cart-product-qty store-cart-product-quantity">{quantity}x</span>{" "}
                             {formatHeaderPrice(bag.salePrice)}
                           </span>
                         </div>
 
                         <figure className="product-image-container">
                           <Link
-                            href={`/product?bag=${encodeURIComponent(bag.slug)}`}
+                            href={`/product?bag=${encodeURIComponent(cartBagKey(bag))}`}
                             className="product-image"
                           >
                             <Image src={bag.imageSrc} width={80} height={80} alt={bag.imageAlt} />

@@ -1,6 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCart } from "@/components/cart/CartProvider";
 
 export type SurpriseBag = {
+  backendId?: string;
+  storeId?: string;
   slug: string;
   imageSrc: string;
   imageAlt: string;
@@ -22,7 +28,10 @@ function formatPrice(value: number) {
 }
 
 export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
-  const productHref = `/product?bag=${encodeURIComponent(bag.slug)}`;
+  const router = useRouter();
+  const { addItem } = useCart();
+  const productKey = bag.backendId ?? bag.slug;
+  const productHref = `/product?bag=${encodeURIComponent(productKey)}`;
   const categoryHref = `/products?category=${encodeURIComponent(bag.category)}`;
 
   return (
@@ -44,9 +53,9 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
         </h3>
         <div className="surprise-bag-card__store-row">
           <p className="surprise-bag-card__store">{bag.storeName}</p>
-          {bag.storeSlug ? (
+          {bag.storeId || bag.storeSlug ? (
             <Link
-              href={`/stores/${encodeURIComponent(bag.storeSlug)}`}
+              href={`/stores/${encodeURIComponent(bag.storeId ?? bag.storeSlug ?? "")}`}
               className="surprise-bag-card__store-link"
             >
               View Store
@@ -78,9 +87,9 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
           <Link href={productHref} className="btn btn-outline-primary-2">
             View Details
           </Link>
-          <Link href={`/cart?bag=${encodeURIComponent(bag.slug)}`} className="btn btn-primary">
+          <button type="button" onClick={() => { addItem(bag, 1); router.push("/cart"); }} className="btn btn-primary">
             Add to Cart
-          </Link>
+          </button>
         </div>
 
         {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}

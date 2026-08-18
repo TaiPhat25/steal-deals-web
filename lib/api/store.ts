@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api/client";
 import type {
   CategoryResponse,
   PendingStoreResponse,
+  PublicStoreReviewResponse,
   StoreProfileResponse,
   SurpriseBagResponse,
 } from "@/lib/api/dashboard-types";
@@ -40,6 +41,17 @@ export type UpdateStoreRequest = {
   licenseUrl?: string | null;
 };
 
+export type CreateStoreRequest = {
+  name: string;
+  description?: string | null;
+  address?: string | null;
+  latitude: number;
+  longitude: number;
+  phone?: string | null;
+  bankAccount?: string | null;
+  licenseUrl?: string | null;
+};
+
 export type UpdateBagRequest = Omit<CreateBagRequest, "status">;
 
 const STORE_API_BASE_URL = process.env.NEXT_PUBLIC_STORE_API_URL;
@@ -65,6 +77,25 @@ export function listStores() {
   return apiRequest<StoreProfileResponse[]>(
     "/api/stores",
     { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function getStore(id: string) {
+  return apiRequest<StoreProfileResponse>(
+    `/api/stores/${encodeURIComponent(id)}`,
+    { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function createStore(
+  accessToken: string,
+  request: CreateStoreRequest,
+) {
+  return apiRequest<StoreProfileResponse>(
+    "/api/stores",
+    { method: "POST", headers: bearer(accessToken), body: request },
     storeApiBaseUrl(),
   );
 }
@@ -135,6 +166,14 @@ export function createBag(accessToken: string, request: CreateBagRequest) {
 export function listStoreBags(storeId: string) {
   return apiRequest<SurpriseBagResponse[]>(
     `/api/bags/store/${encodeURIComponent(storeId)}`,
+    { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function listStoreReviews(storeId: string) {
+  return apiRequest<PublicStoreReviewResponse[]>(
+    `/api/reviews/store/${encodeURIComponent(storeId)}`,
     { method: "GET" },
     storeApiBaseUrl(),
   );
