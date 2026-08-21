@@ -62,9 +62,10 @@ The admin routes now behave as a usable prototype instead of a static theme:
   Demo data banner and retry action; verification and active-state changes stay
   local only while that fallback is active. Its Pending verification tab loads
   authenticated `GET /api/stores/pending`, supports local search and
-  pagination, shows the pending-store details and license URL, and verifies a
-  store through `PATCH /api/stores/{id}/verify`. Successful verification
-  removes the store from the pending list immediately.
+  pagination, shows the pending-store details and license URL, verifies a
+  store through `PATCH /api/stores/{id}/verify`, and rejects a pending
+  store registration through `DELETE /api/stores/{id}/reject`. Successful
+  verification or rejection removes the store from the pending list immediately.
 - `/admin/support` separates Support tickets and Reports in tabs. Support
   tickets retain search/filter/pagination, conversation replies, and
   resolve/reopen actions. Reports cover food listings, stores, and users with
