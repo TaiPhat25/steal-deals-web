@@ -237,6 +237,14 @@ export function verifyStore(accessToken: string, id: string) {
   );
 }
 
+export function rejectPendingStore(accessToken: string, id: string) {
+  return apiRequest<null>(
+    `/api/stores/${encodeURIComponent(id)}/reject`,
+    { method: "DELETE", headers: bearer(accessToken) },
+    storeApiBaseUrl(),
+  );
+}
+
 export function toggleStoreActive(accessToken: string, id: string) {
   return apiRequest<null>(
     `/api/stores/${encodeURIComponent(id)}/toggle-active`,

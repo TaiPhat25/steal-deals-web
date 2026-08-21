@@ -7,7 +7,7 @@ import AdminUsersPage from "@/components/admin/users/AdminUsersPage";
 import { DashboardButton, DashboardCard, StatusBadge } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast } from "@/components/dashboard/Dialog";
 import type { PendingStoreResponse, StoreProfileResponse } from "@/lib/api/dashboard-types";
-import { listPendingStores, listStores, toggleStoreActive, verifyStore } from "@/lib/api/store";
+import { listPendingStores, listStores, rejectPendingStore, toggleStoreActive, verifyStore } from "@/lib/api/store";
 
 type SellerTab = "accounts" | "stores" | "applications";
 
@@ -45,6 +45,7 @@ export default function AdminSellers({
   const [pendingLoading, setPendingLoading] = useState(true);
   const [pendingError, setPendingError] = useState("");
   const [busyStoreId, setBusyStoreId] = useState("");
+  const [busyAction, setBusyAction] = useState<"verify" | "reject" | "">("");
   const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function AdminSellers({
       return;
     }
     setBusyStoreId(store.id);
+    setBusyAction("verify");
     setPendingError("");
     try {
       await verifyStore(accessToken, store.id);
@@ -162,6 +164,28 @@ export default function AdminSellers({
       setPendingError(caught instanceof Error ? caught.message : "Unable to verify this store.");
     } finally {
       setBusyStoreId("");
+      setBusyAction("");
+    }
+  }
+
+  async function rejectPendingStoreAction(store: PendingStoreResponse) {
+    if (!accessToken) {
+      setPendingError("An admin session is required to reject stores.");
+      return;
+    }
+    setBusyStoreId(store.id);
+    setBusyAction("reject");
+    setPendingError("");
+    try {
+      await rejectPendingStore(accessToken, store.id);
+      setPendingStores((items) => items.filter((item) => item.id !== store.id));
+      setActivePendingStore(null);
+      setToast(`${store.name} was rejected.`);
+    } catch (caught) {
+      setPendingError(caught instanceof Error ? caught.message : "Unable to reject this store.");
+    } finally {
+      setBusyStoreId("");
+      setBusyAction("");
     }
   }
 
@@ -212,7 +236,7 @@ export default function AdminSellers({
         <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6"><span className="text-sm text-light-secondary-text">{filtered.length} {tab}</span><div className="flex items-center gap-2"><button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">‹</button><span className="text-sm font-semibold">Page {currentPage} of {totalPages}</span><button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40">›</button></div></div>
       </DashboardCard>
       {activeStore && <DashboardDialog title={activeStore.name} onClose={() => !busyStoreId && setActiveStore(null)}><div className="space-y-5 p-5 text-sm sm:p-6"><div className="flex gap-2"><StatusBadge tone={activeStore.isVerify ? "success" : "warning"}>{activeStore.isVerify ? "Verified" : "Unverified"}</StatusBadge><StatusBadge tone={activeStore.isActive ? "success" : "error"}>{activeStore.isActive ? "Active" : "Inactive"}</StatusBadge></div><p className="leading-6 text-light-secondary-text">{activeStore.description ?? "No description provided."}</p><dl className="grid grid-cols-[100px_1fr] gap-3"><dt className="text-light-secondary-text">Store ID</dt><dd className="break-all font-mono text-xs">{activeStore.id}</dd><dt className="text-light-secondary-text">Owner ID</dt><dd className="break-all font-mono text-xs">{activeStore.ownerId}</dd><dt className="text-light-secondary-text">Address</dt><dd>{activeStore.address ?? "Not set"}</dd><dt className="text-light-secondary-text">Coordinates</dt><dd>{activeStore.latitude}, {activeStore.longitude}</dd><dt className="text-light-secondary-text">Created</dt><dd>{date(activeStore.createdAt)}</dd></dl></div><footer className="flex flex-wrap justify-end gap-3 border-t border-gray-500/20 p-4 sm:px-6"><DashboardButton disabled={Boolean(busyStoreId)} variant="secondary" onClick={() => setActiveStore(null)}>Close</DashboardButton>{!activeStore.isVerify && <DashboardButton disabled={Boolean(busyStoreId)} onClick={() => updateStore(activeStore, { isVerify: true })}>{busyStoreId ? "Updating…" : "Verify store"}</DashboardButton>}<DashboardButton disabled={Boolean(busyStoreId)} variant={activeStore.isActive ? "danger" : "primary"} onClick={() => updateStore(activeStore, { isActive: !activeStore.isActive })}>{busyStoreId ? "Updating…" : activeStore.isActive ? "Deactivate" : "Activate"}</DashboardButton></footer></DashboardDialog>}
-      {activePendingStore && <DashboardDialog title={activePendingStore.name} onClose={() => !busyStoreId && setActivePendingStore(null)}><div className="space-y-5 p-5 text-sm sm:p-6"><StatusBadge tone="warning">Pending verification</StatusBadge><p className="leading-6 text-light-secondary-text">{activePendingStore.description ?? "No description provided."}</p><dl className="grid grid-cols-[100px_1fr] gap-3"><dt className="text-light-secondary-text">Owner ID</dt><dd className="break-all font-mono text-xs">{activePendingStore.ownerId}</dd><dt className="text-light-secondary-text">Phone</dt><dd>{activePendingStore.phone ?? "Not set"}</dd><dt className="text-light-secondary-text">Address</dt><dd>{activePendingStore.address ?? "Not set"}</dd><dt className="text-light-secondary-text">Coordinates</dt><dd>{activePendingStore.latitude}, {activePendingStore.longitude}</dd><dt className="text-light-secondary-text">License</dt><dd>{activePendingStore.licenseUrl ? <a className="font-semibold text-primary hover:text-primary-dark" href={activePendingStore.licenseUrl} rel="noreferrer" target="_blank">Open license</a> : "Not provided"}</dd><dt className="text-light-secondary-text">Submitted</dt><dd>{date(activePendingStore.createdAt)}</dd></dl></div><footer className="flex justify-end gap-3 border-t border-gray-500/20 p-4 sm:px-6"><DashboardButton disabled={Boolean(busyStoreId)} variant="secondary" onClick={() => setActivePendingStore(null)}>Close</DashboardButton><DashboardButton disabled={Boolean(busyStoreId)} onClick={() => approvePendingStore(activePendingStore)}>{busyStoreId ? "Verifying…" : "Verify store"}</DashboardButton></footer></DashboardDialog>}
+      {activePendingStore && <DashboardDialog title={activePendingStore.name} onClose={() => !busyStoreId && setActivePendingStore(null)}><div className="space-y-5 p-5 text-sm sm:p-6"><StatusBadge tone="warning">Pending verification</StatusBadge><p className="leading-6 text-light-secondary-text">{activePendingStore.description ?? "No description provided."}</p><dl className="grid grid-cols-[100px_1fr] gap-3"><dt className="text-light-secondary-text">Owner ID</dt><dd className="break-all font-mono text-xs">{activePendingStore.ownerId}</dd><dt className="text-light-secondary-text">Phone</dt><dd>{activePendingStore.phone ?? "Not set"}</dd><dt className="text-light-secondary-text">Address</dt><dd>{activePendingStore.address ?? "Not set"}</dd><dt className="text-light-secondary-text">Coordinates</dt><dd>{activePendingStore.latitude}, {activePendingStore.longitude}</dd><dt className="text-light-secondary-text">License</dt><dd>{activePendingStore.licenseUrl ? <a className="font-semibold text-primary hover:text-primary-dark" href={activePendingStore.licenseUrl} rel="noreferrer" target="_blank">Open license</a> : "Not provided"}</dd><dt className="text-light-secondary-text">Submitted</dt><dd>{date(activePendingStore.createdAt)}</dd></dl></div><footer className="flex flex-wrap justify-end gap-3 border-t border-gray-500/20 p-4 sm:px-6"><DashboardButton disabled={Boolean(busyStoreId)} variant="secondary" onClick={() => setActivePendingStore(null)}>Close</DashboardButton><DashboardButton disabled={Boolean(busyStoreId)} variant="danger" onClick={() => rejectPendingStoreAction(activePendingStore)}>{busyStoreId === activePendingStore.id && busyAction === "reject" ? "Rejecting…" : "Reject store"}</DashboardButton><DashboardButton disabled={Boolean(busyStoreId)} onClick={() => approvePendingStore(activePendingStore)}>{busyStoreId === activePendingStore.id && busyAction === "verify" ? "Verifying…" : "Verify store"}</DashboardButton></footer></DashboardDialog>}
     </>
   );
 }
