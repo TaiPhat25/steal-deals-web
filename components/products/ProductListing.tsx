@@ -21,9 +21,9 @@ type ProductListingProps = {
 };
 
 const PRICE_MIN = 0;
-const PRICE_MAX = 300000;
+const PRICE_MAX = Number.POSITIVE_INFINITY;
 const DISTANCE_MIN = 0;
-const DISTANCE_MAX = 10;
+const DISTANCE_MAX = Number.POSITIVE_INFINITY;
 
 function clampBound(value: string, fallback: number, min: number, max: number) {
   const parsed = Number(value.replace(/,/g, ""));
@@ -31,9 +31,11 @@ function clampBound(value: string, fallback: number, min: number, max: number) {
 }
 
 function stepDraftValue(value: string, step: number, fallback: number, min: number, max: number) {
-  const current = clampBound(value, fallback, min, max);
+  const current = value.trim() === "" && !Number.isFinite(fallback)
+    ? step < 0 ? Math.max(min, Math.abs(step)) : Number.POSITIVE_INFINITY
+    : clampBound(value, fallback, min, max);
   const next = Math.max(min, Math.min(max, current + step));
-  return Number.isInteger(next) ? String(next) : next.toFixed(1);
+  return Number.isFinite(next) ? Number.isInteger(next) ? String(next) : next.toFixed(1) : "";
 }
 
 function FilterWidget({
