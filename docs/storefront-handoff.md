@@ -358,8 +358,8 @@ imagery from `public/assets/images/demos/demo-28/flash` when the API does not
 provide media. Search, category, price, distance, and sorting controls work
 against the Store Service response. Price and
 Distance now use min/max numeric fields with functional storefront-owned
-minus/plus steppers and an Apply button instead of sliders; blank bounds mean
-no lower or upper limit. The sidebar no longer
+minus/plus steppers and an Apply button instead of sliders; both ranges default
+to 0 with no upper limit, and blank bounds mean no lower or upper limit. The sidebar no longer
 shows the pickup-day radio filter; pickup timing remains available through the
 `Sort by` dropdown's `Pickup Soonest` option. Size, colour, brand, compare,
 thumbnails, fake layout controls, and presentation-only
