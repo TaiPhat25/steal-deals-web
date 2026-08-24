@@ -113,7 +113,9 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
       row.removeEventListener("click", onClick, true);
       resizeObserver.disconnect();
     };
-  }, [visibleItems]);
+  }, [childNodes.length, visibleItems]);
+
+  if (childNodes.length === 0) return null;
 
   return (
     <div ref={rowRef} className={className}>

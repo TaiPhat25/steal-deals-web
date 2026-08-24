@@ -1,8 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { listBags } from "@/lib/api/store";
+import { toListingBag } from "@/components/products/product-listing-data";
 import DragScrollRow from "./DragScrollRow";
 import SurpriseBagCard, { type SurpriseBag } from "./SurpriseBagCard";
 
-const trendingBags: SurpriseBag[] = [
+const DEFAULT_TRENDING_BAGS: SurpriseBag[] = [
   {
     slug: "trending-bakery-mix",
     imageSrc: "/assets/images/demos/demo-28/flash/7.jpg",
@@ -86,6 +91,33 @@ const trendingBags: SurpriseBag[] = [
 ];
 
 export default function TrendingSection() {
+  const [bags, setBags] = useState<SurpriseBag[]>(DEFAULT_TRENDING_BAGS);
+
+  useEffect(() => {
+    let active = true;
+
+    listBags()
+      .then((response) => {
+        if (!active) return;
+
+        const activeBags = response
+          .filter((bag) => (bag.status || "").toLowerCase() === "active")
+          .map(toListingBag)
+          .sort((a, b) => (b.popularity - a.popularity) || (b.discountPercent - a.discountPercent));
+
+        if (activeBags.length > 0) {
+          setBags(activeBags);
+        }
+      })
+      .catch(() => {
+        // keep DEFAULT_TRENDING_BAGS
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section className="trending-section bg-lighter py-5" aria-labelledby="trending-title">
       <div className="container">
@@ -106,8 +138,8 @@ export default function TrendingSection() {
         </div>
 
         <DragScrollRow className="drag-scroll-row trending-scroll-row" visibleItems={5}>
-          {trendingBags.map((bag) => (
-            <SurpriseBagCard key={bag.slug} bag={bag} />
+          {bags.map((bag) => (
+            <SurpriseBagCard key={bag.backendId ?? bag.slug} bag={bag} />
           ))}
         </DragScrollRow>
       </div>
