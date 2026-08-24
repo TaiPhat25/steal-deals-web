@@ -6,7 +6,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
-import { surpriseBags, type ListingBag } from "@/components/products/product-listing-data";
+import {
+  surpriseBags,
+  type ListingBag,
+} from "@/components/products/product-listing-data";
 
 const galleryImagesBySlug: Record<string, string[]> = {
   "bakery-breakfast-box": [
@@ -144,18 +147,27 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
       date: "July 31, 2026",
     },
   ];
-  const galleryImages = galleryImagesBySlug[bag.slug] ?? [
-    bag.imageSrc,
-    ...surpriseBags
-      .filter((item) => item.slug !== bag.slug && item.category === bag.category)
-      .map((item) => item.imageSrc),
-    ...surpriseBags
-      .filter((item) => item.slug !== bag.slug && item.category !== bag.category)
-      .map((item) => item.imageSrc),
-  ].slice(0, 3);
+  const galleryImages =
+    galleryImagesBySlug[bag.slug] ??
+    [
+      bag.imageSrc,
+      ...surpriseBags
+        .filter(
+          (item) => item.slug !== bag.slug && item.category === bag.category,
+        )
+        .map((item) => item.imageSrc),
+      ...surpriseBags
+        .filter(
+          (item) => item.slug !== bag.slug && item.category !== bag.category,
+        )
+        .map((item) => item.imageSrc),
+    ].slice(0, 3);
   // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
 
-  const selectedImage = selectedImageState.bagSlug === bag.slug ? selectedImageState.imageSrc : bag.imageSrc;
+  const selectedImage =
+    selectedImageState.bagSlug === bag.slug
+      ? selectedImageState.imageSrc
+      : bag.imageSrc;
 
   function updateQuantity(value: number) {
     setQuantity(clampQuantity(value, bag.remainingQuantity));
@@ -171,9 +183,15 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
       <nav aria-label="Breadcrumb" className="breadcrumb-nav border-0 mb-0">
         <div className="container d-flex align-items-center">
           <ol className="breadcrumb">
-            <li className="breadcrumb-item"><Link href="/">Home</Link></li>
-            <li className="breadcrumb-item"><Link href="/products">Surprise Bags</Link></li>
-            <li className="breadcrumb-item active" aria-current="page">{bag.name}</li>
+            <li className="breadcrumb-item">
+              <Link href="/">Home</Link>
+            </li>
+            <li className="breadcrumb-item">
+              <Link href="/products">Surprise Bags</Link>
+            </li>
+            <li className="breadcrumb-item active" aria-current="page">
+              {bag.name}
+            </li>
           </ol>
         </div>
       </nav>
@@ -194,9 +212,14 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                         sizes="(max-width: 767px) 100vw, 50vw"
                         priority
                       />
-                      <span className="product-detail-page__discount-badge">Save {bag.discountPercent}%</span>
+                      <span className="product-detail-page__discount-badge">
+                        Save {bag.discountPercent}%
+                      </span>
                     </figure>
-                    <div className="product-detail-page__thumbnail-list" aria-label="Product images">
+                    <div
+                      className="product-detail-page__thumbnail-list"
+                      aria-label="Product images"
+                    >
                       {galleryImages.map((image, index) => (
                         <button
                           key={`${image}-${index}`}
@@ -204,9 +227,19 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                           className={`product-detail-page__thumbnail${selectedImage === image ? " active" : ""}`}
                           aria-label={`View product image ${index + 1}`}
                           aria-pressed={selectedImage === image}
-                          onClick={() => setSelectedImageState({ bagSlug: bag.slug, imageSrc: image })}
+                          onClick={() =>
+                            setSelectedImageState({
+                              bagSlug: bag.slug,
+                              imageSrc: image,
+                            })
+                          }
                         >
-                          <Image src={image} alt={`${bag.name} preview ${index + 1}`} width={120} height={90} />
+                          <Image
+                            src={image}
+                            alt={`${bag.name} preview ${index + 1}`}
+                            width={120}
+                            height={90}
+                          />
                         </button>
                       ))}
                     </div>
@@ -216,14 +249,21 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
 
               <div className="col-md-6">
                 <div className="product-details">
-                  <p className="product-detail-page__eyebrow">Near-expiry surprise bag</p>
+                  <p className="product-detail-page__eyebrow">
+                    Near-expiry surprise bag
+                  </p>
                   <h1 className="product-title">{bag.name}</h1>
 
                   <div className="ratings-container">
                     <div className="ratings">
-                      <div className="ratings-val" style={{ width: `${Math.min(bag.popularity, 100)}%` }} />
+                      <div
+                        className="ratings-val"
+                        style={{ width: `${Math.min(bag.popularity, 100)}%` }}
+                      />
                     </div>
-                    <span className="ratings-text">Popular with local shoppers</span>
+                    <span className="ratings-text">
+                      Popular with local shoppers
+                    </span>
                   </div>
 
                   <div className="product-price product-detail-page__price">
@@ -233,8 +273,9 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
 
                   <div className="product-content">
                     <p>
-                      Rescue good food from {bag.storeName} at a discounted price. Contents vary by day and are
-                      available for pickup during the listed window.
+                      Rescue good food from {bag.storeName} at a discounted
+                      price. Contents vary by day and are available for pickup
+                      during the listed window.
                     </p>
                   </div>
 
@@ -243,19 +284,39 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                       <dt>Store</dt>
                       <dd>
                         {bag.storeId || bag.storeSlug ? (
-                          <Link href={`/stores/${encodeURIComponent(bag.storeId ?? bag.storeSlug ?? "")}`}>
+                          <Link
+                            href={`/stores/${encodeURIComponent(bag.storeId ?? bag.storeSlug ?? "")}`}
+                          >
                             {bag.storeName}
                           </Link>
-                        ) : bag.storeName}
+                        ) : (
+                          bag.storeName
+                        )}
                       </dd>
                     </div>
-                    <div><dt>Pickup</dt><dd>{formatPickupRange(bag)}</dd></div>
-                    <div><dt>Expiry</dt><dd>{formatDate(bag.expiryDate)}, {formatTime(bag.expiryDate)}</dd></div>
-                    <div><dt>Available</dt><dd>{formatAvailability(bag)}</dd></div>
+                    <div>
+                      <dt>Pickup</dt>
+                      <dd>{formatPickupRange(bag)}</dd>
+                    </div>
+                    <div>
+                      <dt>Expiry</dt>
+                      <dd>
+                        {formatDate(bag.expiryDate)},{" "}
+                        {formatTime(bag.expiryDate)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Available</dt>
+                      <dd>{formatAvailability(bag)}</dd>
+                    </div>
                     <div>
                       <dt>Category</dt>
                       <dd className="product-detail-page__categories">
-                        <Link href={`/products?category=${encodeURIComponent(bag.category)}`}>{bag.category}</Link>
+                        <Link
+                          href={`/products?category=${encodeURIComponent(bag.category)}`}
+                        >
+                          {bag.category}
+                        </Link>
                       </dd>
                     </div>
                   </dl>
@@ -287,7 +348,9 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                         type="button"
                         aria-label={`Increase quantity of ${bag.name}`}
                         onClick={() => updateQuantity(quantity + 1)}
-                        disabled={!isAvailable || quantity >= bag.remainingQuantity}
+                        disabled={
+                          !isAvailable || quantity >= bag.remainingQuantity
+                        }
                       >
                         +
                       </button>
@@ -296,9 +359,20 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
 
                   <div className="product-details-action">
                     {isAvailable ? (
-                      <button type="button" onClick={addToCart} className="btn-product btn-cart product-detail-page__cart"><span>Add to cart</span></button>
+                      <button
+                        type="button"
+                        onClick={addToCart}
+                        className="btn-outline-primary-2 btn-product btn-cart product-detail-page__cart"
+                      >
+                        <span>Add to cart</span>
+                      </button>
                     ) : (
-                      <span className="btn-product btn-cart disabled" aria-disabled="true"><span>Sold out</span></span>
+                      <span
+                        className="btn-product btn-cart disabled"
+                        aria-disabled="true"
+                      >
+                        <span>Sold out</span>
+                      </span>
                     )}
                     {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
                     {/*
@@ -307,7 +381,6 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                     </div>
                     */}
                   </div>
-
                 </div>
               </div>
             </div>
@@ -316,48 +389,114 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
           <div className="product-details-tab">
             <ul className="nav nav-pills justify-content-center" role="tablist">
               <li className="nav-item">
-                <a className="nav-link active" id="product-desc-link" data-toggle="tab" href="#product-desc-tab" role="tab" aria-controls="product-desc-tab" aria-selected="true">Bag information</a>
+                <a
+                  className="nav-link active"
+                  id="product-desc-link"
+                  data-toggle="tab"
+                  href="#product-desc-tab"
+                  role="tab"
+                  aria-controls="product-desc-tab"
+                  aria-selected="true"
+                >
+                  Bag information
+                </a>
               </li>
               <li className="nav-item">
-                <a className="nav-link" id="product-info-link" data-toggle="tab" href="#product-info-tab" role="tab" aria-controls="product-info-tab" aria-selected="false">Pickup information</a>
+                <a
+                  className="nav-link"
+                  id="product-info-link"
+                  data-toggle="tab"
+                  href="#product-info-tab"
+                  role="tab"
+                  aria-controls="product-info-tab"
+                  aria-selected="false"
+                >
+                  Pickup information
+                </a>
               </li>
               <li className="nav-item">
-                <a className="nav-link" id="product-review-link" data-toggle="tab" href="#product-review-tab" role="tab" aria-controls="product-review-tab" aria-selected="false">Reviews</a>
+                <a
+                  className="nav-link"
+                  id="product-review-link"
+                  data-toggle="tab"
+                  href="#product-review-tab"
+                  role="tab"
+                  aria-controls="product-review-tab"
+                  aria-selected="false"
+                >
+                  Reviews
+                </a>
               </li>
             </ul>
 
             <div className="tab-content">
-              <div className="tab-pane fade show active" id="product-desc-tab" role="tabpanel" aria-labelledby="product-desc-link">
+              <div
+                className="tab-pane fade show active"
+                id="product-desc-tab"
+                role="tabpanel"
+                aria-labelledby="product-desc-link"
+              >
                 <div className="product-desc-content">
                   <h3>About this surprise bag</h3>
                   <p>
-                    This discounted bag helps {bag.storeName} sell good food before it goes to waste. The exact
-                    contents are selected by the store and may vary depending on the day&apos;s surplus.
+                    This discounted bag helps {bag.storeName} sell good food
+                    before it goes to waste. The exact contents are selected by
+                    the store and may vary depending on the day&apos;s surplus.
                   </p>
                   <ul>
                     <li>Category: {bag.category}.</li>
-                    <li>Discount: {bag.discountPercent}% off the original value.</li>
+                    <li>
+                      Discount: {bag.discountPercent}% off the original value.
+                    </li>
                     <li>{formatAvailability(bag)}.</li>
                   </ul>
                 </div>
               </div>
-              <div className="tab-pane fade" id="product-info-tab" role="tabpanel" aria-labelledby="product-info-link">
+              <div
+                className="tab-pane fade"
+                id="product-info-tab"
+                role="tabpanel"
+                aria-labelledby="product-info-link"
+              >
                 <div className="product-desc-content">
                   <h3>Pickup details</h3>
-                  <p>Collect this bag from {bag.storeName} during the listed pickup window.</p>
+                  <p>
+                    Collect this bag from {bag.storeName} during the listed
+                    pickup window.
+                  </p>
                   <dl className="product-detail-page__tab-details">
-                    <div><dt>Pickup</dt><dd>{formatPickupRange(bag)}</dd></div>
-                    <div><dt>Expiry</dt><dd>{formatDate(bag.expiryDate)}, {formatTime(bag.expiryDate)}</dd></div>
-                    <div><dt>Available</dt><dd>{formatAvailability(bag)}</dd></div>
+                    <div>
+                      <dt>Pickup</dt>
+                      <dd>{formatPickupRange(bag)}</dd>
+                    </div>
+                    <div>
+                      <dt>Expiry</dt>
+                      <dd>
+                        {formatDate(bag.expiryDate)},{" "}
+                        {formatTime(bag.expiryDate)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Available</dt>
+                      <dd>{formatAvailability(bag)}</dd>
+                    </div>
                   </dl>
                 </div>
               </div>
-              <div className="tab-pane fade" id="product-review-tab" role="tabpanel" aria-labelledby="product-review-link">
+              <div
+                className="tab-pane fade"
+                id="product-review-tab"
+                role="tabpanel"
+                aria-labelledby="product-review-link"
+              >
                 <div className="reviews">
                   <h3>Reviews</h3>
                   <div className="store-reviews__list">
                     {reviews.map((review) => (
-                      <article className="store-review" key={`${review.author}-${review.date}`}>
+                      <article
+                        className="store-review"
+                        key={`${review.author}-${review.date}`}
+                      >
                         <div className="store-review__header">
                           <h3>{review.author}</h3>
                           <strong>{review.rating}/5</strong>
@@ -373,13 +512,18 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
           </div>
 
           {relatedBags.length > 0 && (
-            <section className="product-detail-related" aria-labelledby="related-bags-title">
+            <section
+              className="product-detail-related"
+              aria-labelledby="related-bags-title"
+            >
               <div className="product-detail-section-heading">
                 <div>
                   <p>More from StealDeals</p>
                   <h2 id="related-bags-title">You may also like</h2>
                 </div>
-                <Link href={`/products?category=${encodeURIComponent(bag.category)}`}>
+                <Link
+                  href={`/products?category=${encodeURIComponent(bag.category)}`}
+                >
                   View more {bag.category.toLowerCase()} bags
                 </Link>
               </div>
