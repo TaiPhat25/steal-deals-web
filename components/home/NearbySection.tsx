@@ -1,8 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { listBags } from "@/lib/api/store";
+import { toListingBag } from "@/components/products/product-listing-data";
 import DragScrollRow from "./DragScrollRow";
 import SurpriseBagCard, { type SurpriseBag } from "./SurpriseBagCard";
 
-const nearbyBags: SurpriseBag[] = [
+const DEFAULT_NEARBY_BAGS: SurpriseBag[] = [
   {
     slug: "nearby-bakery-box",
     imageSrc: "/assets/images/demos/demo-28/flash/1.jpg",
@@ -86,6 +91,33 @@ const nearbyBags: SurpriseBag[] = [
 ];
 
 export default function NearbySection() {
+  const [bags, setBags] = useState<SurpriseBag[]>(DEFAULT_NEARBY_BAGS);
+
+  useEffect(() => {
+    let active = true;
+
+    listBags()
+      .then((response) => {
+        if (!active) return;
+
+        const activeBags = response
+          .filter((bag) => (bag.status || "").toLowerCase() === "active")
+          .map(toListingBag)
+          .sort((a, b) => a.distanceKm - b.distanceKm);
+
+        if (activeBags.length > 0) {
+          setBags(activeBags);
+        }
+      })
+      .catch(() => {
+        // keep DEFAULT_NEARBY_BAGS
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section className="nearby-section py-5" aria-labelledby="nearby-title">
       <div className="container">
@@ -106,8 +138,8 @@ export default function NearbySection() {
         </div>
 
         <DragScrollRow className="drag-scroll-row nearby-scroll-row" visibleItems={5}>
-          {nearbyBags.map((bag) => (
-            <SurpriseBagCard key={bag.slug} bag={bag} />
+          {bags.map((bag) => (
+            <SurpriseBagCard key={bag.backendId ?? bag.slug} bag={bag} />
           ))}
         </DragScrollRow>
       </div>
