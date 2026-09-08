@@ -113,7 +113,7 @@ export default function CheckoutMain() {
     }
 
     if (!accessToken) {
-      setError("Your session has expired. Please log in again before placing an order.");
+      setError("Your session has expired. Please sign in again before placing an order.");
       return;
     }
 

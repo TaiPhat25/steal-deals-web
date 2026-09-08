@@ -206,7 +206,7 @@ export default function ProfileMain() {
     }
 
     if (!accessToken) {
-      setSellerApplicationError("Your session has expired. Please log in again.");
+      setSellerApplicationError("Your session has expired. Please sign in again.");
       return;
     }
 

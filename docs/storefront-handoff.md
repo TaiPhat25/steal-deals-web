@@ -26,8 +26,8 @@ admin and seller dashboards.
 - `app/(store)/layout.tsx` owns storefront metadata, fonts, legacy stylesheets,
   and legacy JavaScript loading.
 - `components/layout/SiteLayout.tsx` wraps every store page with the shared
-  header, footer, authentication provider, mobile menu, sign-in modal, and
-  global interaction handlers.
+  header, footer, authentication provider, mobile menu, and global interaction
+  handlers.
 - Identity Service integration is implemented for registration, login, access
   token refresh, logout, current-user lookup, profile loading, email
   verification, and OTP resend.
@@ -206,12 +206,24 @@ authorization independently.
 
 ### Login and registration
 
-`/login` and `/register` share `LoginMain` with different initial tabs.
-`LoginTabHashHandler` keeps tab switching on clean routes rather than legacy
-hash URLs:
+`/login` and `/register` share `LoginMain` with different initial tabs. The
+form tabs use local React state and debounce clean-route synchronization through
+the native History API. Switching forms does not trigger an App Router request,
+avoiding the legacy Bootstrap tab handler and rapid navigation request buildup:
 
 - Sign In uses `/login`.
 - Register uses `/register`.
+
+The header Register/Sign In controls dispatch the same local tab change while an
+authentication page is mounted, without attaching a Next.js navigation handler.
+From other storefront pages, they retain normal Next.js client navigation.
+
+The auth section reserves enough height for the registration form at mobile
+widths, avoiding a background resize and repaint on every form switch.
+Rapid tab requests are coalesced to one state update per animation frame. The
+desktop background is anchored to the viewport so inline validation messages
+can increase the form height without rescaling the image; mobile retains fixed
+image dimensions with normal scrolling.
 
 Both routes use direct breadcrumbs from `Home` to the current authentication
 page; the old template `Pages` placeholder has been removed.
@@ -229,6 +241,17 @@ Registration sends first name, last name, email, password, and required phone.
 It does not authenticate the new account. When email verification is required,
 the page opens an OTP modal. Successful verification and Enter later both
 navigate to `/login`.
+
+The storefront auth forms validate required values, email syntax, phone format,
+password length, confirmation, and privacy-policy acceptance before sending a
+request. Names, email, and phone are trimmed at submission, and email is
+lowercased. Input errors render beside their fields; API handling distinguishes
+invalid credentials (`401`), duplicate email (`409`), connection failures, and
+server failures.
+
+Storefront password fields include visibility controls. Registration mirrors
+the Identity Service minimum of 8 characters and requires a matching confirmation
+password before submitting; the confirmation value is not sent to the API.
 
 The registration email field in the OTP modal is read-only. Invalid or expired
 OTP responses remain in the modal and display a user-facing error.
@@ -535,7 +558,7 @@ The shared header currently provides:
 - About Us, linking to `/about`;
 - Contact Us, linking to `/contact`;
 - search, wishlist, and cart presentation;
-- Inline `Register | Login` links for visitors, using the same bold, slightly
+- Inline `Register | Sign In` links for visitors, using the same bold, slightly
   larger style and right-aligned account area as the authenticated Welcome
   link; and
 - Clickable `Welcome, <name>` profile link followed by `| Logout` for
@@ -546,7 +569,7 @@ The utility bar now shows `Steal Deals E-commerce Website` on the far left
 using the same bold, slightly larger uppercase styling as the Welcome text.
 The template phone-number entry is commented out.
 The storefront overrides the template account-menu minimum width so the
-`Register | Login` and authenticated account rows do not retain empty space.
+`Register | Sign In` and authenticated account rows do not retain empty space.
 
 The storefront brand is `Steal Deals` across the shared logo, footer, metadata,
 and newsletter copy.
@@ -564,10 +587,9 @@ Several dropdown and footer links still reference original `.html` pages or
 use `href="#"`. Replace or remove these as routes are converted. Avoid hash
 links for commands because they can scroll the page unexpectedly.
 
-`components/home/SigninModal.tsx` is still mounted globally but contains an
-unconnected legacy login/register form. The functional authentication entry
-point is `/login`; either remove the legacy modal or connect it deliberately
-before exposing a trigger.
+The unconnected legacy `SigninModal` is no longer mounted globally and its
+source is archived at `remove-later/SigninModal.tsx`. `/login` and `/register`
+are the storefront authentication entry points.
 
 ## Assets
 
@@ -700,13 +722,11 @@ At this handoff:
    mobile breakpoints, then refine card density and filter placement if needed.
 2. Update `.env.example` to match the agreed local Identity Service protocol
    and port.
-3. Remove or connect `SigninModal`; keep `/login` as the single functional
-   authentication path.
-4. Implement forgot-password and profile-edit flows using Identity/Account
+3. Implement forgot-password and profile-edit flows using Identity/Account
    endpoints.
-5. Connect shipping to the Order Service and order-detail endpoint, then finish
+4. Connect shipping to the Order Service and order-detail endpoint, then finish
    the seller application workflow.
-6. Decide whether to add saved-store or availability-notification state; do not
+5. Decide whether to add saved-store or availability-notification state; do not
    restore wishlist state for short-lived surprise bags without a clear product
    requirement.
 7. Replace obsolete `.html`/hash links as each destination becomes available.

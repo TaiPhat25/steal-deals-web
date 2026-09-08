@@ -622,9 +622,18 @@ img {
 }
 
 .top-menu .account-link:hover,
-.top-menu .account-link:focus {
+.top-menu .account-link:focus-visible {
   color: #61ab00;
   text-decoration: none;
+}
+
+.top-menu .account-link:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.top-menu .account-link:focus-visible {
+  outline: 0.1rem dotted currentColor;
+  outline-offset: 0.3rem;
 }
 
 .top-menu .account-inline {
@@ -1462,6 +1471,99 @@ img {
 @media (max-width: 575px) {
   .product-detail-page__related-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.auth-page {
+  display: flex;
+  min-height: 85rem;
+  align-items: center;
+  padding: 5rem 0;
+  background-attachment: fixed;
+  background-color: #d8c9b7;
+  background-image: url("/assets/images/backgrounds/new-login-bg.webp");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.auth-page > .container {
+  width: 100%;
+}
+
+.auth-page .form-tab .nav-link {
+  width: 100%;
+  cursor: pointer;
+  background: transparent;
+  font-family: inherit;
+}
+
+.auth-password-field {
+  position: relative;
+}
+
+.auth-password-field .form-control {
+  padding-right: 4.5rem;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  width: 4.5rem;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #777;
+  font-size: 2rem;
+}
+
+.auth-password-toggle:hover,
+.auth-password-toggle:focus-visible {
+  color: #61ab00;
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 0.1rem dotted currentColor;
+  outline-offset: -0.4rem;
+}
+
+.auth-field-hint {
+  display: block;
+  margin-top: 0.5rem;
+  color: #777;
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.auth-page .form-control.auth-input-error {
+  border-color: #c83232;
+}
+
+.auth-page .form-control.auth-input-error:focus {
+  border-color: #a62424;
+  box-shadow: 0 0 0 0.1rem rgb(200 50 50 / 15%);
+}
+
+.auth-field-error {
+  display: block;
+  margin-top: 0.5rem;
+  color: #b42318;
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 767px) {
+  .auth-page {
+    min-height: 90rem;
+    padding: 3rem 0;
+    background-attachment: scroll;
+    background-position: center top;
+    background-size: auto 100rem;
   }
 }
 
