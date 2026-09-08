@@ -573,21 +573,25 @@ before exposing a trigger.
 
 The active storefront still uses `public/assets`. Current notable state:
 
-- `public` contains 629 files and approximately 22.5 MB.
+- `public` contains 121 files and approximately 6.35 MB.
 - `public/assets/images/demos/demo-28` contains the active home assets.
 - `public/assets/images/demos/demo-26/logo-footer.png` was retained, although
   it is still referenced by the current footer implementation.
 - `public/assets/images/menu/demos` was retained because the commented demo
   chooser still references those screenshots.
-- The asset audit moved 344 unused or legacy template assets into
+- The original asset audit moved 344 unused or legacy template assets into
   `remove-later/assets`, preserving their original `public/assets` path
   structure. This includes old Molla page-image folders, unused demo and skin
   stylesheets, unused demo/helper scripts, Font Awesome, Flaming fonts, and
   unused standalone images.
+- A later audit moved another 166 safe cleanup candidates into the same archive:
+  29 unused demo stylesheets, 23 unused skin stylesheets, and 114 legacy product
+  images. `demo-28.css`, `carousel-layout.css`, `skin-demo-28.css`, and the three
+  commented wishlist table images remain in `public`.
 - Assets referenced only by intentionally retained commented code were left in
   `public/assets`, including the menu screenshots, newsletter popup images, and
   wishlist/product template images.
-- The remaining 283 files in `public/assets` are the active storefront assets,
+- The remaining 119 files in `public/assets` are the active storefront assets,
   CSS/JS dependencies, and intentionally retained commented-code assets.
 - Nineteen category-only fashion images (approximately 115 KB) were removed
   after their source references were replaced. The remaining product-detail,
@@ -596,6 +600,7 @@ The active storefront still uses `public/assets`. Current notable state:
   currently removed from the working tree and appear as Git deletions.
 - `public/removedAssets` does not currently exist. Removed assets remain
   recoverable from Git history.
+- `remove-later/assets` now contains 510 files and approximately 17.11 MB.
 - `.codex-runtime/` is ignored and is only for local logs, browser profiles,
   and screenshots.
 
