@@ -32,6 +32,7 @@ export type SurpriseBagResponse = {
   storeName: string;
   name: string;
   description: string | null;
+  imageUrl?: string | null;
   originalPrice: number;
   salePrice: number;
   quantityTotal: number;

@@ -134,20 +134,25 @@ export function Avatar({
   );
 }
 
+export const BAG_PLACEHOLDER_IMAGE = "/assets/images/demos/demo-28/flash/13.png";
+
 export function ProductImage({
   alt,
   className,
+  src,
 }: {
   alt: string;
   className?: string;
+  src?: string | null;
 }) {
   return (
     <Image
       alt={alt}
       className={classes("h-full w-full object-cover", className)}
       height={100}
-      src="/dashboard/product-placeholder.png"
+      src={src || BAG_PLACEHOLDER_IMAGE}
       width={100}
+      unoptimized
     />
   );
 }

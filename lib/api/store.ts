@@ -20,6 +20,7 @@ export type UpdateCategoryRequest = CreateCategoryRequest & {
 export type CreateBagRequest = {
   name: string;
   description?: string | null;
+  imageUrl?: string | null;
   originalPrice: number;
   salePrice: number;
   quantityTotal: number;
@@ -28,6 +29,7 @@ export type CreateBagRequest = {
   pickupEndTime: string;
   expiryDate: string;
   categoryIds?: string[];
+  image?: File | null;
 };
 
 export type UpdateStoreRequest = {
@@ -52,7 +54,9 @@ export type CreateStoreRequest = {
   licenseUrl?: string | null;
 };
 
-export type UpdateBagRequest = Omit<CreateBagRequest, "status">;
+export type UpdateBagRequest = Omit<CreateBagRequest, "status"> & {
+  status?: string;
+};
 
 const STORE_API_BASE_URL = process.env.NEXT_PUBLIC_STORE_API_URL;
 
@@ -155,10 +159,49 @@ export function deleteCategory(accessToken: string, id: string) {
   );
 }
 
-export function createBag(accessToken: string, request: CreateBagRequest) {
+export function buildBagFormData(
+  request: (CreateBagRequest | UpdateBagRequest) & { status?: string },
+): FormData {
+  const formData = new FormData();
+  formData.append("name", request.name);
+  if (request.description) {
+    formData.append("description", request.description);
+  }
+  if (request.imageUrl) {
+    formData.append("imageUrl", request.imageUrl);
+  }
+  formData.append("originalPrice", String(request.originalPrice));
+  formData.append("salePrice", String(request.salePrice));
+  formData.append("quantityTotal", String(request.quantityTotal));
+  if (request.status) {
+    formData.append("status", request.status);
+  }
+  formData.append("pickupStartTime", request.pickupStartTime);
+  formData.append("pickupEndTime", request.pickupEndTime);
+  formData.append("expiryDate", request.expiryDate);
+
+  if (request.categoryIds) {
+    for (const categoryId of request.categoryIds) {
+      formData.append("categoryIds", categoryId);
+    }
+  }
+
+  if (request.image) {
+    formData.append("image", request.image);
+  }
+
+  return formData;
+}
+
+export function createBag(
+  accessToken: string,
+  request: CreateBagRequest | FormData,
+) {
+  const body = request instanceof FormData ? request : buildBagFormData(request);
+
   return apiRequest<SurpriseBagResponse>(
     "/api/bags",
-    { method: "POST", headers: bearer(accessToken), body: request },
+    { method: "POST", headers: bearer(accessToken), body },
     storeApiBaseUrl(),
   );
 }
@@ -184,11 +227,13 @@ export function listStoreReviews(storeId: string) {
 export function updateBag(
   accessToken: string,
   id: string,
-  request: UpdateBagRequest,
+  request: UpdateBagRequest | FormData,
 ) {
+  const body = request instanceof FormData ? request : buildBagFormData(request);
+
   return apiRequest<SurpriseBagResponse>(
     `/api/bags/${encodeURIComponent(id)}`,
-    { method: "PUT", headers: bearer(accessToken), body: request },
+    { method: "PUT", headers: bearer(accessToken), body },
     storeApiBaseUrl(),
   );
 }
