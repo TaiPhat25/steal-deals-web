@@ -92,23 +92,6 @@ export default function SigninModal() {
                         </a>
                       </div>
                     </form>
-                    <div className="form-choice">
-                      <p className="text-center">or sign in with</p>
-                      <div className="row">
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-g">
-                            <i className="icon-google"></i>
-                            Sign In With Google
-                          </a>
-                        </div>
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-f">
-                            <i className="icon-facebook-f"></i>
-                            Sign In With Facebook
-                          </a>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                   <div
                     className="tab-pane fade"
@@ -158,23 +141,6 @@ export default function SigninModal() {
                         </div>
                       </div>
                     </form>
-                    <div className="form-choice">
-                      <p className="text-center">or sign in with</p>
-                      <div className="row">
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-g">
-                            <i className="icon-google"></i>
-                            Sign In With Google
-                          </a>
-                        </div>
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-f">
-                            <i className="icon-facebook-f"></i>
-                            Sign In With Facebook
-                          </a>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

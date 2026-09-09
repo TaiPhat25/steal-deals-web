@@ -1491,11 +1491,158 @@ img {
   width: 100%;
 }
 
+.auth-page .form-box {
+  width: 100%;
+  max-width: 58rem;
+  padding: 3.2rem 4.8rem 4rem;
+  border: 0.1rem solid rgb(51 51 51 / 8%);
+  border-radius: 0.4rem;
+  box-shadow: 0 1.2rem 3.2rem rgb(24 35 20 / 14%);
+}
+
+.auth-page .form-tab .nav.nav-pills {
+  margin: 0;
+}
+
 .auth-page .form-tab .nav-link {
   width: 100%;
   cursor: pointer;
   background: transparent;
   font-family: inherit;
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 1.1rem 1rem;
+}
+
+.auth-page .form-tab .nav-link:focus-visible {
+  outline: 0.2rem solid #61ab00 !important;
+  outline-offset: -0.3rem;
+}
+
+.auth-page .form-tab .tab-content .tab-pane {
+  padding-top: 2.8rem;
+}
+
+.auth-form-heading {
+  margin-bottom: 2.6rem;
+}
+
+.auth-form-heading h1 {
+  margin-bottom: 0.7rem;
+  color: #222;
+  font-size: 2.8rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
+.auth-form-heading h1:focus-visible {
+  outline: 0.2rem dotted #61ab00;
+  outline-offset: 0.4rem;
+}
+
+.auth-form-heading p {
+  margin: 0;
+  color: #666;
+  font-size: 1.5rem;
+  line-height: 1.55;
+}
+
+.auth-form .form-group {
+  margin-bottom: 1.8rem;
+}
+
+.auth-form label {
+  margin-bottom: 0.7rem;
+  color: #444;
+  font-weight: 500;
+}
+
+.auth-form .form-control {
+  min-height: 4.6rem;
+}
+
+.auth-page .auth-form-footer {
+  display: grid;
+  align-items: center;
+  gap: 1.6rem;
+  margin: 0;
+  padding: 0.4rem 0 0;
+  border-bottom: 0;
+}
+
+.auth-page .auth-login-footer {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.auth-page .auth-register-footer {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.auth-page .auth-form-footer .auth-submit-button {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 4.8rem;
+  margin: 0;
+  border-color: #61ab00;
+  background-color: #61ab00;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  order: initial;
+}
+
+.auth-page .auth-form-footer .auth-submit-button:hover,
+.auth-page .auth-form-footer .auth-submit-button:focus-visible {
+  border-color: #4e8c00;
+  background-color: #4e8c00;
+  color: #fff;
+}
+
+.auth-page .auth-form-footer .auth-submit-button:focus-visible {
+  outline: 0.2rem solid #fff;
+  outline-offset: -0.4rem;
+  box-shadow: 0 0 0 0.2rem #4e8c00;
+}
+
+.auth-page .auth-form-footer .auth-submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.auth-page .auth-form-footer .auth-submit-button i {
+  margin-left: 1rem;
+}
+
+.auth-page .auth-login-footer .custom-control {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.auth-page .auth-login-footer .forgot-link {
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  margin: 0;
+  color: #555;
+  order: initial;
+}
+
+.auth-page .auth-login-footer .auth-submit-button {
+  grid-row: 2;
+}
+
+.auth-page .auth-register-footer .custom-control {
+  grid-row: 1;
+}
+
+.auth-page .auth-register-footer .auth-submit-button {
+  grid-row: 2;
 }
 
 .auth-password-field {
@@ -1564,6 +1711,52 @@ img {
     background-attachment: scroll;
     background-position: center top;
     background-size: auto 100rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .auth-page > .container {
+    padding-right: 1.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .auth-page .form-box {
+    padding: 2.4rem 2rem 3rem;
+  }
+
+  .auth-page .form-tab .nav-link {
+    font-size: 1.6rem;
+  }
+
+  .auth-page .form-tab .tab-content .tab-pane {
+    padding-top: 2.4rem;
+  }
+
+  .auth-form-heading {
+    margin-bottom: 2.2rem;
+  }
+
+  .auth-form-heading h1 {
+    font-size: 2.4rem;
+  }
+
+  .auth-page .auth-login-footer {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.2rem;
+  }
+
+  .auth-page .auth-login-footer .custom-control,
+  .auth-page .auth-login-footer .forgot-link,
+  .auth-page .auth-login-footer .auth-submit-button {
+    grid-column: 1;
+  }
+
+  .auth-page .auth-login-footer .forgot-link {
+    grid-row: 2;
+  }
+
+  .auth-page .auth-login-footer .auth-submit-button {
+    grid-row: 3;
   }
 }
 

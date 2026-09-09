@@ -214,6 +214,17 @@ avoiding the legacy Bootstrap tab handler and rapid navigation request buildup:
 - Sign In uses `/login`.
 - Register uses `/register`.
 
+Auth component ownership is split by responsibility:
+
+- `components/login/LoginMain.tsx` coordinates tabs, clean-route synchronization,
+  header-driven tab changes, and verification-dialog visibility.
+- `SignInForm.tsx` and `RegisterForm.tsx` own their respective field state,
+  validation, and API submission.
+- `EmailVerificationDialog.tsx` owns OTP verification and modal keyboard behavior.
+- `PasswordField.tsx` provides the shared password/visibility control.
+- `auth-form-utils.ts` contains shared normalization-adjacent validation, request
+  error mapping, and invalid-field focus behavior.
+
 The header Register/Sign In controls dispatch the same local tab change while an
 authentication page is mounted, without attaching a Next.js navigation handler.
 From other storefront pages, they retain normal Next.js client navigation.
@@ -249,6 +260,17 @@ lowercased. Input errors render beside their fields; API handling distinguishes
 invalid credentials (`401`), duplicate email (`409`), connection failures, and
 server failures.
 
+Sign In and Register use compact page headings inside the shared form surface,
+stronger label/field spacing, and a full-width green primary action. Secondary
+controls are arranged separately from the submit action and collapse into a
+single-column order on small screens.
+
+The auth tabs implement the ARIA tabs pattern with one tab stop and automatic
+activation for Left Arrow, Right Arrow, Home, and End. Header-driven form
+changes move focus to the selected panel heading, and failed submissions move
+focus to the first invalid field. Template IDs and the misspelled sign-in field
+IDs have been replaced with clean tab, panel, label, and input relationships.
+
 Storefront password fields include visibility controls. Registration mirrors
 the Identity Service minimum of 8 characters and requires a matching confirmation
 password before submitting; the confirmation value is not sent to the API.
@@ -264,8 +286,13 @@ OTP responses remain in the modal and display a user-facing error.
 - replacement of a selected digit;
 - forward focus after entry;
 - backward navigation from an empty cell;
-- arrow-key navigation; and
+- Left Arrow, Right Arrow, Home, and End focus navigation; and
 - multi-digit paste support.
+
+The registration verification dialog focuses the first OTP digit when opened,
+traps Tab and Shift+Tab within the dialog, restores prior focus when closed,
+prevents background scrolling, and supports Escape while verification is not
+in flight.
 
 `ResendOtpButton` provides a 30-second client cooldown. Cooldown state is kept
 in a module-level map keyed by email so closing and reopening the profile modal
@@ -695,7 +722,7 @@ At this handoff:
   sent to a catalog service.
 - Forgot password is not implemented.
 - Remember Me has no behavior under the current memory-only access-token model.
-- Google/Facebook login is commented out.
+- Google/Facebook login is not implemented.
 - Profile phone/address edits are currently frontend-only until Account Service
   update endpoints are connected.
 - The `Become a Seller` form submits to `POST /api/stores`, but the form does
