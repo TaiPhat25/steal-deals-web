@@ -62,7 +62,9 @@ export async function apiRequest<T>(
   const { body, headers, ...requestOptions } = options;
   const requestHeaders = new Headers(headers);
 
-  if (body !== undefined) {
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
+  if (body !== undefined && !isFormData) {
     requestHeaders.set("Content-Type", "application/json");
   }
 
@@ -71,7 +73,7 @@ export async function apiRequest<T>(
       ...requestOptions,
       headers: requestHeaders,
       credentials: "include",
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: isFormData ? (body as BodyInit) : (body === undefined ? undefined : JSON.stringify(body)),
     });
 
   let response = await sendRequest();
