@@ -13,6 +13,15 @@ import { addMinutes, localDateTime, nextHalfHour } from "@/lib/seller-dashboard"
 
 const inputClass = "mt-2 h-10 w-full rounded-xl border-none bg-gray-100 px-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary";
 const shortcutClass = "rounded-full border border-primary/25 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40";
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function ScheduleField({
   label,
@@ -41,6 +50,8 @@ export type ProductInput = {
   expiryDate: string;
   status: BagStatus;
   categoryIds: string[];
+  image?: File | null;
+  imageUrl?: string | null;
   imageName?: string;
 };
 
@@ -54,6 +65,10 @@ export default function ProductForm({
   title: string;
 }) {
   const [imageName, setImageName] = useState(initial?.imageName ?? "");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [objectUrl, setObjectUrl] = useState<string>("");
+  const [fileError, setFileError] = useState("");
+  const previewUrl = objectUrl || initial?.imageUrl || "";
   const [categoryId, setCategoryId] = useState(initial?.categories[0]?.id ?? "");
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -72,6 +87,41 @@ export default function ProductForm({
 
   function applyDiscount(percent: number) {
     if (originalPriceValue > 0) setSalePrice(String(Math.round(originalPriceValue * (1 - percent / 100))));
+  }
+
+  useEffect(() => {
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [objectUrl]);
+
+  function handleImageChange(file: File | null | undefined) {
+    setFileError("");
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setFileError("Only JPG, PNG, or WebP images are allowed.");
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      setFileError("Image must be smaller than 5MB.");
+      return;
+    }
+
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    const newUrl = URL.createObjectURL(file);
+    setObjectUrl(newUrl);
+    setSelectedFile(file);
+    setImageName(file.name);
+  }
+
+  function handleClearImage() {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    setObjectUrl("");
+    setSelectedFile(null);
+    setImageName("");
+    setFileError("");
   }
 
   useEffect(() => {
@@ -116,6 +166,10 @@ export default function ProductForm({
       setError("Expiry must not be before the pickup window ends.");
       return;
     }
+    if (fileError) {
+      setError(fileError);
+      return;
+    }
     setSubmitting(true);
     try {
       await onSave({
@@ -129,6 +183,8 @@ export default function ProductForm({
         expiryDate,
         status: String(data.get("status")) as BagStatus,
         categoryIds: [String(data.get("categoryId"))],
+        image: selectedFile ?? null,
+        imageUrl: previewUrl || initial?.imageUrl || null,
         ...(imageName ? { imageName } : {}),
       });
     } catch (caught) {
@@ -175,13 +231,63 @@ export default function ProductForm({
           <label className="block text-sm font-semibold">Description<textarea name="description" rows={4} defaultValue={initial?.description ?? ""} className="mt-2 w-full rounded-xl border-none bg-gray-100 p-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label>
         </div>
         <div>
-          <span className="block text-sm font-semibold">Bag image (future field)</span>
+          <span className="block text-sm font-semibold">Bag image <span className="font-normal text-light-secondary-text">(optional)</span></span>
           <label className="mt-2 flex min-h-56 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-gray-500/30 bg-gray-50 p-4 text-center hover:bg-gray-100">
-            <span className="size-28 overflow-hidden rounded-xl"><ProductImage alt="" /></span>
-            <strong className="mt-3 text-sm">{imageName || "Choose an image"}</strong>
-            <span className="mt-1 text-xs text-light-secondary-text">Kept in local demo state; the current bag contract has no media field.</span>
-            <input type="file" accept="image/*" className="sr-only" onChange={(event) => setImageName(event.target.files?.[0]?.name ?? "")} />
+            <span className="size-28 overflow-hidden rounded-xl bg-gray-100">
+              <ProductImage alt="Bag preview" src={previewUrl} />
+            </span>
+            {selectedFile ? (
+              <>
+                <strong className="mt-3 block max-w-52 truncate text-sm">{selectedFile.name}</strong>
+                <span className="text-xs text-light-secondary-text">{formatFileSize(selectedFile.size)}</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs font-semibold text-primary hover:underline">Change image</span>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleClearImage();
+                    }}
+                    className="text-xs font-semibold text-error-dark hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </>
+            ) : previewUrl ? (
+              <>
+                <strong className="mt-3 block max-w-52 truncate text-sm">Current image</strong>
+                <span className="mt-1 text-xs text-light-secondary-text">Click to choose a new image</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs font-semibold text-primary hover:underline">Change image</span>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleClearImage();
+                    }}
+                    className="text-xs font-semibold text-error-dark hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <strong className="mt-3 text-sm">Choose an image</strong>
+                <span className="mt-1 text-xs text-light-secondary-text">JPG, PNG, or WebP up to 5MB</span>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={(event) => handleImageChange(event.target.files?.[0])}
+            />
           </label>
+          {fileError && <p className="mt-2 text-xs font-semibold text-error-dark">{fileError}</p>}
         </div>
       </DashboardCard>
       {error && <div role="alert" className="rounded-xl bg-error-alpha-16 px-4 py-3 text-sm text-error-dark">{error}</div>}
