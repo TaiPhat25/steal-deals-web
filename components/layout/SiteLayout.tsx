@@ -5,7 +5,6 @@ import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import InteractiveHandlers from "@/components/home/InteractiveHandlers";
 import MobileMenu from "@/components/home/MobileMenu";
-import SigninModal from "@/components/home/SigninModal";
 import AuthProvider from "@/components/auth/AuthProvider";
 import CartProvider from "@/components/cart/CartProvider";
 
@@ -25,7 +24,6 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           <i className="icon-arrow-up"></i>
         </button>
         <MobileMenu />
-        <SigninModal />
         <InteractiveHandlers />
       </CartProvider>
     </AuthProvider>

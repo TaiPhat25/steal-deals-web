@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import type { MouseEvent } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cartBagKey, useCart } from "@/components/cart/CartProvider";
+import {
+  AUTH_TAB_CHANGE_EVENT,
+  type AuthTab,
+  type AuthTabChangeDetail,
+} from "@/components/login/auth-navigation";
 
 function formatHeaderPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
@@ -12,6 +18,7 @@ function formatHeaderPrice(value: number) {
 
 export default function Header() {
   const pathname = usePathname();
+  const isAuthPage = pathname === "/login" || pathname === "/register";
   const { currentUser, isAuthenticated, logout } = useAuth();
   const { items: headerCartItems, itemCount: headerCartCount, subtotal: headerCartTotal } = useCart();
 
@@ -36,6 +43,15 @@ export default function Header() {
     } finally {
       window.location.assign("/login");
     }
+  };
+
+  const handleAuthNavigation = (event: MouseEvent<HTMLButtonElement>, tab: AuthTab) => {
+    event.preventDefault();
+    window.dispatchEvent(
+      new CustomEvent<AuthTabChangeDetail>(AUTH_TAB_CHANGE_EVENT, {
+        detail: { tab },
+      }),
+    );
   };
 
   return (
@@ -113,20 +129,40 @@ export default function Header() {
                         |
                       </span>
                       <button type="button" className="account-logout" onClick={handleLogout}>
-                        Logout
+                        Sign Out
                       </button>
                     </li>
                   ) : (
                     <li className="account-inline">
-                      <Link href="/register" className="account-link">
-                        Register
-                      </Link>
+                      {isAuthPage ? (
+                        <button
+                          type="button"
+                          className="account-link"
+                          onClick={(event) => handleAuthNavigation(event, "register")}
+                        >
+                          Register
+                        </button>
+                      ) : (
+                        <Link href="/register" className="account-link" prefetch={false}>
+                          Register
+                        </Link>
+                      )}
                       <span className="account-separator" aria-hidden="true">
                         |
                       </span>
-                      <Link href="/login" className="account-link">
-                        Login
-                      </Link>
+                      {isAuthPage ? (
+                        <button
+                          type="button"
+                          className="account-link"
+                          onClick={(event) => handleAuthNavigation(event, "signin")}
+                        >
+                          Sign In
+                        </button>
+                      ) : (
+                        <Link href="/login" className="account-link" prefetch={false}>
+                          Sign In
+                        </Link>
+                      )}
                     </li>
                   )}
                 </ul>

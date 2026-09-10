@@ -73,3 +73,13 @@ export type VerifyEmailRequest = {
 export type ResendOtpRequest = {
   email: string;
 };
+
+export type ForgotPasswordRequest = {
+  email: string;
+};
+
+export type ResetPasswordRequest = {
+  email: string;
+  otp: string;
+  newPassword: string;
+};

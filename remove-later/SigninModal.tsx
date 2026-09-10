@@ -72,7 +72,7 @@ export default function SigninModal() {
 
                       <div className="form-footer">
                         <button type="submit" className="btn btn-outline-primary-2">
-                          <span>LOG IN</span>
+                          <span>SIGN IN</span>
                           <i className="icon-long-arrow-right"></i>
                         </button>
 
@@ -92,23 +92,6 @@ export default function SigninModal() {
                         </a>
                       </div>
                     </form>
-                    <div className="form-choice">
-                      <p className="text-center">or sign in with</p>
-                      <div className="row">
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-g">
-                            <i className="icon-google"></i>
-                            Login With Google
-                          </a>
-                        </div>
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-f">
-                            <i className="icon-facebook-f"></i>
-                            Login With Facebook
-                          </a>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                   <div
                     className="tab-pane fade"
@@ -141,7 +124,7 @@ export default function SigninModal() {
 
                       <div className="form-footer">
                         <button type="submit" className="btn btn-outline-primary-2">
-                          <span>SIGN UP</span>
+                          <span>REGISTER</span>
                           <i className="icon-long-arrow-right"></i>
                         </button>
 
@@ -158,23 +141,6 @@ export default function SigninModal() {
                         </div>
                       </div>
                     </form>
-                    <div className="form-choice">
-                      <p className="text-center">or sign in with</p>
-                      <div className="row">
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-g">
-                            <i className="icon-google"></i>
-                            Login With Google
-                          </a>
-                        </div>
-                        <div className="col-sm-6">
-                          <a href="#" className="btn btn-login btn-f">
-                            <i className="icon-facebook-f"></i>
-                            Login With Facebook
-                          </a>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

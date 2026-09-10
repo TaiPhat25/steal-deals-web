@@ -13,9 +13,20 @@ type OtpInputProps = {
   onChange: (value: string) => void;
   disabled?: boolean;
   idPrefix: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
+  invalid?: boolean;
 };
 
-export default function OtpInput({ value, onChange, disabled = false, idPrefix }: OtpInputProps) {
+export default function OtpInput({
+  value,
+  onChange,
+  disabled = false,
+  idPrefix,
+  ariaLabelledBy,
+  ariaDescribedBy,
+  invalid = false,
+}: OtpInputProps) {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const digits = Array.from({ length: OTP_LENGTH }, (_, index) => {
     const digit = value[index] ?? "";
@@ -44,7 +55,10 @@ export default function OtpInput({ value, onChange, disabled = false, idPrefix }
     }
   };
 
-  const handleKeyDown = (index: number, event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    index: number,
+    event: KeyboardEvent<HTMLInputElement>,
+  ) => {
     if (/^\d$/.test(event.key)) {
       event.preventDefault();
 
@@ -83,11 +97,24 @@ export default function OtpInput({ value, onChange, disabled = false, idPrefix }
       event.preventDefault();
       focusInput(index + 1, true);
     }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      focusInput(0, true);
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      focusInput(OTP_LENGTH - 1, true);
+    }
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
     event.preventDefault();
-    const pastedDigits = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    const pastedDigits = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
 
     if (!pastedDigits) return;
 
@@ -106,7 +133,13 @@ export default function OtpInput({ value, onChange, disabled = false, idPrefix }
   };
 
   return (
-    <div className="otp-inputs" role="group" aria-label="Verification code">
+    <div
+      className="otp-inputs"
+      role="group"
+      aria-label={ariaLabelledBy ? undefined : "Verification code"}
+      aria-labelledby={ariaLabelledBy}
+      aria-describedby={ariaDescribedBy}
+    >
       {Array.from({ length: OTP_LENGTH }, (_, index) => (
         <input
           key={`${idPrefix}-${index}`}
@@ -126,6 +159,7 @@ export default function OtpInput({ value, onChange, disabled = false, idPrefix }
           pattern="[0-9]"
           maxLength={1}
           aria-label={`Verification code digit ${index + 1}`}
+          aria-invalid={invalid}
           disabled={disabled}
           autoComplete={index === 0 ? "one-time-code" : "off"}
         />

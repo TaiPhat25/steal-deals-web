@@ -26,8 +26,8 @@ admin and seller dashboards.
 - `app/(store)/layout.tsx` owns storefront metadata, fonts, legacy stylesheets,
   and legacy JavaScript loading.
 - `components/layout/SiteLayout.tsx` wraps every store page with the shared
-  header, footer, authentication provider, mobile menu, sign-in modal, and
-  global interaction handlers.
+  header, footer, authentication provider, mobile menu, and global interaction
+  handlers.
 - Identity Service integration is implemented for registration, login, access
   token refresh, logout, current-user lookup, profile loading, email
   verification, and OTP resend.
@@ -206,12 +206,38 @@ authorization independently.
 
 ### Login and registration
 
-`/login` and `/register` share `LoginMain` with different initial tabs.
-`LoginTabHashHandler` keeps tab switching on clean routes rather than legacy
-hash URLs:
+`/login` and `/register` share `LoginMain` with different initial tabs. The
+form tabs use local React state and debounce clean-route synchronization through
+the native History API. Switching forms does not trigger an App Router request,
+avoiding the legacy Bootstrap tab handler and rapid navigation request buildup:
 
 - Sign In uses `/login`.
 - Register uses `/register`.
+
+Auth component ownership is split by responsibility:
+
+- `components/login/LoginMain.tsx` coordinates tabs, clean-route synchronization,
+  header-driven tab changes, and verification-dialog visibility.
+- `SignInForm.tsx` and `RegisterForm.tsx` own their respective field state,
+  validation, and API submission.
+- `EmailVerificationDialog.tsx` owns OTP verification and modal keyboard behavior.
+- `PrivacyPolicyDialog.tsx` presents the registration policy in a scrollable
+  modal, while `use-dialog-focus-trap.ts` provides shared dialog focus and
+  Escape-key behavior.
+- `PasswordField.tsx` provides the shared password/visibility control.
+- `auth-form-utils.ts` contains shared normalization-adjacent validation, request
+  error mapping, and invalid-field focus behavior.
+
+The header Register/Sign In controls dispatch the same local tab change while an
+authentication page is mounted, without attaching a Next.js navigation handler.
+From other storefront pages, they retain normal Next.js client navigation.
+
+The auth section reserves enough height for the registration form at mobile
+widths, avoiding a background resize and repaint on every form switch.
+Rapid tab requests are coalesced to one state update per animation frame. The
+desktop background is anchored to the viewport so inline validation messages
+can increase the form height without rescaling the image; mobile retains fixed
+image dimensions with normal scrolling.
 
 Both routes use direct breadcrumbs from `Home` to the current authentication
 page; the old template `Pages` placeholder has been removed.
@@ -230,6 +256,34 @@ It does not authenticate the new account. When email verification is required,
 the page opens an OTP modal. Successful verification and Enter later both
 navigate to `/login`.
 
+The storefront auth forms validate required values, email syntax, phone format,
+password length, confirmation, and privacy-policy acceptance before sending a
+request. Names, email, and phone are trimmed at submission, and email is
+lowercased. Input errors render beside their fields; API handling distinguishes
+invalid credentials (`401`), duplicate email (`409`), connection failures, and
+server failures.
+
+Remember Me was removed because the storefront does not support persistent
+sign-in. The registration Privacy Policy control opens an accessible,
+scrollable dialog that traps focus, closes with Escape or its OK action, and
+returns focus to the link after closing.
+
+Sign In and Register use compact page headings inside the shared form surface,
+stronger label/field spacing, and full-width outline actions matching the Home
+page's View Details button. The Privacy Policy OK action uses the same visual
+treatment. Secondary controls are arranged separately from the submit action
+and collapse into a single-column order on small screens.
+
+The auth tabs implement the ARIA tabs pattern with one tab stop and automatic
+activation for Left Arrow, Right Arrow, Home, and End. Header-driven form
+changes move focus to the selected panel heading, and failed submissions move
+focus to the first invalid field. Template IDs and the misspelled sign-in field
+IDs have been replaced with clean tab, panel, label, and input relationships.
+
+Storefront password fields include visibility controls. Registration mirrors
+the Identity Service minimum of 8 characters and requires a matching confirmation
+password before submitting; the confirmation value is not sent to the API.
+
 The registration email field in the OTP modal is read-only. Invalid or expired
 OTP responses remain in the modal and display a user-facing error.
 
@@ -241,8 +295,13 @@ OTP responses remain in the modal and display a user-facing error.
 - replacement of a selected digit;
 - forward focus after entry;
 - backward navigation from an empty cell;
-- arrow-key navigation; and
+- Left Arrow, Right Arrow, Home, and End focus navigation; and
 - multi-digit paste support.
+
+The registration verification dialog focuses the first OTP digit when opened,
+traps Tab and Shift+Tab within the dialog, restores prior focus when closed,
+prevents background scrolling, and supports Escape while verification is not
+in flight.
 
 `ResendOtpButton` provides a 30-second client cooldown. Cooldown state is kept
 in a module-level map keyed by email so closing and reopening the profile modal
@@ -535,7 +594,7 @@ The shared header currently provides:
 - About Us, linking to `/about`;
 - Contact Us, linking to `/contact`;
 - search, wishlist, and cart presentation;
-- Inline `Register | Login` links for visitors, using the same bold, slightly
+- Inline `Register | Sign In` links for visitors, using the same bold, slightly
   larger style and right-aligned account area as the authenticated Welcome
   link; and
 - Clickable `Welcome, <name>` profile link followed by `| Logout` for
@@ -546,7 +605,7 @@ The utility bar now shows `Steal Deals E-commerce Website` on the far left
 using the same bold, slightly larger uppercase styling as the Welcome text.
 The template phone-number entry is commented out.
 The storefront overrides the template account-menu minimum width so the
-`Register | Login` and authenticated account rows do not retain empty space.
+`Register | Sign In` and authenticated account rows do not retain empty space.
 
 The storefront brand is `Steal Deals` across the shared logo, footer, metadata,
 and newsletter copy.
@@ -564,30 +623,33 @@ Several dropdown and footer links still reference original `.html` pages or
 use `href="#"`. Replace or remove these as routes are converted. Avoid hash
 links for commands because they can scroll the page unexpectedly.
 
-`components/home/SigninModal.tsx` is still mounted globally but contains an
-unconnected legacy login/register form. The functional authentication entry
-point is `/login`; either remove the legacy modal or connect it deliberately
-before exposing a trigger.
+The unconnected legacy `SigninModal` is no longer mounted globally and its
+source is archived at `remove-later/SigninModal.tsx`. `/login` and `/register`
+are the storefront authentication entry points.
 
 ## Assets
 
 The active storefront still uses `public/assets`. Current notable state:
 
-- `public` contains 629 files and approximately 22.5 MB.
+- `public` contains 121 files and approximately 6.35 MB.
 - `public/assets/images/demos/demo-28` contains the active home assets.
 - `public/assets/images/demos/demo-26/logo-footer.png` was retained, although
   it is still referenced by the current footer implementation.
 - `public/assets/images/menu/demos` was retained because the commented demo
   chooser still references those screenshots.
-- The asset audit moved 344 unused or legacy template assets into
+- The original asset audit moved 344 unused or legacy template assets into
   `remove-later/assets`, preserving their original `public/assets` path
   structure. This includes old Molla page-image folders, unused demo and skin
   stylesheets, unused demo/helper scripts, Font Awesome, Flaming fonts, and
   unused standalone images.
+- A later audit moved another 166 safe cleanup candidates into the same archive:
+  29 unused demo stylesheets, 23 unused skin stylesheets, and 114 legacy product
+  images. `demo-28.css`, `carousel-layout.css`, `skin-demo-28.css`, and the three
+  commented wishlist table images remain in `public`.
 - Assets referenced only by intentionally retained commented code were left in
   `public/assets`, including the menu screenshots, newsletter popup images, and
   wishlist/product template images.
-- The remaining 283 files in `public/assets` are the active storefront assets,
+- The remaining 119 files in `public/assets` are the active storefront assets,
   CSS/JS dependencies, and intentionally retained commented-code assets.
 - Nineteen category-only fashion images (approximately 115 KB) were removed
   after their source references were replaced. The remaining product-detail,
@@ -596,6 +658,7 @@ The active storefront still uses `public/assets`. Current notable state:
   currently removed from the working tree and appear as Git deletions.
 - `public/removedAssets` does not currently exist. Removed assets remain
   recoverable from Git history.
+- `remove-later/assets` now contains 510 files and approximately 17.11 MB.
 - `.codex-runtime/` is ignored and is only for local logs, browser profiles,
   and screenshots.
 
@@ -667,8 +730,9 @@ At this handoff:
 - Listing filters use local client state and are not persisted in the URL or
   sent to a catalog service.
 - Forgot password is not implemented.
-- Remember Me has no behavior under the current memory-only access-token model.
-- Google/Facebook login is commented out.
+- The generated Privacy Policy copy requires product-owner and legal review
+  before production use.
+- Google/Facebook login is not implemented.
 - Profile phone/address edits are currently frontend-only until Account Service
   update endpoints are connected.
 - The `Become a Seller` form submits to `POST /api/stores`, but the form does
@@ -695,13 +759,11 @@ At this handoff:
    mobile breakpoints, then refine card density and filter placement if needed.
 2. Update `.env.example` to match the agreed local Identity Service protocol
    and port.
-3. Remove or connect `SigninModal`; keep `/login` as the single functional
-   authentication path.
-4. Implement forgot-password and profile-edit flows using Identity/Account
+3. Implement forgot-password and profile-edit flows using Identity/Account
    endpoints.
-5. Connect shipping to the Order Service and order-detail endpoint, then finish
+4. Connect shipping to the Order Service and order-detail endpoint, then finish
    the seller application workflow.
-6. Decide whether to add saved-store or availability-notification state; do not
+5. Decide whether to add saved-store or availability-notification state; do not
    restore wishlist state for short-lived surprise bags without a clear product
    requirement.
 7. Replace obsolete `.html`/hash links as each destination becomes available.
