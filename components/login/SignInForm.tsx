@@ -2,6 +2,7 @@
 
 import { useState, type SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import PasswordField from "@/components/login/PasswordField";
 import {
@@ -144,9 +145,9 @@ export default function SignInForm() {
             <i className="icon-long-arrow-right" aria-hidden="true" />
           </button>
 
-          <a href="#" className="forgot-link">
+          <Link href="/forgot-password" className="forgot-link">
             Forgot Your Password?
-          </a>
+          </Link>
         </div>
       </form>
     </>

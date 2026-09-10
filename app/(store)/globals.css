@@ -1608,6 +1608,84 @@ img {
   margin-left: 1rem;
 }
 
+.forgot-password-page .form-box {
+  max-width: 54rem;
+}
+
+.auth-reset-actions {
+  display: grid;
+  gap: 1.6rem;
+  padding-top: 0.4rem;
+}
+
+.auth-reset-actions .auth-submit-button,
+.auth-reset-success .auth-submit-button {
+  display: inline-flex;
+  min-height: 4.8rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.auth-reset-actions .auth-submit-button i,
+.auth-reset-success .auth-submit-button i {
+  margin-left: 1rem;
+}
+
+.auth-reset-actions .auth-submit-button:focus-visible,
+.auth-reset-success .auth-submit-button:focus-visible {
+  outline: 0.2rem solid #61ab00;
+  outline-offset: 0.2rem;
+}
+
+.auth-return-link {
+  justify-self: center;
+  color: #555;
+}
+
+.auth-return-link:hover,
+.auth-return-link:focus-visible {
+  color: #61ab00;
+}
+
+.auth-reset-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.auth-reset-secondary-actions .btn-link {
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.auth-reset-success {
+  text-align: center;
+}
+
+.auth-reset-success > .icon-check {
+  display: inline-flex;
+  width: 5.6rem;
+  height: 5.6rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  border: 0.1rem solid #61ab00;
+  border-radius: 50%;
+  color: #61ab00;
+  font-size: 2.6rem;
+}
+
+.auth-reset-success .auth-form-heading {
+  margin-bottom: 2.6rem;
+}
+
 .auth-page .auth-login-footer .forgot-link {
   grid-column: 1;
   grid-row: 1;

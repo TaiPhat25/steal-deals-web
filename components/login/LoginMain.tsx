@@ -52,13 +52,19 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
     });
   }, []);
 
-  const focusPanelHeading = useCallback((tab: AuthTab) => {
+  const focusPanelFirstField = useCallback((tab: AuthTab) => {
     window.requestAnimationFrame(() => {
       const panel =
         tab === "signin" ? signInPanelRef.current : registerPanelRef.current;
-      panel?.querySelector<HTMLElement>("h1")?.focus();
+      panel
+        ?.querySelector<HTMLInputElement>("input:not([disabled])")
+        ?.focus();
     });
   }, []);
+
+  useEffect(() => {
+    focusPanelFirstField(initialTab);
+  }, [focusPanelFirstField, initialTab]);
 
   useEffect(
     () => () => {
@@ -86,7 +92,7 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
       if (tab !== "signin" && tab !== "register") return;
 
       if (tab === activeTab) {
-        focusPanelHeading(tab);
+        focusPanelFirstField(tab);
         return;
       }
 
@@ -97,16 +103,21 @@ export default function LoginMain({ initialTab = "signin" }: LoginMainProps) {
     window.addEventListener(AUTH_TAB_CHANGE_EVENT, handleAuthTabChange);
     return () =>
       window.removeEventListener(AUTH_TAB_CHANGE_EVENT, handleAuthTabChange);
-  }, [activeTab, focusPanelHeading, queueTabChange]);
+  }, [activeTab, focusPanelFirstField, queueTabChange]);
 
   useEffect(() => {
     if (!shouldFocusPanelRef.current) return;
     shouldFocusPanelRef.current = false;
-    focusPanelHeading(activeTab);
-  }, [activeTab, focusPanelHeading]);
+    focusPanelFirstField(activeTab);
+  }, [activeTab, focusPanelFirstField]);
 
   const handleTabChange = (tab: AuthTab) => {
-    shouldFocusPanelRef.current = false;
+    if (tab === activeTab) {
+      focusPanelFirstField(tab);
+      return;
+    }
+
+    shouldFocusPanelRef.current = true;
     queueTabChange(tab);
   };
 

@@ -14,6 +14,8 @@ type OtpInputProps = {
   disabled?: boolean;
   idPrefix: string;
   ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
+  invalid?: boolean;
 };
 
 export default function OtpInput({
@@ -22,6 +24,8 @@ export default function OtpInput({
   disabled = false,
   idPrefix,
   ariaLabelledBy,
+  ariaDescribedBy,
+  invalid = false,
 }: OtpInputProps) {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const digits = Array.from({ length: OTP_LENGTH }, (_, index) => {
@@ -134,6 +138,7 @@ export default function OtpInput({
       role="group"
       aria-label={ariaLabelledBy ? undefined : "Verification code"}
       aria-labelledby={ariaLabelledBy}
+      aria-describedby={ariaDescribedBy}
     >
       {Array.from({ length: OTP_LENGTH }, (_, index) => (
         <input
@@ -154,6 +159,7 @@ export default function OtpInput({
           pattern="[0-9]"
           maxLength={1}
           aria-label={`Verification code digit ${index + 1}`}
+          aria-invalid={invalid}
           disabled={disabled}
           autoComplete={index === 0 ? "one-time-code" : "off"}
         />

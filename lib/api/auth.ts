@@ -2,11 +2,13 @@ import { apiRequest } from "@/lib/api/client";
 import type {
   AccessTokenResponse,
   CurrentUser,
+  ForgotPasswordRequest,
   LoginRequest,
   MessageResponse,
   RegistrationResponse,
   RegisterRequest,
   ResendOtpRequest,
+  ResetPasswordRequest,
   VerifyEmailRequest,
 } from "@/lib/api/store-types";
 
@@ -54,6 +56,20 @@ export function verifyEmail(request: VerifyEmailRequest) {
 
 export function resendVerificationOtp(request: ResendOtpRequest) {
   return apiRequest<MessageResponse>("/api/auth/resend-otp", {
+    method: "POST",
+    body: request,
+  });
+}
+
+export function requestPasswordReset(request: ForgotPasswordRequest) {
+  return apiRequest<MessageResponse>("/api/auth/forgot-password", {
+    method: "POST",
+    body: request,
+  });
+}
+
+export function resetPassword(request: ResetPasswordRequest) {
+  return apiRequest<MessageResponse>("/api/auth/reset-password", {
     method: "POST",
     body: request,
   });
