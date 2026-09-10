@@ -137,23 +137,12 @@ export default function SignInForm() {
         <div className="form-footer auth-form-footer auth-login-footer">
           <button
             type="submit"
-            className="btn auth-submit-button"
+            className="btn btn-outline-primary-2 auth-submit-button"
             disabled={isLoading}
           >
             <span>{isLoading ? "SIGNING IN..." : "SIGN IN"}</span>
             <i className="icon-long-arrow-right" aria-hidden="true" />
           </button>
-
-          <div className="custom-control custom-checkbox">
-            <input
-              type="checkbox"
-              className="custom-control-input"
-              id="signin-remember"
-            />
-            <label className="custom-control-label" htmlFor="signin-remember">
-              Remember Me
-            </label>
-          </div>
 
           <a href="#" className="forgot-link">
             Forgot Your Password?

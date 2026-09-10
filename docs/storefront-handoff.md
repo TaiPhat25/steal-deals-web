@@ -221,6 +221,9 @@ Auth component ownership is split by responsibility:
 - `SignInForm.tsx` and `RegisterForm.tsx` own their respective field state,
   validation, and API submission.
 - `EmailVerificationDialog.tsx` owns OTP verification and modal keyboard behavior.
+- `PrivacyPolicyDialog.tsx` presents the registration policy in a scrollable
+  modal, while `use-dialog-focus-trap.ts` provides shared dialog focus and
+  Escape-key behavior.
 - `PasswordField.tsx` provides the shared password/visibility control.
 - `auth-form-utils.ts` contains shared normalization-adjacent validation, request
   error mapping, and invalid-field focus behavior.
@@ -260,10 +263,16 @@ lowercased. Input errors render beside their fields; API handling distinguishes
 invalid credentials (`401`), duplicate email (`409`), connection failures, and
 server failures.
 
+Remember Me was removed because the storefront does not support persistent
+sign-in. The registration Privacy Policy control opens an accessible,
+scrollable dialog that traps focus, closes with Escape or its OK action, and
+returns focus to the link after closing.
+
 Sign In and Register use compact page headings inside the shared form surface,
-stronger label/field spacing, and a full-width green primary action. Secondary
-controls are arranged separately from the submit action and collapse into a
-single-column order on small screens.
+stronger label/field spacing, and full-width outline actions matching the Home
+page's View Details button. The Privacy Policy OK action uses the same visual
+treatment. Secondary controls are arranged separately from the submit action
+and collapse into a single-column order on small screens.
 
 The auth tabs implement the ARIA tabs pattern with one tab stop and automatic
 activation for Left Arrow, Right Arrow, Home, and End. Header-driven form
@@ -721,7 +730,8 @@ At this handoff:
 - Listing filters use local client state and are not persisted in the URL or
   sent to a catalog service.
 - Forgot password is not implemented.
-- Remember Me has no behavior under the current memory-only access-token model.
+- The generated Privacy Policy copy requires product-owner and legal review
+  before production use.
 - Google/Facebook login is not implemented.
 - Profile phone/address edits are currently frontend-only until Account Service
   update endpoints are connected.

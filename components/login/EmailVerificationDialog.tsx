@@ -1,19 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, type SubmitEvent } from "react";
+import { useRef, useState, type SubmitEvent } from "react";
 import OtpInput from "@/components/auth/OtpInput";
 import ResendOtpButton from "@/components/auth/ResendOtpButton";
+import { useDialogFocusTrap } from "@/components/login/use-dialog-focus-trap";
 import { verifyEmail } from "@/lib/api/auth";
 import { ApiClientError } from "@/lib/api/client";
-
-const FOCUSABLE_SELECTOR = [
-  "a[href]",
-  "button:not([disabled])",
-  "input:not([disabled]):not([type='hidden'])",
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-  "[tabindex]:not([tabindex='-1'])",
-].join(",");
 
 type EmailVerificationDialogProps = {
   email: string;
@@ -28,72 +20,13 @@ export default function EmailVerificationDialog({
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
-  const isVerifyingRef = useRef(false);
 
-  useEffect(() => {
-    isVerifyingRef.current = isVerifying;
-  }, [isVerifying]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const previouslyFocusedElement =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    const previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const focusFrame = window.requestAnimationFrame(() => {
-      const firstOtpInput = dialog.querySelector<HTMLInputElement>(".otp-input");
-      (firstOtpInput ?? dialog).focus();
-    });
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isVerifyingRef.current) {
-        event.preventDefault();
-        onExit();
-        return;
-      }
-
-      if (event.key !== "Tab") return;
-
-      const focusableElements = Array.from(
-        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      );
-
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        dialog.focus();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      } else if (!dialog.contains(activeElement)) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousBodyOverflow;
-      previouslyFocusedElement?.focus();
-    };
-  }, [onExit]);
+  useDialogFocusTrap({
+    dialogRef,
+    initialFocusSelector: ".otp-input",
+    onEscape: onExit,
+    canEscape: !isVerifying,
+  });
 
   const focusFirstOtpInput = () => {
     window.requestAnimationFrame(() => {

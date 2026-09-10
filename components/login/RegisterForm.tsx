@@ -3,6 +3,7 @@
 import { useState, type SubmitEvent } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import PasswordField from "@/components/login/PasswordField";
+import PrivacyPolicyDialog from "@/components/login/PrivacyPolicyDialog";
 import {
   focusFirstInvalidControl,
   getRequestErrorMessage,
@@ -38,6 +39,7 @@ export default function RegisterForm({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [hasAcceptedPolicy, setHasAcceptedPolicy] = useState(false);
+  const [isPolicyOpen, setIsPolicyOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
     FieldErrors<RegisterField>
@@ -324,14 +326,14 @@ export default function RegisterForm({
         <div className="form-footer auth-form-footer auth-register-footer">
           <button
             type="submit"
-            className="btn auth-submit-button"
+            className="btn btn-outline-primary-2 auth-submit-button"
             disabled={isLoading}
           >
             <span>{isLoading ? "REGISTERING..." : "REGISTER"}</span>
             <i className="icon-long-arrow-right" aria-hidden="true" />
           </button>
 
-          <div className="custom-control custom-checkbox">
+          <div className="custom-control custom-checkbox auth-policy-control">
             <input
               type="checkbox"
               className="custom-control-input"
@@ -345,11 +347,22 @@ export default function RegisterForm({
               aria-describedby={
                 fieldErrors.policy ? "register-policy-error" : undefined
               }
+              aria-label="I agree to the Privacy Policy"
               required
             />
             <label className="custom-control-label" htmlFor="register-policy">
-              I agree to the <a href="#">privacy policy</a> *
+              I agree to the
             </label>
+            <button
+              type="button"
+              className="auth-policy-link"
+              onClick={() => setIsPolicyOpen(true)}
+            >
+              Privacy Policy
+            </button>
+            <span className="auth-required-mark" aria-hidden="true">
+              *
+            </span>
             {fieldErrors.policy && (
               <small
                 id="register-policy-error"
@@ -362,6 +375,10 @@ export default function RegisterForm({
           </div>
         </div>
       </form>
+
+      {isPolicyOpen && (
+        <PrivacyPolicyDialog onClose={() => setIsPolicyOpen(false)} />
+      )}
     </>
   );
 }
