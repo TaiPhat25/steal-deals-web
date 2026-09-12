@@ -59,6 +59,30 @@ export type UpdateBagRequest = Omit<CreateBagRequest, "status"> & {
 };
 
 const STORE_API_BASE_URL = process.env.NEXT_PUBLIC_STORE_API_URL;
+const publicListRequests = new Map<string, Promise<unknown>>();
+
+function dedupePublicListRequest<T>(key: string, request: () => Promise<T>) {
+  if (typeof window === "undefined") {
+    return request();
+  }
+
+  const existingRequest = publicListRequests.get(key) as
+    | Promise<T>
+    | undefined;
+
+  if (existingRequest) {
+    return existingRequest;
+  }
+
+  const pendingRequest = request().finally(() => {
+    if (publicListRequests.get(key) === pendingRequest) {
+      publicListRequests.delete(key);
+    }
+  });
+
+  publicListRequests.set(key, pendingRequest);
+  return pendingRequest;
+}
 
 function storeApiBaseUrl() {
   if (!STORE_API_BASE_URL) throw new Error("NEXT_PUBLIC_STORE_API_URL is not configured.");
@@ -70,18 +94,22 @@ function bearer(accessToken: string) {
 }
 
 export function listCategories() {
-  return apiRequest<CategoryResponse[]>(
-    "/api/categories",
-    { method: "GET" },
-    storeApiBaseUrl(),
+  return dedupePublicListRequest("categories", () =>
+    apiRequest<CategoryResponse[]>(
+      "/api/categories",
+      { method: "GET" },
+      storeApiBaseUrl(),
+    ),
   );
 }
 
 export function listStores() {
-  return apiRequest<StoreProfileResponse[]>(
-    "/api/stores",
-    { method: "GET" },
-    storeApiBaseUrl(),
+  return dedupePublicListRequest("stores", () =>
+    apiRequest<StoreProfileResponse[]>(
+      "/api/stores",
+      { method: "GET" },
+      storeApiBaseUrl(),
+    ),
   );
 }
 
@@ -113,10 +141,12 @@ export function listPendingStores(accessToken: string) {
 }
 
 export function listBags() {
-  return apiRequest<SurpriseBagResponse[]>(
-    "/api/bags",
-    { method: "GET" },
-    storeApiBaseUrl(),
+  return dedupePublicListRequest("bags", () =>
+    apiRequest<SurpriseBagResponse[]>(
+      "/api/bags",
+      { method: "GET" },
+      storeApiBaseUrl(),
+    ),
   );
 }
 

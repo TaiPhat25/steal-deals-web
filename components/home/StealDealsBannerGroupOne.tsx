@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const campaigns = [
@@ -10,15 +11,16 @@ export default function StealDealsBannerGroupOne() {
   return (
     <section className="banner-group-1 mt-1 mb-1" aria-label="StealDeals campaigns">
       <div className="container">
-        <div
-          className="owl-carousel owl-simple rows cols-1 cols-sm-2 cols-lg-3"
-          data-toggle="owl"
-          data-owl-options='{"nav": false, "dots": true, "margin": 10, "loop": false, "responsive": {"0": {"items": 1}, "576": {"items": 2}, "992": {"items": 3}}}'
-        >
+        <div className="home-campaign-grid">
           {campaigns.map((campaign) => (
             <div key={campaign.eyebrow} className="banner mb-0">
               <Link href={campaign.href}>
-                <img src={`/assets/images/demos/demo-28/banners/${campaign.image}`} width="460" height="210" alt={campaign.imageAlt} />
+                <Image
+                  src={`/assets/images/demos/demo-28/banners/${campaign.image}`}
+                  width={460}
+                  height={210}
+                  alt={campaign.imageAlt}
+                />
               </Link>
               <div className="banner-content p-3">
                 <h5 className="banner-subtitle font-weight-normal text-light mb-1">{campaign.eyebrow}</h5>

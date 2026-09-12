@@ -2,7 +2,7 @@ import { ApiClientError } from "@/lib/api/client";
 
 export type FieldErrors<Field extends string> = Partial<Record<Field, string>>;
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
 const PHONE_CHARACTERS_PATTERN = /^\+?[0-9\s().-]+$/;
 
 export function isValidEmail(value: string) {
@@ -12,9 +12,7 @@ export function isValidEmail(value: string) {
 export function isValidPhoneNumber(value: string) {
   const digitCount = value.replace(/\D/g, "").length;
   return (
-    PHONE_CHARACTERS_PATTERN.test(value) &&
-    digitCount >= 9 &&
-    digitCount <= 15
+    PHONE_CHARACTERS_PATTERN.test(value) && digitCount >= 9 && digitCount <= 15
   );
 }
 

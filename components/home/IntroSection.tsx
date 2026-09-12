@@ -1,58 +1,128 @@
 "use client";
 
-import { useEffect } from "react";
+import {
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import Link from "next/link";
 
-type CarouselElement = {
-  hasClass: (className: string) => boolean;
-  owlCarousel: (options: Record<string, unknown>) => void;
-};
-
-type JQueryLike = ((selector: string) => CarouselElement) & {
-  fn?: {
-    owlCarousel?: unknown;
-  };
-};
+const INTRO_SLIDES = [
+  {
+    image: "/assets/images/demos/demo-28/intro-slider/1.jpg",
+    backgroundColor: "#2a323e",
+    contentClassName: "intro-content-left",
+    eyebrowClassName: "text-primary",
+    eyebrow: "Rescue surplus food",
+    title: ["Good food", "at a better price"],
+    description: "Surprise bags from local stores",
+    href: "/products?sort=near-expiry",
+    action: "Browse surprise bags",
+  },
+  {
+    image: "/assets/images/demos/demo-28/intro-slider/2.jpg",
+    backgroundColor: "#dd6584",
+    contentClassName: "intro-content-right",
+    eyebrowClassName: "text-white",
+    eyebrow: "Make every meal count",
+    title: ["Save food.", "Support local stores."],
+    description: "Pick up quality food before the day ends",
+    href: "/products?sort=distance",
+    action: "Find bags near you",
+  },
+] as const;
 
 export default function IntroSection() {
-  useEffect(() => {
-    let retryTimer: number | undefined;
-    let attempts = 0;
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragPointerIdRef = useRef<number | null>(null);
+  const dragStartXRef = useRef(0);
+  const didDragRef = useRef(false);
 
-    const initializeCarousel = () => {
-      const jquery = (window as Window & { jQuery?: JQueryLike }).jQuery;
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (isAnimating) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if ((event.target as HTMLElement).closest("a, button")) return;
 
-      if (jquery?.fn?.owlCarousel) {
-        const carousel = jquery(".inner-carousel");
+    dragPointerIdRef.current = event.pointerId;
+    dragStartXRef.current = event.clientX;
+    didDragRef.current = false;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
 
-        if (!carousel.hasClass("owl-loaded")) {
-          carousel.owlCarousel({
-            items: 1,
-            loop: true,
-            margin: 0,
-            nav: false,
-            dots: true,
-            smartSpeed: 400,
-          });
-        }
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragPointerIdRef.current !== event.pointerId) return;
 
-        return;
+    const distance = event.clientX - dragStartXRef.current;
+
+    if (Math.abs(distance) >= 8) {
+      didDragRef.current = true;
+      setIsDragging(true);
+    }
+
+    const isDraggingPastStart = activeSlide === 0 && distance > 0;
+    const isDraggingPastEnd =
+      activeSlide === INTRO_SLIDES.length - 1 && distance < 0;
+    const resistedDistance =
+      isDraggingPastStart || isDraggingPastEnd ? distance * 0.25 : distance;
+    const maximumOffset = event.currentTarget.clientWidth;
+
+    setDragOffset(
+      Math.max(-maximumOffset, Math.min(maximumOffset, resistedDistance))
+    );
+  };
+
+  const finishDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragPointerIdRef.current !== event.pointerId) return;
+
+    const distance = event.clientX - dragStartXRef.current;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    dragPointerIdRef.current = null;
+    setIsDragging(false);
+    setIsAnimating(true);
+    setDragOffset(0);
+
+    if (didDragRef.current && Math.abs(distance) >= 40) {
+      const requestedSlide = activeSlide + (distance < 0 ? 1 : -1);
+
+      if (requestedSlide >= 0 && requestedSlide < INTRO_SLIDES.length) {
+        setActiveSlide(requestedSlide);
       }
+    }
+  };
 
-      if (attempts < 20) {
-        attempts += 1;
-        retryTimer = window.setTimeout(initializeCarousel, 100);
-      }
-    };
+  const cancelDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragPointerIdRef.current !== event.pointerId) return;
 
-    initializeCarousel();
+    dragPointerIdRef.current = null;
+    didDragRef.current = false;
+    setIsDragging(false);
+    setIsAnimating(true);
+    setDragOffset(0);
+  };
 
-    return () => {
-      if (retryTimer !== undefined) {
-        window.clearTimeout(retryTimer);
-      }
-    };
-  }, []);
+  const suppressClickAfterDrag = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!didDragRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    didDragRef.current = false;
+  };
+
+  const selectSlide = (index: number) => {
+    if (index === activeSlide) return;
+
+    setIsAnimating(true);
+    setDragOffset(0);
+    setActiveSlide(index);
+  };
 
   return (
     <div
@@ -61,57 +131,72 @@ export default function IntroSection() {
     >
       <div className="container">
         <div
-          className="owl-carousel inner-carousel owl-simple rows cols-1"
-          data-toggle="owl"
-          data-owl-options='{"nav": false, "dots": true, "loop": true}'
+          className={`home-intro-carousel${isDragging ? " is-dragging" : ""}`}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Featured food rescue offers"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={finishDrag}
+          onPointerCancel={cancelDrag}
+          onClickCapture={suppressClickAfterDrag}
         >
           <div
-            className="intro-slide"
+            className={`home-intro-carousel__track${isAnimating ? " is-animating" : ""}`}
             style={{
-              backgroundImage: "url(/assets/images/demos/demo-28/intro-slider/1.jpg)",
-              backgroundColor: "#2a323e",
+              transform: `translate3d(calc(${-activeSlide * 100}% + ${dragOffset}px), 0, 0)`,
             }}
+            onTransitionEnd={() => setIsAnimating(false)}
           >
-            <div className="intro-content intro-content-left">
-              <h6 className="font-weight-normal text-primary my-2 mt-0">
-                Rescue surplus food
-              </h6>
-              <h3 className="intro-title font-weight-bold text-white mb-0">
-                Good food
-                <br />
-                at a better price
-              </h3>
-              <h3 className="intro-desc mb-2 font-weight-light text-secondary">
-                Surprise bags from local stores
-              </h3>
-              <Link href="/products?sort=near-expiry" className="btn btn-primary text-uppercase">
-                Browse surprise bags
-              </Link>
-            </div>
+            {INTRO_SLIDES.map((slide, index) => (
+              <div
+                key={slide.image}
+                className="intro-slide home-intro-carousel__slide"
+                style={{
+                  backgroundImage: `url(${slide.image})`,
+                  backgroundColor: slide.backgroundColor,
+                }}
+                aria-hidden={index !== activeSlide}
+              >
+                <div className={`intro-content ${slide.contentClassName}`}>
+                  <h6
+                    className={`font-weight-normal ${slide.eyebrowClassName} my-2 mt-0`}
+                  >
+                    {slide.eyebrow}
+                  </h6>
+                  <h3 className="intro-title font-weight-bold text-white mb-0">
+                    {slide.title[0]}
+                    <br />
+                    {slide.title[1]}
+                  </h3>
+                  <h3 className="intro-desc mb-2 font-weight-light text-secondary">
+                    {slide.description}
+                  </h3>
+                  <Link
+                    href={slide.href}
+                    className="btn btn-primary text-uppercase"
+                    tabIndex={index === activeSlide ? undefined : -1}
+                  >
+                    {slide.action}
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
-          <div
-            className="intro-slide"
-            style={{
-              backgroundImage: "url(/assets/images/demos/demo-28/intro-slider/2.jpg)",
-              backgroundColor: "#dd6584",
-            }}
-          >
-            <div className="intro-content intro-content-right">
-              <h6 className="font-weight-normal text-white my-2 mt-0">
-                Make every meal count
-              </h6>
-              <h3 className="intro-title font-weight-bold text-white mb-0">
-                Save food.
-                <br />
-                Support local stores.
-              </h3>
-              <h3 className="intro-desc mb-2 font-weight-light text-secondary">
-                Pick up quality food before the day ends
-              </h3>
-              <Link href="/products?sort=distance" className="btn btn-primary text-uppercase">
-                Find bags near you
-              </Link>
-            </div>
+
+          <div className="home-intro-carousel__dots" aria-label="Choose featured offer">
+            {INTRO_SLIDES.map((item, index) => (
+              <button
+                key={item.image}
+                type="button"
+                className={index === activeSlide ? "active" : undefined}
+                aria-label={`Show offer ${index + 1}`}
+                aria-current={index === activeSlide ? "true" : undefined}
+                onClick={() => selectSlide(index)}
+              >
+                <span aria-hidden="true" />
+              </button>
+            ))}
           </div>
         </div>
       </div>
