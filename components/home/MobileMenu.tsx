@@ -31,14 +31,14 @@ export default function MobileMenu() {
             <i className="icon-close"></i>
           </span>
 
-          <form action="#" method="get" className="mobile-search">
+          <form action="/products" method="get" className="mobile-search" role="search">
             <label htmlFor="mobile-search" className="sr-only">
               Search
             </label>
             <input
               type="search"
               className="form-control"
-              name="mobile-search"
+              name="q"
               id="mobile-search"
               placeholder="Search in..."
               required

@@ -6,6 +6,7 @@ import type { MouseEvent } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cartBagKey, useCart } from "@/components/cart/CartProvider";
+import HeaderSearch from "@/components/home/HeaderSearch";
 import {
   AUTH_TAB_CHANGE_EVENT,
   type AuthTab,
@@ -1013,26 +1014,7 @@ export default function Header() {
               </nav>
             </div>
             <div className="header-right">
-              <div className="header-search">
-                <a href="#" className="search-toggle" role="button">
-                  <i className="icon-search"></i>
-                </a>
-                <form action="#" method="get">
-                  <div className="header-search-wrapper">
-                    <label htmlFor="q" className="sr-only">
-                      Search
-                    </label>
-                    <input
-                      type="search"
-                      className="form-control"
-                      name="q"
-                      id="q"
-                      placeholder="Search in..."
-                      required
-                    />
-                  </div>
-                </form>
-              </div>
+              <HeaderSearch />
 
               {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
               {/*
