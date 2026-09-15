@@ -86,6 +86,7 @@ const INITIAL_SETTINGS: StoreSettings = {
   avatarUrl: null,
   phone: "+84 28 3822 1234",
   ratingScore: 4.8,
+  reviewCount: 7,
   isVerify: true,
   isActive: true,
   createdAt: "2026-01-12T08:00:00+07:00",

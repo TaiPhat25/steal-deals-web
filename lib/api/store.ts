@@ -1,9 +1,10 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
   CategoryResponse,
+  PagedResult,
   PendingStoreResponse,
-  PublicStoreReviewResponse,
   StoreProfileResponse,
+  StoreReviewResponse,
   SurpriseBagResponse,
 } from "@/lib/api/dashboard-types";
 
@@ -216,10 +217,33 @@ export async function listStoreBags(storeId: string) {
   return Promise.all(bags.map((bag) => bag.categories.length ? bag : getBag(bag.id)));
 }
 
-export function listStoreReviews(storeId: string) {
-  return apiRequest<PublicStoreReviewResponse[]>(
-    `/api/reviews/store/${encodeURIComponent(storeId)}`,
+export function listStoreReviews(storeId: string, page = 1, pageSize = 50) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+
+  return apiRequest<PagedResult<StoreReviewResponse>>(
+    `/api/reviews/store/${encodeURIComponent(storeId)}?${params.toString()}`,
     { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function replyToStoreReview(
+  accessToken: string,
+  reviewId: string,
+  storeReply: string,
+) {
+  return apiRequest<void>(
+    `/api/reviews/${encodeURIComponent(reviewId)}/reply`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: { storeReply },
+    },
     storeApiBaseUrl(),
   );
 }
