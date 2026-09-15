@@ -1,6 +1,8 @@
 import type {
+  PagedResult,
   PublicStoreReviewResponse,
   StoreProfileResponse,
+  StoreReviewResponse,
   SurpriseBagResponse,
 } from "@/lib/api/dashboard-types";
 import type { StoreProfile, StoreReview, StoreSurpriseBag } from "@/components/stores/store-profile-data";
@@ -27,7 +29,7 @@ function mapBagResponse(bag: SurpriseBagResponse): StoreSurpriseBag {
 }
 
 function mapReviewResponse(
-  review: PublicStoreReviewResponse,
+  review: PublicStoreReviewResponse | StoreReviewResponse,
   storeId: string,
 ): StoreReview {
   return {
@@ -35,7 +37,7 @@ function mapReviewResponse(
     orderId: review.orderId,
     buyerId: review.buyerId,
     storeId,
-    bagId: "",
+    bagId: "bagId" in review ? review.bagId : "",
     ratingScore: review.ratingScore,
     comment: review.comment,
     storeReply: review.storeReply,
@@ -47,8 +49,9 @@ function mapReviewResponse(
 export function mapStoreResponse(
   store: StoreProfileResponse,
   bags: SurpriseBagResponse[] = [],
-  reviews: PublicStoreReviewResponse[] = [],
+  reviews: PublicStoreReviewResponse[] | PagedResult<StoreReviewResponse> = [],
 ): StoreProfile {
+  const reviewList = Array.isArray(reviews) ? reviews : (reviews?.items ?? []);
   return {
     ...store,
     bankAccount: null,
@@ -57,6 +60,6 @@ export function mapStoreResponse(
     surpriseBags: bags
       .filter((bag) => bag.storeId === store.id)
       .map(mapBagResponse),
-    storeReviews: reviews.map((review) => mapReviewResponse(review, store.id)),
+    storeReviews: reviewList.map((review) => mapReviewResponse(review, store.id)),
   };
 }
