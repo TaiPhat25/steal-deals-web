@@ -162,10 +162,20 @@ storage, fake latency, notification integration, or speculative API layer.
   require a closing time after their opening time. `bankAccount` and
   `licenseUrl` can be sent but are cleared on reload because the response does
   not return them.
-- `/seller/store-reviews` remains local. The current response omits `bagId` and
-  `isReported`, which the screen requires, and the API has no remove-reply or
-  clear-report operation. Do not partially integrate this page by inventing
-  those fields.
+- `/seller/store-reviews` connects to the Store Service review API
+  (`GET /api/reviews/store/{storeId}` and `PATCH /api/reviews/{id}/reply`) using
+  the seller's active store from `settings.id`. It displays reviews, rating scores,
+  buyer display names, and bag names from backend responses with an API-unavailable
+  demo fallback banner and retry action.
+  - Disabled actions & UI adaptations pending backend support:
+    - "Remove reply": Disabled in the review dialog because the backend has no reply
+      deletion endpoint (`DELETE /api/reviews/{id}/reply`) and rejects empty reply bodies.
+    - "Report review": Disabled in the review dialog because `StoreReviewResponse` omits
+      `isReported` and the API lacks an un-report or seller moderation endpoint.
+    - Stat cards: "Need replies" and "Reported" were removed; summary cards display
+      store profile `reviewCount` and `ratingScore`.
+    - Query filtering: Search and rating filters apply to the loaded reviews slice
+      because `GET /api/reviews/store/{storeId}` only accepts `page` and `pageSize`.
 - `/seller/inbox` provides customer/order search, local messages, emoji and
   attachment placeholders, contact details, and conversation clearing. Voice
   and video controls remain disabled until a calling service exists.

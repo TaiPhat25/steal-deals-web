@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   DashboardButton,
   DashboardCard,
@@ -10,10 +11,10 @@ import {
 } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast } from "@/components/dashboard/Dialog";
 import { useSellerDemo } from "@/components/seller/SellerDemoProvider";
+import { listStoreReviews, replyToStoreReview } from "@/lib/api/store";
 import type { StoreReviewResponse } from "@/lib/api/dashboard-types";
 
 const PAGE_SIZE = 5;
-const STORE_ID = "20000000-0000-0000-0000-000000000001";
 const RATING_OPTIONS = [5, 4, 3, 2, 1] as const;
 
 const INITIAL_REVIEWS: StoreReviewResponse[] = [
@@ -21,90 +22,103 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     id: "80000000-0000-0000-0000-000000000001",
     orderId: "40000000-0000-0000-0000-000000000001",
     buyerId: "50000000-0000-0000-0000-000000000001",
-    storeId: STORE_ID,
+    buyerName: "Linh Nguyen",
+    storeId: "20000000-0000-0000-0000-000000000001",
     bagId: "30000000-0000-0000-0000-000000000101",
+    bagName: "Bakery Surprise Bag",
     ratingScore: 5,
     comment: "Great value and the pastries were still fresh at pickup.",
     storeReply: "Thank you for rescuing our bakery bag. We are happy you enjoyed it.",
-    isReported: false,
+    repliedAt: "2026-07-31T09:00:00+07:00",
     createdAt: "2026-07-31T08:25:00+07:00",
   },
   {
     id: "80000000-0000-0000-0000-000000000002",
     orderId: "40000000-0000-0000-0000-000000000002",
     buyerId: "50000000-0000-0000-0000-000000000002",
-    storeId: STORE_ID,
+    buyerName: "Daniel Lee",
+    storeId: "20000000-0000-0000-0000-000000000001",
     bagId: "30000000-0000-0000-0000-000000000102",
+    bagName: "Fresh Lunch Bag",
     ratingScore: 4,
     comment: "Good lunch set. Pickup was quick, but I wish the bag had one more side dish.",
     storeReply: null,
-    isReported: false,
+    repliedAt: null,
     createdAt: "2026-07-31T07:40:00+07:00",
   },
   {
     id: "80000000-0000-0000-0000-000000000003",
     orderId: "40000000-0000-0000-0000-000000000005",
     buyerId: "50000000-0000-0000-0000-000000000005",
-    storeId: STORE_ID,
+    buyerName: "Quoc Bao",
+    storeId: "20000000-0000-0000-0000-000000000001",
     bagId: "30000000-0000-0000-0000-000000000103",
+    bagName: "Fruit and Veg Rescue",
     ratingScore: 2,
     comment: "Some fruit was bruised and the pickup counter was hard to find.",
     storeReply: null,
-    isReported: true,
+    repliedAt: null,
     createdAt: "2026-07-30T20:10:00+07:00",
   },
   {
     id: "80000000-0000-0000-0000-000000000004",
     orderId: "40000000-0000-0000-0000-000000000003",
     buyerId: "50000000-0000-0000-0000-000000000003",
-    storeId: STORE_ID,
+    buyerName: "Mai Tran",
+    storeId: "20000000-0000-0000-0000-000000000001",
     bagId: "30000000-0000-0000-0000-000000000105",
+    bagName: "Grocery Essentials",
     ratingScore: 3,
     comment: "The essentials were useful, though one chilled item was close to expiry.",
     storeReply: "Thanks for the note. We will double-check chilled bags before handoff.",
-    isReported: false,
+    repliedAt: "2026-07-30T19:00:00+07:00",
     createdAt: "2026-07-30T18:35:00+07:00",
   },
   {
     id: "80000000-0000-0000-0000-000000000005",
     orderId: "40000000-0000-0000-0000-000000000004",
     buyerId: "50000000-0000-0000-0000-000000000004",
-    storeId: STORE_ID,
+    buyerName: "An Pham",
+    storeId: "20000000-0000-0000-0000-000000000001",
     bagId: "30000000-0000-0000-0000-000000000101",
+    bagName: "Bakery Surprise Bag",
     ratingScore: 1,
     comment: "Order failed before pickup and I could not reserve the bag.",
     storeReply: null,
-    isReported: false,
+    repliedAt: null,
     createdAt: "2026-07-30T16:30:00+07:00",
   },
   {
     id: "80000000-0000-0000-0000-000000000006",
     orderId: "40000000-0000-0000-0000-000000000002",
     buyerId: "50000000-0000-0000-0000-000000000002",
-    storeId: STORE_ID,
+    buyerName: "Daniel Lee",
+    storeId: "20000000-0000-0000-0000-000000000001",
     bagId: "30000000-0000-0000-0000-000000000102",
+    bagName: "Fresh Lunch Bag",
     ratingScore: 5,
     comment: "Friendly staff and the pickup code worked without any delay.",
     storeReply: "We appreciate the feedback and hope to see you again.",
-    isReported: false,
+    repliedAt: "2026-07-29T16:00:00+07:00",
     createdAt: "2026-07-29T15:15:00+07:00",
   },
   {
     id: "80000000-0000-0000-0000-000000000007",
     orderId: "40000000-0000-0000-0000-000000000001",
     buyerId: "50000000-0000-0000-0000-000000000001",
-    storeId: STORE_ID,
+    buyerName: "Linh Nguyen",
+    storeId: "20000000-0000-0000-0000-000000000001",
     bagId: "30000000-0000-0000-0000-000000000104",
+    bagName: "Dessert Box",
     ratingScore: 4,
     comment: "Dessert box looked nice and was packed carefully.",
     storeReply: null,
-    isReported: false,
+    repliedAt: null,
     createdAt: "2026-07-29T13:00:00+07:00",
   },
 ];
 
 type ReplyFilter = "all" | "unanswered" | "replied";
-type ReportFilter = "all" | "reported" | "clean";
 type StatusTone = "neutral" | "info" | "success" | "warning" | "error";
 
 const shortId = (value: string) => value.slice(0, 8);
@@ -137,17 +151,64 @@ function RatingPips({ score }: { score: number }) {
 }
 
 export default function StoreReviews() {
-  const { orders, products, settings } = useSellerDemo();
-  const [reviews, setReviews] = useState(INITIAL_REVIEWS);
+  const { accessToken } = useAuth();
+  const { orders, products, settings, settingsLoading } = useSellerDemo();
+
+  const [reviews, setReviews] = useState<StoreReviewResponse[]>(INITIAL_REVIEWS);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsDemoReason, setReviewsDemoReason] = useState("");
+  const [reloadVersion, setReloadVersion] = useState(0);
+
   const [search, setSearch] = useState("");
   const [rating, setRating] = useState("");
   const [replyStatus, setReplyStatus] = useState<ReplyFilter>("all");
-  const [reportStatus, setReportStatus] = useState<ReportFilter>("all");
   const [page, setPage] = useState(1);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [replyError, setReplyError] = useState("");
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [toast, setToast] = useState("");
+
+  const retryReviews = useCallback(() => setReloadVersion((v) => v + 1), []);
+
+  useEffect(() => {
+    if (settingsLoading) return;
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      if (!settings.id) {
+        setReviews(INITIAL_REVIEWS);
+        setReviewsDemoReason("No seller store profile available.");
+        setReviewsLoading(false);
+        return;
+      }
+
+      setReviewsLoading(true);
+      setReviewsDemoReason("");
+
+      listStoreReviews(settings.id, 1, 50)
+        .then((result) => {
+          if (!active) return;
+          setReviews(result.items);
+          setReviewsLoading(false);
+        })
+        .catch((caught) => {
+          if (!active) return;
+          setReviews(INITIAL_REVIEWS);
+          setReviewsDemoReason(
+            caught instanceof Error ? caught.message : "The Store Service could not be reached.",
+          );
+          setReviewsLoading(false);
+        });
+    }, 0);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [settings.id, settingsLoading, reloadVersion]);
 
   const productById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
@@ -168,8 +229,10 @@ export default function StoreReviews() {
           review.id,
           review.orderId,
           review.buyerId,
+          review.buyerName,
           review.bagId,
-          review.comment,
+          review.bagName ?? "",
+          review.comment ?? "",
           review.storeReply ?? "",
           product?.name ?? "",
           order?.storeNameSnapshot ?? "",
@@ -182,26 +245,31 @@ export default function StoreReviews() {
           (!rating || review.ratingScore === Number(rating)) &&
           (replyStatus === "all" ||
             (replyStatus === "replied" && hasReply(review.storeReply)) ||
-            (replyStatus === "unanswered" && !hasReply(review.storeReply))) &&
-          (reportStatus === "all" ||
-            (reportStatus === "reported" && review.isReported) ||
-            (reportStatus === "clean" && !review.isReported))
+            (replyStatus === "unanswered" && !hasReply(review.storeReply)))
         );
       }),
-    [orderById, productById, rating, replyStatus, reportStatus, reviews, search],
+    [orderById, productById, rating, replyStatus, reviews, search],
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const averageRating = reviews.length
-    ? (reviews.reduce((sum, review) => sum + review.ratingScore, 0) / reviews.length).toFixed(1)
-    : "0.0";
+
+  const totalReviewsCount =
+    typeof settings.reviewCount === "number" && settings.reviewCount > 0
+      ? settings.reviewCount
+      : reviews.length;
+  const averageRatingScore =
+    settings.ratingScore > 0
+      ? Number(settings.ratingScore).toFixed(1)
+      : reviews.length
+        ? (reviews.reduce((sum, review) => sum + review.ratingScore, 0) / reviews.length).toFixed(1)
+        : "0.0";
+
   const stats = [
-    ["Total reviews", reviews.length, "bg-accent-5/60"],
-    ["Average rating", `${averageRating} / 5`, "bg-accent-1/60"],
-    ["Need replies", reviews.filter((review) => !hasReply(review.storeReply)).length, "bg-accent-2/60"],
-    ["Reported", reviews.filter((review) => review.isReported).length, "bg-accent-3/60"],
+    ["Total reviews", totalReviewsCount, "bg-accent-5/60"],
+    ["Average rating", `${averageRatingScore} / 5`, "bg-accent-1/60"],
   ] as const;
+
   const activeReview = activeId
     ? reviews.find((review) => review.id === activeId) ?? null
     : null;
@@ -212,7 +280,6 @@ export default function StoreReviews() {
     setSearch("");
     setRating("");
     setReplyStatus("all");
-    setReportStatus("all");
     setPage(1);
   }
 
@@ -222,7 +289,7 @@ export default function StoreReviews() {
     setReplyError("");
   }
 
-  function saveReply(event: FormEvent<HTMLFormElement>) {
+  async function saveReply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!activeReview) return;
 
@@ -232,38 +299,35 @@ export default function StoreReviews() {
       return;
     }
 
+    setIsSubmittingReply(true);
+    setReplyError("");
+
+    if (accessToken && !reviewsDemoReason) {
+      try {
+        await replyToStoreReview(accessToken, activeReview.id, nextReply);
+      } catch (caught) {
+        setReplyError(
+          caught instanceof Error ? caught.message : "Failed to save reply. Please try again.",
+        );
+        setIsSubmittingReply(false);
+        return;
+      }
+    }
+
     setReviews((items) =>
       items.map((item) =>
-        item.id === activeReview.id ? { ...item, storeReply: nextReply } : item,
+        item.id === activeReview.id
+          ? {
+              ...item,
+              storeReply: nextReply,
+              repliedAt: new Date().toISOString(),
+            }
+          : item,
       ),
     );
-    setReplyError("");
+    setIsSubmittingReply(false);
     setActiveId(null);
-    setPage(1);
     setToast(`Reply saved for review #${shortId(activeReview.id)}.`);
-  }
-
-  function deleteReply(review: StoreReviewResponse) {
-    setReviews((items) =>
-      items.map((item) => (item.id === review.id ? { ...item, storeReply: null } : item)),
-    );
-    setReplyDraft("");
-    setReplyError("");
-    setPage(1);
-    setToast(`Reply removed from review #${shortId(review.id)}.`);
-  }
-
-  function toggleReported(review: StoreReviewResponse) {
-    const nextValue = !review.isReported;
-    setReviews((items) =>
-      items.map((item) =>
-        item.id === review.id ? { ...item, isReported: nextValue } : item,
-      ),
-    );
-    setPage(1);
-    setToast(
-      `Review #${shortId(review.id)} marked ${nextValue ? "reported" : "not reported"}.`,
-    );
   }
 
   function exportCsv() {
@@ -274,24 +338,28 @@ export default function StoreReviews() {
         "id",
         "orderId",
         "buyerId",
+        "buyerName",
         "storeId",
         "bagId",
+        "bagName",
         "ratingScore",
         "comment",
         "storeReply",
-        "isReported",
+        "repliedAt",
         "createdAt",
       ],
       ...filtered.map((review) => [
         review.id,
         review.orderId,
         review.buyerId,
+        review.buyerName,
         review.storeId,
         review.bagId,
+        review.bagName ?? "",
         review.ratingScore,
         review.comment,
         review.storeReply,
-        review.isReported,
+        review.repliedAt,
         review.createdAt,
       ]),
     ]
@@ -309,7 +377,7 @@ export default function StoreReviews() {
     <>
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {stats.map(([label, value, color]) => (
             <DashboardCard className={`${color} p-4`} key={label}>
               <p className="text-sm font-semibold text-light-secondary-text">{label}</p>
@@ -372,20 +440,7 @@ export default function StoreReviews() {
                   <option value="unanswered">Needs reply</option>
                   <option value="replied">Replied</option>
                 </select>
-                <select
-                  aria-label="Report status"
-                  className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"
-                  onChange={(event) => {
-                    setReportStatus(event.target.value as ReportFilter);
-                    setPage(1);
-                  }}
-                  value={reportStatus}
-                >
-                  <option value="all">All reports</option>
-                  <option value="reported">Reported</option>
-                  <option value="clean">Not reported</option>
-                </select>
-                {(search || rating || replyStatus !== "all" || reportStatus !== "all") && (
+                {(search || rating || replyStatus !== "all") && (
                   <button
                     className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter"
                     onClick={clearFilters}
@@ -398,82 +453,113 @@ export default function StoreReviews() {
             </div>
           </div>
 
-          <div className="overflow-x-auto border-t border-gray-500/20">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-left">
-                <tr>
-                  <th className="p-3 pl-5">Review</th>
-                  <th className="p-3">Bag / order</th>
-                  <th className="p-3">Buyer</th>
-                  <th className="p-3">Reply</th>
-                  <th className="p-3">Report</th>
-                  <th className="p-3">Created</th>
-                  <th className="p-3 pr-5 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((review) => {
-                  const product = productById.get(review.bagId);
-                  return (
-                    <tr
-                      className="border-t border-gray-500/20 hover:bg-gray-50/50"
-                      key={review.id}
-                    >
-                      <td className="max-w-md p-3 pl-5">
-                        <div className="flex items-start gap-3">
-                          <span className="size-11 shrink-0 overflow-hidden rounded-xl">
-                            <ProductImage alt={product?.name ?? "Reviewed bag"} />
-                          </span>
-                          <div>
-                            <RatingPips score={review.ratingScore} />
-                            <p className="mt-1 text-light-secondary-text">{review.comment}</p>
-                            <span className="mt-1 block font-mono text-xs text-light-secondary-text">
-                              #{shortId(review.id)}
+          {reviewsDemoReason && (
+            <div
+              className="flex flex-col gap-3 border-t border-warning/30 bg-warning/10 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6"
+              role="status"
+            >
+              <p>
+                <strong>Demo data active.</strong> {reviewsDemoReason}
+              </p>
+              <button
+                className="h-8 shrink-0 rounded-full px-3 font-semibold text-warning-dark hover:bg-warning/15"
+                onClick={retryReviews}
+                type="button"
+              >
+                Retry API
+              </button>
+            </div>
+          )}
+
+          {reviewsLoading ? (
+            <div
+              className="border-t border-gray-500/20 px-4 py-14 text-center text-sm text-light-secondary-text"
+              role="status"
+            >
+              Loading store reviews…
+            </div>
+          ) : (
+            <div className="overflow-x-auto border-t border-gray-500/20">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100 text-left">
+                  <tr>
+                    <th className="p-3 pl-5">Review</th>
+                    <th className="p-3">Bag / order</th>
+                    <th className="p-3">Buyer</th>
+                    <th className="p-3">Reply</th>
+                    <th className="p-3">Created</th>
+                    <th className="p-3 pr-5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((review) => {
+                    const product = productById.get(review.bagId);
+                    const bagDisplayName = review.bagName || product?.name || "Unknown bag";
+                    return (
+                      <tr
+                        className="border-t border-gray-500/20 hover:bg-gray-50/50"
+                        key={review.id}
+                      >
+                        <td className="max-w-md p-3 pl-5">
+                          <div className="flex items-start gap-3">
+                            <span className="size-11 shrink-0 overflow-hidden rounded-xl">
+                              <ProductImage alt={bagDisplayName} />
                             </span>
+                            <div>
+                              <RatingPips score={review.ratingScore} />
+                              <p className="mt-1 text-light-secondary-text">
+                                {review.comment || <span className="italic">No comment provided</span>}
+                              </p>
+                              <span className="mt-1 block font-mono text-xs text-light-secondary-text">
+                                #{shortId(review.id)}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <strong className="block">{product?.name ?? "Unknown bag"}</strong>
-                        <span className="font-mono text-xs text-light-secondary-text">
-                          Order {shortId(review.orderId)}
-                        </span>
-                      </td>
-                      <td className="p-3 font-mono text-xs">{shortId(review.buyerId)}...</td>
-                      <td className="max-w-56 p-3">
-                        <StatusBadge tone={hasReply(review.storeReply) ? "success" : "warning"}>
-                          {hasReply(review.storeReply) ? "Replied" : "Needs reply"}
-                        </StatusBadge>
-                        <span className="mt-1 block truncate text-xs text-light-secondary-text">
-                          {review.storeReply ?? "No public reply yet"}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <StatusBadge tone={review.isReported ? "error" : "neutral"}>
-                          {review.isReported ? "Reported" : "Clear"}
-                        </StatusBadge>
-                      </td>
-                      <td className="p-3 whitespace-nowrap">{dateTime(review.createdAt)}</td>
-                      <td className="p-3 pr-5 text-right">
-                        <button
-                          className="h-8 rounded-lg px-3 font-semibold text-primary hover:bg-primary-lighter"
-                          onClick={() => openReview(review)}
-                          type="button"
-                        >
-                          Manage
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {rows.length === 0 && (
-              <div className="px-4 py-14 text-center text-sm text-light-secondary-text">
-                No store reviews match these filters.
-              </div>
-            )}
-          </div>
+                        </td>
+                        <td className="p-3">
+                          <strong className="block">{bagDisplayName}</strong>
+                          <span className="font-mono text-xs text-light-secondary-text">
+                            Order {shortId(review.orderId)}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-medium">
+                            {review.buyerName || "Customer"}
+                          </div>
+                          <span className="font-mono text-xs text-light-secondary-text">
+                            {shortId(review.buyerId)}...
+                          </span>
+                        </td>
+                        <td className="max-w-56 p-3">
+                          <StatusBadge tone={hasReply(review.storeReply) ? "success" : "warning"}>
+                            {hasReply(review.storeReply) ? "Replied" : "Needs reply"}
+                          </StatusBadge>
+                          <span className="mt-1 block truncate text-xs text-light-secondary-text">
+                            {review.storeReply ?? "No public reply yet"}
+                          </span>
+                        </td>
+                        <td className="p-3 whitespace-nowrap">{dateTime(review.createdAt)}</td>
+                        <td className="p-3 pr-5 text-right">
+                          <button
+                            className="h-8 rounded-lg px-3 font-semibold text-primary hover:bg-primary-lighter"
+                            onClick={() => openReview(review)}
+                            type="button"
+                          >
+                            Manage
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {rows.length === 0 && (
+                <div className="px-4 py-14 text-center text-sm text-light-secondary-text">
+                  No store reviews match these filters.
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6">
             <span className="text-sm text-light-secondary-text">
@@ -487,7 +573,7 @@ export default function StoreReviews() {
                 onClick={() => setPage(page - 1)}
                 type="button"
               >
-                {"<"}
+                ‹
               </button>
               <span className="text-sm font-semibold">
                 Page {page} of {totalPages}
@@ -499,7 +585,7 @@ export default function StoreReviews() {
                 onClick={() => setPage(page + 1)}
                 type="button"
               >
-                {">"}
+                ›
               </button>
             </div>
           </div>
@@ -522,15 +608,12 @@ export default function StoreReviews() {
                     Customer feedback
                   </p>
                   <h2 className="mt-1 text-lg font-bold">
-                    {activeProduct?.name ?? "Unknown surprise bag"}
+                    {activeReview.bagName || activeProduct?.name || "Surprise bag"}
                   </h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusBadge tone={ratingTone(activeReview.ratingScore)}>
                     {activeReview.ratingScore} / 5
-                  </StatusBadge>
-                  <StatusBadge tone={activeReview.isReported ? "error" : "neutral"}>
-                    {activeReview.isReported ? "Reported" : "Clear"}
                   </StatusBadge>
                 </div>
               </div>
@@ -538,21 +621,37 @@ export default function StoreReviews() {
               <div className="rounded-2xl bg-gray-100 p-4">
                 <RatingPips score={activeReview.ratingScore} />
                 <p className="mt-3 leading-6 text-light-secondary-text">
-                  {activeReview.comment}
+                  {activeReview.comment || <span className="italic">No comment provided</span>}
                 </p>
               </div>
 
               <dl className="grid gap-3 sm:grid-cols-[110px_1fr]">
                 <dt className="text-light-secondary-text">Order ID</dt>
                 <dd className="break-all font-mono text-xs">{activeReview.orderId}</dd>
-                <dt className="text-light-secondary-text">Buyer ID</dt>
-                <dd className="break-all font-mono text-xs">{activeReview.buyerId}</dd>
-                <dt className="text-light-secondary-text">Bag ID</dt>
-                <dd className="break-all font-mono text-xs">{activeReview.bagId}</dd>
+                <dt className="text-light-secondary-text">Buyer</dt>
+                <dd className="break-all text-xs font-medium">
+                  {activeReview.buyerName}{" "}
+                  <span className="font-mono text-light-secondary-text">
+                    ({activeReview.buyerId})
+                  </span>
+                </dd>
+                <dt className="text-light-secondary-text">Bag</dt>
+                <dd className="break-all text-xs font-medium">
+                  {activeReview.bagName || activeProduct?.name || "Unknown bag"}{" "}
+                  <span className="font-mono text-light-secondary-text">
+                    ({activeReview.bagId})
+                  </span>
+                </dd>
                 <dt className="text-light-secondary-text">Delivery</dt>
                 <dd>{activeOrder?.deliveryType ?? "Unknown"}</dd>
                 <dt className="text-light-secondary-text">Created</dt>
                 <dd>{dateTime(activeReview.createdAt)}</dd>
+                {activeReview.repliedAt && (
+                  <>
+                    <dt className="text-light-secondary-text">Replied</dt>
+                    <dd>{dateTime(activeReview.repliedAt)}</dd>
+                  </>
+                )}
               </dl>
 
               <label className="block text-sm font-semibold">
@@ -594,20 +693,26 @@ export default function StoreReviews() {
                 Close
               </DashboardButton>
               {hasReply(activeReview.storeReply) && (
-                <DashboardButton
-                  onClick={() => deleteReply(activeReview)}
-                  variant="secondary"
+                <button
+                  className="h-9 cursor-not-allowed rounded-full border border-gray-300 bg-gray-100 px-4 text-sm font-semibold text-gray-400 opacity-60"
+                  disabled
+                  title="Deleting replies is not yet supported by the backend."
+                  type="button"
                 >
                   Remove reply
-                </DashboardButton>
+                </button>
               )}
-              <DashboardButton
-                onClick={() => toggleReported(activeReview)}
-                variant={activeReview.isReported ? "secondary" : "danger"}
+              <button
+                className="h-9 cursor-not-allowed rounded-full border border-gray-300 bg-gray-100 px-4 text-sm font-semibold text-gray-400 opacity-60"
+                disabled
+                title="Reporting reviews is not yet supported in the seller API."
+                type="button"
               >
-                {activeReview.isReported ? "Clear report" : "Report review"}
+                Report review
+              </button>
+              <DashboardButton disabled={isSubmittingReply} type="submit">
+                {isSubmittingReply ? "Saving…" : "Save reply"}
               </DashboardButton>
-              <DashboardButton type="submit">Save reply</DashboardButton>
             </footer>
           </form>
         </DashboardDialog>

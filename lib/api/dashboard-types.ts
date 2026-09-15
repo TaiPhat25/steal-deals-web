@@ -17,6 +17,7 @@ export type StoreProfileResponse = {
   avatarUrl: string | null;
   phone: string | null;
   ratingScore: number;
+  reviewCount?: number;
   isVerify: boolean;
   isActive: boolean;
   createdAt: string;
@@ -91,16 +92,25 @@ export type OrderResponse = {
   items: OrderItemResponse[];
 };
 
+export type PagedResult<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+};
+
 export type StoreReviewResponse = {
   id: string;
   orderId: string;
   buyerId: string;
+  buyerName: string;
   storeId: string;
   bagId: string;
+  bagName: string | null;
   ratingScore: number;
-  comment: string;
+  comment: string | null;
   storeReply: string | null;
-  isReported: boolean;
+  repliedAt: string | null;
   createdAt: string;
 };
 
