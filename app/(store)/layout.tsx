@@ -45,12 +45,10 @@ export default function RootLayout({
           href="/assets/vendor/line-awesome/line-awesome/line-awesome/css/line-awesome.min.css"
         />
         <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
-        <link rel="stylesheet" href="/assets/css/plugins/owl-carousel/owl.carousel.css" />
         <link rel="stylesheet" href="/assets/css/plugins/magnific-popup/magnific-popup.css" />
         <link rel="stylesheet" href="/assets/css/style.css" />
         <link rel="stylesheet" href="/assets/css/skins/skin-demo-28.css" />
         <link rel="stylesheet" href="/assets/css/demos/demo-28.css" />
-        <link rel="stylesheet" href="/assets/css/demos/carousel-layout.css" />
         <link rel="stylesheet" href="/assets/css/custom.css" />
         <Script src="/assets/js/jquery.min.js" strategy="beforeInteractive" />
       </head>
@@ -60,7 +58,6 @@ export default function RootLayout({
         <Script src="/assets/js/jquery.hoverIntent.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/jquery.waypoints.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/superfish.min.js" strategy="afterInteractive" />
-        <Script src="/assets/js/owl.carousel.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/jquery.magnific-popup.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/bootstrap-input-spinner.js" strategy="afterInteractive" />
         <Script src="/assets/js/jquery.elevateZoom.min.js" strategy="afterInteractive" />

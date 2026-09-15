@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, useEffect, useMemo, useRef } from "react";
+import { Children, useLayoutEffect, useMemo, useRef } from "react";
 
 type DragScrollRowProps = {
   className?: string;
@@ -11,8 +11,38 @@ type DragScrollRowProps = {
 export default function DragScrollRow({ className, children, visibleItems }: DragScrollRowProps) {
   const rowRef = useRef<HTMLDivElement | null>(null);
   const childNodes = useMemo(() => Children.toArray(children), [children]);
+  const cloneCount = childNodes.length > 1
+    ? Math.min(visibleItems ?? 1, childNodes.length)
+    : 0;
+  const loopedChildNodes = useMemo(() => {
+    if (cloneCount === 0) return childNodes;
 
-  useEffect(() => {
+    return [
+      ...childNodes.slice(-cloneCount).map((child, index) => (
+        <div
+          key={`loop-start-${index}`}
+          className="drag-scroll-row__clone"
+          aria-hidden="true"
+          inert
+        >
+          {child}
+        </div>
+      )),
+      ...childNodes,
+      ...childNodes.slice(0, cloneCount).map((child, index) => (
+        <div
+          key={`loop-end-${index}`}
+          className="drag-scroll-row__clone"
+          aria-hidden="true"
+          inert
+        >
+          {child}
+        </div>
+      )),
+    ];
+  }, [childNodes, cloneCount]);
+
+  useLayoutEffect(() => {
     const row = rowRef.current;
     if (!row) return;
 
@@ -21,15 +51,16 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
     let shouldSuppressClick = false;
     let startX = 0;
     let startScrollLeft = 0;
-    let singleTrackWidth = 0;
+    let loopStart = 0;
+    let loopWidth = 0;
 
-    const syncLoopPosition = () => {
-      if (!singleTrackWidth) return;
+    const normalizeLoopPosition = () => {
+      if (!loopWidth) return;
 
-      if (row.scrollLeft < singleTrackWidth * 0.5) {
-        row.scrollLeft += singleTrackWidth;
-      } else if (row.scrollLeft > singleTrackWidth * 1.5) {
-        row.scrollLeft -= singleTrackWidth;
+      if (row.scrollLeft < loopStart - 0.5) {
+        row.scrollLeft += loopWidth;
+      } else if (row.scrollLeft >= loopStart + loopWidth - 0.5) {
+        row.scrollLeft -= loopWidth;
       }
     };
 
@@ -46,16 +77,18 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
         const gap = trackStyles ? Number.parseFloat(trackStyles.columnGap) || 0 : 0;
         const itemWidth = (row.clientWidth - gap * (itemCount - 1)) / itemCount;
         row.style.setProperty("--drag-item-width", `${Math.max(itemWidth, 0)}px`);
-      }
 
-      singleTrackWidth = row.scrollWidth / 3;
-      if (singleTrackWidth) {
-        row.scrollLeft = singleTrackWidth;
+        const itemStep = Math.max(itemWidth, 0) + gap;
+        loopStart = itemStep * cloneCount;
+        loopWidth = itemStep * childNodes.length;
+        row.scrollLeft = loopStart;
       }
     };
 
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
+      if ((event.target as HTMLElement).closest("button, input, select, textarea")) return;
+
       isDragging = true;
       shouldSuppressClick = false;
       startX = event.clientX;
@@ -64,16 +97,23 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
 
     const onPointerMove = (event: PointerEvent) => {
       if (!isDragging) return;
+
+      if (event.pointerType === "mouse" && (event.buttons & 1) === 0) {
+        isDragging = false;
+        row.classList.remove("is-dragging");
+        return;
+      }
+
       const distance = event.clientX - startX;
       if (!shouldSuppressClick && Math.abs(distance) < dragThreshold) return;
 
+      event.preventDefault();
       shouldSuppressClick = true;
       row.classList.add("is-dragging");
       if (!row.hasPointerCapture(event.pointerId)) {
         row.setPointerCapture(event.pointerId);
       }
       row.scrollLeft = startScrollLeft - distance;
-      syncLoopPosition();
     };
 
     const onPointerUp = (event: PointerEvent) => {
@@ -83,7 +123,17 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
       if (row.hasPointerCapture(event.pointerId)) {
         row.releasePointerCapture(event.pointerId);
       }
-      syncLoopPosition();
+      normalizeLoopPosition();
+    };
+
+    const onLostPointerCapture = () => {
+      isDragging = false;
+      row.classList.remove("is-dragging");
+      normalizeLoopPosition();
+    };
+
+    const onNativeDragStart = (event: DragEvent) => {
+      event.preventDefault();
     };
 
     const onClick = (event: MouseEvent) => {
@@ -91,6 +141,10 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
       event.preventDefault();
       event.stopPropagation();
       shouldSuppressClick = false;
+    };
+
+    const onScroll = () => {
+      if (!isDragging) normalizeLoopPosition();
     };
 
     measureTrack();
@@ -103,27 +157,33 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
     row.addEventListener("pointermove", onPointerMove);
     row.addEventListener("pointerup", onPointerUp);
     row.addEventListener("pointercancel", onPointerUp);
+    row.addEventListener("lostpointercapture", onLostPointerCapture);
+    row.addEventListener("dragstart", onNativeDragStart, true);
     row.addEventListener("click", onClick, true);
+    row.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
 
     return () => {
       row.removeEventListener("pointerdown", onPointerDown);
       row.removeEventListener("pointermove", onPointerMove);
       row.removeEventListener("pointerup", onPointerUp);
       row.removeEventListener("pointercancel", onPointerUp);
+      row.removeEventListener("lostpointercapture", onLostPointerCapture);
+      row.removeEventListener("dragstart", onNativeDragStart, true);
       row.removeEventListener("click", onClick, true);
+      row.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
       resizeObserver.disconnect();
     };
-  }, [childNodes.length, visibleItems]);
+  }, [childNodes.length, cloneCount, visibleItems]);
 
   if (childNodes.length === 0) return null;
 
   return (
     <div ref={rowRef} className={className}>
-      <div className="drag-scroll-row__track">
-        {childNodes}
-        {childNodes}
-        {childNodes}
-      </div>
+      <div className="drag-scroll-row__track">{loopedChildNodes}</div>
     </div>
   );
 }

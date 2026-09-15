@@ -12,10 +12,177 @@ body {
   font-family: var(--font-poppins), sans-serif;
 }
 
+.header-search .search-toggle {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.header-search-results {
+  position: absolute;
+  top: calc(100% + 0.8rem);
+  right: 0;
+  width: 36rem;
+  overflow: hidden;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  box-shadow: 0 1rem 2.4rem rgba(0, 0, 0, 0.12);
+  color: #555;
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.header-search-results__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.header-search-results__list li + li {
+  border-top: 1px solid #ededed;
+}
+
+.header-search-result {
+  display: flex;
+  min-width: 0;
+  gap: 1.2rem;
+  padding: 1rem 1.2rem;
+  align-items: center;
+  color: #555;
+}
+
+.header-search-result:hover,
+.header-search-result:focus-visible {
+  background: #f7f7f7;
+  color: #555;
+}
+
+.header-search-result img {
+  flex: 0 0 5.6rem;
+  width: 5.6rem;
+  height: 5.6rem;
+  object-fit: cover;
+}
+
+.header-search-result__content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.header-search-result__content strong,
+.header-search-result__content span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-search-result__content strong {
+  color: #222;
+  font-size: 1.35rem;
+  font-weight: 500;
+}
+
+.header-search-result__content span {
+  color: #777;
+  font-size: 1.2rem;
+}
+
+.header-search-result__content b {
+  margin-top: 0.2rem;
+  color: #61ab00;
+  font-weight: 600;
+}
+
+.header-search-results__message {
+  display: flex;
+  min-height: 7rem;
+  margin: 0;
+  padding: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.header-search-results__message button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #61ab00;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.header-search-results__all {
+  display: block;
+  padding: 1rem 1.2rem;
+  border-top: 1px solid #e5e5e5;
+  color: #61ab00;
+  font-weight: 600;
+  text-align: center;
+}
+
+.header-search-results__all:hover,
+.header-search-results__all:focus-visible {
+  background: #f7f7f7;
+  color: #4f9200;
+}
+
+@media (max-width: 575px) {
+  .header-search-results {
+    width: min(36rem, calc(100vw - 3rem));
+  }
+}
+
+.store-route-loading {
+  display: flex;
+  min-height: 34rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  color: #666;
+}
+
+.store-route-loading p {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.store-route-loading__spinner {
+  width: 3.6rem;
+  height: 3.6rem;
+  border: 0.3rem solid #e2e2e2;
+  border-top-color: #61ab00;
+  border-radius: 50%;
+  animation: store-route-loading-spin 0.7s linear infinite;
+}
+
+@keyframes store-route-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-route-loading__spinner {
+    animation: none;
+    border-color: #61ab00;
+  }
+}
+
 /* Keep the shared template navigation aligned with the storefront palette. */
 .page-wrapper .header .main-nav .menu > li.active > a,
 .page-wrapper .header .main-nav .menu > li.active > a:hover,
 .page-wrapper .header .main-nav .menu > li.active > a:focus {
+  color: #61ab00;
+}
+
+.page-wrapper .header .main-nav .menu > li:hover > a,
+.page-wrapper .header .main-nav .menu > li > a:hover,
+.page-wrapper .header .main-nav .menu > li > a:focus-visible {
   color: #61ab00;
 }
 
@@ -33,6 +200,120 @@ body {
 
 .page-wrapper--home .intro-section {
   padding-top: 110px;
+}
+
+.home-intro-carousel {
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.home-intro-carousel.is-dragging,
+.home-intro-carousel.is-dragging * {
+  cursor: grabbing;
+}
+
+.home-intro-carousel__track {
+  display: flex;
+  width: 100%;
+  will-change: transform;
+}
+
+.home-intro-carousel__track.is-animating {
+  transition: transform 0.35s ease;
+}
+
+.home-intro-carousel__slide {
+  position: relative;
+  flex: 0 0 100%;
+  width: 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.home-intro-carousel__dots {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  gap: 0.8rem;
+  transform: translateX(-50%);
+}
+
+.home-intro-carousel__dots button {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.home-intro-carousel__dots span {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.home-intro-carousel__dots button:hover span,
+.home-intro-carousel__dots button:focus-visible span,
+.home-intro-carousel__dots button.active span {
+  background: #fff;
+  transform: scale(1.2);
+}
+
+.home-intro-carousel__dots button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.home-campaign-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.home-campaign-grid .banner {
+  min-width: 0;
+}
+
+.home-campaign-grid .banner > a,
+.home-campaign-grid .banner > a img {
+  display: block;
+  width: 100%;
+}
+
+.home-campaign-grid .banner > a img {
+  aspect-ratio: 46 / 21;
+  object-fit: cover;
+}
+
+@media (max-width: 991px) {
+  .home-campaign-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575px) {
+  .home-campaign-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-intro-carousel__track.is-animating {
+    transition: none;
+  }
 }
 
 img {
@@ -60,8 +341,17 @@ img {
   width: max-content;
 }
 
+.drag-scroll-row__clone {
+  display: contents;
+}
+
 .drag-scroll-row.is-dragging {
   cursor: grabbing;
+}
+
+.drag-scroll-row a,
+.drag-scroll-row img {
+  -webkit-user-drag: none;
 }
 
 .near-expiry-section__heading {
@@ -621,10 +911,19 @@ img {
   cursor: pointer;
 }
 
+.page-wrapper--inner .header-28 .header-top .account-link {
+  color: #777 !important;
+}
+
 .top-menu .account-link:hover,
 .top-menu .account-link:focus-visible {
   color: #61ab00;
   text-decoration: none;
+}
+
+.page-wrapper--inner .header-28 .header-top .account-link:hover,
+.page-wrapper--inner .header-28 .header-top .account-link:focus-visible {
+  color: #61ab00 !important;
 }
 
 .top-menu .account-link:focus:not(:focus-visible) {

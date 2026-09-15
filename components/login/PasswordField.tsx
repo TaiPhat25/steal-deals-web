@@ -51,9 +51,17 @@ export default function PasswordField({
           type="button"
           className="auth-password-toggle"
           onClick={() => setIsVisible((currentValue) => !currentValue)}
-          aria-label={isVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          aria-label={
+            isVisible
+              ? `Hide ${label.toLowerCase()}`
+              : `Show ${label.toLowerCase()}`
+          }
           aria-pressed={isVisible}
-          title={isVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+          title={
+            isVisible
+              ? `Hide ${label.toLowerCase()}`
+              : `Show ${label.toLowerCase()}`
+          }
         >
           <i
             className={`la ${isVisible ? "la-eye-slash" : "la-eye"}`}
