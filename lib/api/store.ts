@@ -59,6 +59,15 @@ export type UpdateBagRequest = Omit<CreateBagRequest, "status"> & {
   status?: string;
 };
 
+export type ReviewFilterRequest = {
+  page?: number;
+  pageSize?: number;
+  ratingScore?: number;
+  hasReply?: boolean;
+  search?: string;
+  isReported?: boolean;
+};
+
 const STORE_API_BASE_URL = process.env.NEXT_PUBLIC_STORE_API_URL;
 
 function storeApiBaseUrl() {
@@ -217,15 +226,43 @@ export async function listStoreBags(storeId: string) {
   return Promise.all(bags.map((bag) => bag.categories.length ? bag : getBag(bag.id)));
 }
 
-export function listStoreReviews(storeId: string, page = 1, pageSize = 50) {
-  const params = new URLSearchParams({
-    page: String(page),
-    pageSize: String(pageSize),
-  });
+function buildReviewQueryParams(filter?: ReviewFilterRequest) {
+  const params = new URLSearchParams();
+  if (filter?.page !== undefined) params.set("page", String(filter.page));
+  if (filter?.pageSize !== undefined) params.set("pageSize", String(filter.pageSize));
+  if (filter?.ratingScore !== undefined) params.set("ratingScore", String(filter.ratingScore));
+  if (filter?.hasReply !== undefined) params.set("hasReply", String(filter.hasReply));
+  if (filter?.search) params.set("search", filter.search);
+  if (filter?.isReported !== undefined) params.set("isReported", String(filter.isReported));
+  return params.toString();
+}
+
+export function listStoreReviews(
+  storeId: string,
+  filterOrPage: ReviewFilterRequest | number = 1,
+  pageSize = 50,
+) {
+  const query =
+    typeof filterOrPage === "object"
+      ? buildReviewQueryParams(filterOrPage)
+      : buildReviewQueryParams({ page: filterOrPage, pageSize });
 
   return apiRequest<PagedResult<StoreReviewResponse>>(
-    `/api/reviews/store/${encodeURIComponent(storeId)}?${params.toString()}`,
+    `/api/reviews/store/${encodeURIComponent(storeId)}${query ? `?${query}` : ""}`,
     { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
+export function listMyStoreReviews(
+  accessToken: string,
+  filter?: ReviewFilterRequest,
+) {
+  const query = buildReviewQueryParams(filter);
+
+  return apiRequest<PagedResult<StoreReviewResponse>>(
+    `/api/reviews/store/me${query ? `?${query}` : ""}`,
+    { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
 }
@@ -239,10 +276,69 @@ export function replyToStoreReview(
     `/api/reviews/${encodeURIComponent(reviewId)}/reply`,
     {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: bearer(accessToken),
       body: { storeReply },
+    },
+    storeApiBaseUrl(),
+  );
+}
+
+export function deleteReviewReply(accessToken: string, reviewId: string) {
+  return apiRequest<void>(
+    `/api/reviews/${encodeURIComponent(reviewId)}/reply`,
+    {
+      method: "DELETE",
+      headers: bearer(accessToken),
+    },
+    storeApiBaseUrl(),
+  );
+}
+
+export function reportReview(accessToken: string, reviewId: string) {
+  return apiRequest<void>(
+    `/api/reviews/${encodeURIComponent(reviewId)}/report`,
+    {
+      method: "PATCH",
+      headers: bearer(accessToken),
+    },
+    storeApiBaseUrl(),
+  );
+}
+
+export function unreportReview(accessToken: string, reviewId: string) {
+  return apiRequest<void>(
+    `/api/reviews/${encodeURIComponent(reviewId)}/report`,
+    {
+      method: "DELETE",
+      headers: bearer(accessToken),
+    },
+    storeApiBaseUrl(),
+  );
+}
+
+export function listReportedReviews(
+  accessToken: string,
+  page = 1,
+  pageSize = 20,
+) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+
+  return apiRequest<PagedResult<StoreReviewResponse>>(
+    `/api/reviews/reported?${params.toString()}`,
+    { method: "GET", headers: bearer(accessToken) },
+    storeApiBaseUrl(),
+  );
+}
+
+export function deleteReview(accessToken: string, reviewId: string) {
+  return apiRequest<void>(
+    `/api/reviews/${encodeURIComponent(reviewId)}`,
+    {
+      method: "DELETE",
+      headers: bearer(accessToken),
     },
     storeApiBaseUrl(),
   );
