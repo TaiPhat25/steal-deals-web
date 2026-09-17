@@ -11,10 +11,16 @@ import {
 } from "@/components/dashboard/ui";
 import { DashboardDialog, DashboardToast } from "@/components/dashboard/Dialog";
 import { useSellerDemo } from "@/components/seller/SellerDemoProvider";
-import { listStoreReviews, replyToStoreReview } from "@/lib/api/store";
+import {
+  deleteReviewReply,
+  listMyStoreReviews,
+  replyToStoreReview,
+  reportReview,
+  unreportReview,
+} from "@/lib/api/store";
 import type { StoreReviewResponse } from "@/lib/api/dashboard-types";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 const RATING_OPTIONS = [5, 4, 3, 2, 1] as const;
 
 const INITIAL_REVIEWS: StoreReviewResponse[] = [
@@ -31,6 +37,7 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     storeReply: "Thank you for rescuing our bakery bag. We are happy you enjoyed it.",
     repliedAt: "2026-07-31T09:00:00+07:00",
     createdAt: "2026-07-31T08:25:00+07:00",
+    isReported: false,
   },
   {
     id: "80000000-0000-0000-0000-000000000002",
@@ -45,6 +52,7 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     storeReply: null,
     repliedAt: null,
     createdAt: "2026-07-31T07:40:00+07:00",
+    isReported: false,
   },
   {
     id: "80000000-0000-0000-0000-000000000003",
@@ -59,6 +67,7 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     storeReply: null,
     repliedAt: null,
     createdAt: "2026-07-30T20:10:00+07:00",
+    isReported: true,
   },
   {
     id: "80000000-0000-0000-0000-000000000004",
@@ -73,6 +82,7 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     storeReply: "Thanks for the note. We will double-check chilled bags before handoff.",
     repliedAt: "2026-07-30T19:00:00+07:00",
     createdAt: "2026-07-30T18:35:00+07:00",
+    isReported: false,
   },
   {
     id: "80000000-0000-0000-0000-000000000005",
@@ -87,6 +97,7 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     storeReply: null,
     repliedAt: null,
     createdAt: "2026-07-30T16:30:00+07:00",
+    isReported: false,
   },
   {
     id: "80000000-0000-0000-0000-000000000006",
@@ -101,6 +112,7 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     storeReply: "We appreciate the feedback and hope to see you again.",
     repliedAt: "2026-07-29T16:00:00+07:00",
     createdAt: "2026-07-29T15:15:00+07:00",
+    isReported: false,
   },
   {
     id: "80000000-0000-0000-0000-000000000007",
@@ -115,14 +127,18 @@ const INITIAL_REVIEWS: StoreReviewResponse[] = [
     storeReply: null,
     repliedAt: null,
     createdAt: "2026-07-29T13:00:00+07:00",
+    isReported: false,
   },
 ];
 
 type ReplyFilter = "all" | "unanswered" | "replied";
+type ReportFilter = "all" | "reported" | "not_reported";
 type StatusTone = "neutral" | "info" | "success" | "warning" | "error";
 
+type InlineAction = "report" | "unreport" | "delete_reply";
+
 const shortId = (value: string) => value.slice(0, 8);
-const hasReply = (value: string | null) => Boolean(value?.trim());
+const hasReply = (value: string | null | undefined) => Boolean(value?.trim());
 const dateTime = (value: string) =>
   new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
     new Date(value),
@@ -154,61 +170,48 @@ export default function StoreReviews() {
   const { accessToken } = useAuth();
   const { orders, products, settings, settingsLoading } = useSellerDemo();
 
-  const [reviews, setReviews] = useState<StoreReviewResponse[]>(INITIAL_REVIEWS);
+  const [demoReviews, setDemoReviews] = useState<StoreReviewResponse[]>(INITIAL_REVIEWS);
+  const [reviews, setReviews] = useState<StoreReviewResponse[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [reviewsDemoReason, setReviewsDemoReason] = useState("");
   const [reloadVersion, setReloadVersion] = useState(0);
 
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [rating, setRating] = useState("");
   const [replyStatus, setReplyStatus] = useState<ReplyFilter>("all");
+  const [reportStatus, setReportStatus] = useState<ReportFilter>("all");
   const [page, setPage] = useState(1);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [replyError, setReplyError] = useState("");
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+  const [inlineAction, setInlineAction] = useState<InlineAction | null>(null);
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [actionError, setActionError] = useState("");
+
   const [toast, setToast] = useState("");
 
-  const retryReviews = useCallback(() => setReloadVersion((v) => v + 1), []);
+  const retryReviews = useCallback(() => {
+    setReviewsDemoReason("");
+    setReloadVersion((v) => v + 1);
+  }, []);
 
   useEffect(() => {
-    if (settingsLoading) return;
-
-    let active = true;
     const timer = window.setTimeout(() => {
-      if (!active) return;
-      if (!settings.id) {
-        setReviews(INITIAL_REVIEWS);
-        setReviewsDemoReason("No seller store profile available.");
-        setReviewsLoading(false);
-        return;
+      const trimmed = searchInput.trim();
+      if (trimmed !== debouncedSearch) {
+        setDebouncedSearch(trimmed);
+        setPage(1);
       }
+    }, 300);
 
-      setReviewsLoading(true);
-      setReviewsDemoReason("");
-
-      listStoreReviews(settings.id, 1, 50)
-        .then((result) => {
-          if (!active) return;
-          setReviews(result.items);
-          setReviewsLoading(false);
-        })
-        .catch((caught) => {
-          if (!active) return;
-          setReviews(INITIAL_REVIEWS);
-          setReviewsDemoReason(
-            caught instanceof Error ? caught.message : "The Store Service could not be reached.",
-          );
-          setReviewsLoading(false);
-        });
-    }, 0);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [settings.id, settingsLoading, reloadVersion]);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, debouncedSearch]);
 
   const productById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
@@ -219,12 +222,60 @@ export default function StoreReviews() {
     [orders],
   );
 
-  const filtered = useMemo(
-    () =>
-      reviews.filter((review) => {
+  useEffect(() => {
+    if (settingsLoading) return;
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      setReviewsLoading(true);
+
+      if (accessToken && !reviewsDemoReason) {
+        listMyStoreReviews(accessToken, {
+          page,
+          pageSize: PAGE_SIZE,
+          search: debouncedSearch || undefined,
+          ratingScore: rating ? Number(rating) : undefined,
+          hasReply:
+            replyStatus === "replied"
+              ? true
+              : replyStatus === "unanswered"
+                ? false
+                : undefined,
+          isReported:
+            reportStatus === "reported"
+              ? true
+              : reportStatus === "not_reported"
+                ? false
+                : undefined,
+        })
+          .then((result) => {
+            if (!active) return;
+            setReviews(result.items);
+            setTotalCount(result.totalCount);
+            setTotalPages(
+              result.totalPages ?? Math.max(1, Math.ceil(result.totalCount / PAGE_SIZE)),
+            );
+            setReviewsLoading(false);
+          })
+          .catch((caught) => {
+            if (!active) return;
+            setReviewsDemoReason(
+              caught instanceof Error ? caught.message : "The Store Service could not be reached.",
+            );
+            filterDemoData();
+          });
+      } else {
+        filterDemoData();
+      }
+    }, 0);
+
+    function filterDemoData() {
+      if (!active) return;
+      const query = debouncedSearch.toLowerCase();
+      const filtered = demoReviews.filter((review) => {
         const product = productById.get(review.bagId);
         const order = orderById.get(review.orderId);
-        const query = search.trim().toLowerCase();
         const searchable = [
           review.id,
           review.orderId,
@@ -240,24 +291,54 @@ export default function StoreReviews() {
           .join(" ")
           .toLowerCase();
 
-        return (
-          (!query || searchable.includes(query)) &&
-          (!rating || review.ratingScore === Number(rating)) &&
-          (replyStatus === "all" ||
-            (replyStatus === "replied" && hasReply(review.storeReply)) ||
-            (replyStatus === "unanswered" && !hasReply(review.storeReply)))
-        );
-      }),
-    [orderById, productById, rating, replyStatus, reviews, search],
-  );
+        const matchesSearch = !query || searchable.includes(query);
+        const matchesRating = !rating || review.ratingScore === Number(rating);
+        const matchesReply =
+          replyStatus === "all" ||
+          (replyStatus === "replied" && hasReply(review.storeReply)) ||
+          (replyStatus === "unanswered" && !hasReply(review.storeReply));
+        const matchesReport =
+          reportStatus === "all" ||
+          (reportStatus === "reported" && Boolean(review.isReported)) ||
+          (reportStatus === "not_reported" && !review.isReported);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+        return matchesSearch && matchesRating && matchesReply && matchesReport;
+      });
+
+      const calculatedPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+      const safePage = Math.min(page, calculatedPages);
+      const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+      setReviews(paged);
+      setTotalCount(filtered.length);
+      setTotalPages(calculatedPages);
+      setReviewsLoading(false);
+    }
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [
+    accessToken,
+    debouncedSearch,
+    demoReviews,
+    orderById,
+    page,
+    productById,
+    rating,
+    reloadVersion,
+    replyStatus,
+    reportStatus,
+    reviewsDemoReason,
+    settingsLoading,
+  ]);
 
   const totalReviewsCount =
     typeof settings.reviewCount === "number" && settings.reviewCount > 0
       ? settings.reviewCount
-      : reviews.length;
+      : totalCount;
+
   const averageRatingScore =
     settings.ratingScore > 0
       ? Number(settings.ratingScore).toFixed(1)
@@ -271,15 +352,19 @@ export default function StoreReviews() {
   ] as const;
 
   const activeReview = activeId
-    ? reviews.find((review) => review.id === activeId) ?? null
+    ? reviews.find((review) => review.id === activeId) ??
+      demoReviews.find((review) => review.id === activeId) ??
+      null
     : null;
   const activeProduct = activeReview ? productById.get(activeReview.bagId) : undefined;
   const activeOrder = activeReview ? orderById.get(activeReview.orderId) : undefined;
 
   function clearFilters() {
-    setSearch("");
+    setSearchInput("");
+    setDebouncedSearch("");
     setRating("");
     setReplyStatus("all");
+    setReportStatus("all");
     setPage(1);
   }
 
@@ -287,6 +372,8 @@ export default function StoreReviews() {
     setActiveId(review.id);
     setReplyDraft(review.storeReply ?? "");
     setReplyError("");
+    setInlineAction(null);
+    setActionError("");
   }
 
   async function saveReply(event: FormEvent<HTMLFormElement>) {
@@ -314,24 +401,78 @@ export default function StoreReviews() {
       }
     }
 
-    setReviews((items) =>
-      items.map((item) =>
-        item.id === activeReview.id
-          ? {
-              ...item,
-              storeReply: nextReply,
-              repliedAt: new Date().toISOString(),
-            }
-          : item,
-      ),
-    );
+    const updatedTimestamp = new Date().toISOString();
+    const updateReply = (item: StoreReviewResponse): StoreReviewResponse =>
+      item.id === activeReview.id
+        ? {
+            ...item,
+            storeReply: nextReply,
+            repliedAt: updatedTimestamp,
+          }
+        : item;
+
+    setReviews((items) => items.map(updateReply));
+    setDemoReviews((items) => items.map(updateReply));
+
     setIsSubmittingReply(false);
     setActiveId(null);
     setToast(`Reply saved for review #${shortId(activeReview.id)}.`);
   }
 
+  async function handleExecuteAction(type: InlineAction) {
+    if (!activeReview) return;
+
+    setIsSubmittingAction(true);
+    setActionError("");
+
+    try {
+      if (accessToken && !reviewsDemoReason) {
+        if (type === "report") {
+          await reportReview(accessToken, activeReview.id);
+        } else if (type === "unreport") {
+          await unreportReview(accessToken, activeReview.id);
+        } else if (type === "delete_reply") {
+          await deleteReviewReply(accessToken, activeReview.id);
+        }
+      }
+
+      const updateItem = (item: StoreReviewResponse): StoreReviewResponse => {
+        if (item.id !== activeReview.id) return item;
+        if (type === "report") return { ...item, isReported: true };
+        if (type === "unreport") return { ...item, isReported: false };
+        if (type === "delete_reply") return { ...item, storeReply: null, repliedAt: null };
+        return item;
+      };
+
+      setReviews((items) => items.map(updateItem));
+      setDemoReviews((items) => items.map(updateItem));
+
+      if (type === "delete_reply") {
+        setReplyDraft("");
+      }
+
+      setIsSubmittingAction(false);
+      setInlineAction(null);
+
+      if (type === "report") {
+        setToast(`Review #${shortId(activeReview.id)} reported to moderators.`);
+      } else if (type === "unreport") {
+        setToast(`Report dismissed for review #${shortId(activeReview.id)}.`);
+      } else if (type === "delete_reply") {
+        setToast(`Reply removed for review #${shortId(activeReview.id)}.`);
+      }
+    } catch (caught) {
+      setIsSubmittingAction(false);
+      setActionError(
+        caught instanceof Error
+          ? caught.message
+          : "The requested action could not be completed. Please try again.",
+      );
+    }
+  }
+
   function exportCsv() {
-    const escape = (value: string | number | boolean | null) =>
+    const escape = (value: string | number | boolean | null | undefined) =>
       `"${String(value ?? "").replaceAll('"', '""')}"`;
     const csv = [
       [
@@ -346,9 +487,10 @@ export default function StoreReviews() {
         "comment",
         "storeReply",
         "repliedAt",
+        "isReported",
         "createdAt",
       ],
-      ...filtered.map((review) => [
+      ...reviews.map((review) => [
         review.id,
         review.orderId,
         review.buyerId,
@@ -360,6 +502,7 @@ export default function StoreReviews() {
         review.comment,
         review.storeReply,
         review.repliedAt,
+        Boolean(review.isReported),
         review.createdAt,
       ]),
     ]
@@ -376,6 +519,7 @@ export default function StoreReviews() {
   return (
     <>
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
+
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {stats.map(([label, value, color]) => (
@@ -401,13 +545,10 @@ export default function StoreReviews() {
                 <span className="sr-only">Search store reviews</span>
                 <input
                   className="h-9 w-full rounded-full border-none bg-gray-100 px-4 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"
-                  onChange={(event) => {
-                    setSearch(event.target.value);
-                    setPage(1);
-                  }}
+                  onChange={(event) => setSearchInput(event.target.value)}
                   placeholder="Review, bag, order, buyer..."
                   type="search"
-                  value={search}
+                  value={searchInput}
                 />
               </label>
               <div className="flex flex-wrap gap-3">
@@ -440,7 +581,20 @@ export default function StoreReviews() {
                   <option value="unanswered">Needs reply</option>
                   <option value="replied">Replied</option>
                 </select>
-                {(search || rating || replyStatus !== "all") && (
+                <select
+                  aria-label="Moderation status"
+                  className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"
+                  onChange={(event) => {
+                    setReportStatus(event.target.value as ReportFilter);
+                    setPage(1);
+                  }}
+                  value={reportStatus}
+                >
+                  <option value="all">All moderation</option>
+                  <option value="reported">Reported only</option>
+                  <option value="not_reported">Not reported</option>
+                </select>
+                {(searchInput || rating || replyStatus !== "all" || reportStatus !== "all") && (
                   <button
                     className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter"
                     onClick={clearFilters}
@@ -492,7 +646,7 @@ export default function StoreReviews() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((review) => {
+                  {reviews.map((review) => {
                     const product = productById.get(review.bagId);
                     const bagDisplayName = review.bagName || product?.name || "Unknown bag";
                     return (
@@ -508,11 +662,18 @@ export default function StoreReviews() {
                             <div>
                               <RatingPips score={review.ratingScore} />
                               <p className="mt-1 text-light-secondary-text">
-                                {review.comment || <span className="italic">No comment provided</span>}
+                                {review.comment || (
+                                  <span className="italic">No comment provided</span>
+                                )}
                               </p>
-                              <span className="mt-1 block font-mono text-xs text-light-secondary-text">
-                                #{shortId(review.id)}
-                              </span>
+                              <div className="mt-1 flex items-center gap-2">
+                                <span className="font-mono text-xs text-light-secondary-text">
+                                  #{shortId(review.id)}
+                                </span>
+                                {review.isReported && (
+                                  <StatusBadge tone="error">Reported</StatusBadge>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -553,7 +714,7 @@ export default function StoreReviews() {
                   })}
                 </tbody>
               </table>
-              {rows.length === 0 && (
+              {reviews.length === 0 && (
                 <div className="px-4 py-14 text-center text-sm text-light-secondary-text">
                   No store reviews match these filters.
                 </div>
@@ -563,14 +724,14 @@ export default function StoreReviews() {
 
           <div className="flex items-center justify-between border-t border-gray-500/20 p-4 sm:px-6">
             <span className="text-sm text-light-secondary-text">
-              {filtered.length} reviews
+              {totalCount} {totalCount === 1 ? "review" : "reviews"}
             </span>
             <div className="flex items-center gap-2">
               <button
                 aria-label="Previous page"
                 className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
+                disabled={page <= 1 || reviewsLoading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 type="button"
               >
                 ‹
@@ -581,8 +742,8 @@ export default function StoreReviews() {
               <button
                 aria-label="Next page"
                 className="size-8 rounded-full hover:bg-gray-100 disabled:opacity-40"
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
+                disabled={page >= totalPages || reviewsLoading}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 type="button"
               >
                 ›
@@ -615,6 +776,9 @@ export default function StoreReviews() {
                   <StatusBadge tone={ratingTone(activeReview.ratingScore)}>
                     {activeReview.ratingScore} / 5
                   </StatusBadge>
+                  {activeReview.isReported && (
+                    <StatusBadge tone="error">Reported</StatusBadge>
+                  )}
                 </div>
               </div>
 
@@ -641,6 +805,17 @@ export default function StoreReviews() {
                   <span className="font-mono text-light-secondary-text">
                     ({activeReview.bagId})
                   </span>
+                </dd>
+                <dt className="text-light-secondary-text">Moderation</dt>
+                <dd>
+                  {activeReview.isReported ? (
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-error-dark">
+                      <span className="size-2 rounded-full bg-error" />
+                      Reported to platform moderators
+                    </span>
+                  ) : (
+                    <span className="text-light-secondary-text">Normal (Not reported)</span>
+                  )}
                 </dd>
                 <dt className="text-light-secondary-text">Delivery</dt>
                 <dd>{activeOrder?.deliveryType ?? "Unknown"}</dd>
@@ -680,13 +855,106 @@ export default function StoreReviews() {
                   {replyError}
                 </div>
               )}
+
+              {inlineAction && (
+                <div
+                  className={
+                    inlineAction === "unreport"
+                      ? "rounded-2xl border border-primary/25 bg-primary-lighter/40 p-4 sm:p-5"
+                      : "rounded-2xl border border-error/25 bg-error-alpha-16/40 p-4 sm:p-5"
+                  }
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      aria-hidden="true"
+                      className={
+                        inlineAction === "unreport"
+                          ? "flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
+                          : "flex size-8 shrink-0 items-center justify-center rounded-full bg-error text-xs font-bold text-white"
+                      }
+                    >
+                      {inlineAction === "unreport" ? "✓" : "!"}
+                    </span>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-light-primary-text">
+                        {inlineAction === "report"
+                          ? `Report review #${shortId(activeReview.id)} to moderators?`
+                          : inlineAction === "unreport"
+                            ? `Dismiss moderation report for review #${shortId(activeReview.id)}?`
+                            : "Remove public store reply?"}
+                      </h3>
+                      <p className="mt-1 text-xs leading-5 text-light-secondary-text">
+                        {inlineAction === "report" &&
+                          "This flags this review to platform administrators for moderation inspection (e.g. policy violations, offensive language, spam, or false claims). The review will remain marked as reported until resolved."}
+                        {inlineAction === "unreport" &&
+                          "This will clear the reported status from this review and dismiss it from the administrator moderation queue."}
+                        {inlineAction === "delete_reply" &&
+                          "Are you sure you want to remove your public store reply? The customer and other shoppers will no longer see your response."}
+                      </p>
+
+                      {inlineAction === "report" && (
+                        <div className="mt-3 rounded-xl bg-white/90 p-3 text-xs text-light-secondary-text shadow-xs">
+                          <strong className="block font-medium text-light-primary-text">
+                            Review from {activeReview.buyerName}:
+                          </strong>
+                          &ldquo;{activeReview.comment || "No comment provided"}&rdquo;
+                        </div>
+                      )}
+
+                      {actionError && (
+                        <div
+                          className="mt-3 rounded-xl bg-white p-3 text-xs font-semibold text-error-dark shadow-xs"
+                          role="alert"
+                        >
+                          {actionError}
+                        </div>
+                      )}
+
+                      <div className="mt-4 flex flex-wrap justify-end gap-2.5">
+                        <button
+                          className="h-8.5 rounded-full px-4 text-xs font-semibold ring ring-gray-500/20 hover:bg-white disabled:opacity-50"
+                          disabled={isSubmittingAction}
+                          onClick={() => {
+                            setInlineAction(null);
+                            setActionError("");
+                          }}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className={
+                            inlineAction === "unreport"
+                              ? "h-8.5 rounded-full bg-primary px-4 text-xs font-bold text-white hover:bg-primary-dark disabled:opacity-60"
+                              : "h-8.5 rounded-full bg-error px-4 text-xs font-bold text-white hover:opacity-90 disabled:opacity-60"
+                          }
+                          disabled={isSubmittingAction}
+                          onClick={() => handleExecuteAction(inlineAction)}
+                          type="button"
+                        >
+                          {isSubmittingAction
+                            ? "Processing…"
+                            : inlineAction === "report"
+                              ? "Confirm report"
+                              : inlineAction === "unreport"
+                                ? "Confirm dismissal"
+                                : "Remove reply"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <footer className="flex flex-wrap justify-end gap-3 border-t border-gray-500/20 px-5 py-4 sm:px-6">
               <DashboardButton
+                disabled={isSubmittingAction || isSubmittingReply}
                 onClick={() => {
                   setActiveId(null);
                   setReplyError("");
+                  setInlineAction(null);
+                  setActionError("");
                 }}
                 variant="secondary"
               >
@@ -694,23 +962,46 @@ export default function StoreReviews() {
               </DashboardButton>
               {hasReply(activeReview.storeReply) && (
                 <button
-                  className="h-9 cursor-not-allowed rounded-full border border-gray-300 bg-gray-100 px-4 text-sm font-semibold text-gray-400 opacity-60"
-                  disabled
-                  title="Deleting replies is not yet supported by the backend."
+                  className="h-9 rounded-full border border-error/30 bg-error-alpha-16 px-4 text-sm font-semibold text-error-dark hover:bg-error/25 disabled:opacity-50"
+                  disabled={inlineAction !== null || isSubmittingAction || isSubmittingReply}
+                  onClick={() => {
+                    setActionError("");
+                    setInlineAction("delete_reply");
+                  }}
                   type="button"
                 >
                   Remove reply
                 </button>
               )}
-              <button
-                className="h-9 cursor-not-allowed rounded-full border border-gray-300 bg-gray-100 px-4 text-sm font-semibold text-gray-400 opacity-60"
-                disabled
-                title="Reporting reviews is not yet supported in the seller API."
-                type="button"
+              {activeReview.isReported ? (
+                <button
+                  className="h-9 rounded-full border border-primary/30 bg-primary-lighter px-4 text-sm font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
+                  disabled={inlineAction !== null || isSubmittingAction || isSubmittingReply}
+                  onClick={() => {
+                    setActionError("");
+                    setInlineAction("unreport");
+                  }}
+                  type="button"
+                >
+                  Dismiss report
+                </button>
+              ) : (
+                <button
+                  className="h-9 rounded-full border border-warning/40 bg-warning/15 px-4 text-sm font-semibold text-warning-dark hover:bg-warning/25 disabled:opacity-50"
+                  disabled={inlineAction !== null || isSubmittingAction || isSubmittingReply}
+                  onClick={() => {
+                    setActionError("");
+                    setInlineAction("report");
+                  }}
+                  type="button"
+                >
+                  Report review
+                </button>
+              )}
+              <DashboardButton
+                disabled={inlineAction !== null || isSubmittingAction || isSubmittingReply}
+                type="submit"
               >
-                Report review
-              </button>
-              <DashboardButton disabled={isSubmittingReply} type="submit">
                 {isSubmittingReply ? "Saving…" : "Save reply"}
               </DashboardButton>
             </footer>
