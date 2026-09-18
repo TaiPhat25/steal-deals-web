@@ -97,6 +97,7 @@ export type PagedResult<T> = {
   page: number;
   pageSize: number;
   totalCount: number;
+  totalPages?: number;
 };
 
 export type StoreReviewResponse = {
@@ -112,6 +113,7 @@ export type StoreReviewResponse = {
   storeReply: string | null;
   repliedAt: string | null;
   createdAt: string;
+  isReported?: boolean;
 };
 
 export type PublicStoreReviewResponse = {

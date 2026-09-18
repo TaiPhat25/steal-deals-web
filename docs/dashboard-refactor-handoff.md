@@ -163,19 +163,19 @@ storage, fake latency, notification integration, or speculative API layer.
   `licenseUrl` can be sent but are cleared on reload because the response does
   not return them.
 - `/seller/store-reviews` connects to the Store Service review API
-  (`GET /api/reviews/store/{storeId}` and `PATCH /api/reviews/{id}/reply`) using
-  the seller's active store from `settings.id`. It displays reviews, rating scores,
-  buyer display names, and bag names from backend responses with an API-unavailable
-  demo fallback banner and retry action.
-  - Disabled actions & UI adaptations pending backend support:
-    - "Remove reply": Disabled in the review dialog because the backend has no reply
-      deletion endpoint (`DELETE /api/reviews/{id}/reply`) and rejects empty reply bodies.
-    - "Report review": Disabled in the review dialog because `StoreReviewResponse` omits
-      `isReported` and the API lacks an un-report or seller moderation endpoint.
-    - Stat cards: "Need replies" and "Reported" were removed; summary cards display
-      store profile `reviewCount` and `ratingScore`.
-    - Query filtering: Search and rating filters apply to the loaded reviews slice
-      because `GET /api/reviews/store/{storeId}` only accepts `page` and `pageSize`.
+  (`GET /api/reviews/store/me`, `PATCH /api/reviews/{id}/reply`, `DELETE /api/reviews/{id}/reply`,
+  `PATCH /api/reviews/{id}/report`, and `DELETE /api/reviews/{id}/report`).
+  It displays reviews, rating scores, buyer display names, bag names, and moderation status
+  from backend responses with an API-unavailable demo fallback banner and retry action.
+  - Features:
+    - Server-side pagination and filtering: Uses `ReviewFilterRequest` parameters
+      (`page`, `pageSize`, `search`, `ratingScore`, `hasReply`, `isReported`) with debounced search.
+    - "Remove reply": Enabled via `DELETE /api/reviews/{id}/reply` with confirmation dialog.
+    - "Report review" & "Dismiss report": Enabled via `PATCH /api/reviews/{id}/report` and
+      `DELETE /api/reviews/{id}/report` with confirmation dialog. Reported reviews display
+      an error-toned `Reported` badge.
+    - Stat cards display store review count and rating score.
+    - In-memory demo fallback supports interactive reply, removal, reporting, and filtering when offline.
 - `/seller/inbox` provides customer/order search, local messages, emoji and
   attachment placeholders, contact details, and conversation clearing. Voice
   and video controls remain disabled until a calling service exists.
