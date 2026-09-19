@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BRAND_NAME } from "@/lib/brand";
 
 type FaqItem = {
   question: string;
@@ -17,7 +18,7 @@ const faqGroups: FaqGroup[] = [
     description: "Everything you need to know before reserving a surprise bag.",
     items: [
       { question: "What is a surprise bag?", answer: "A surprise bag contains good surplus food from a local store. The exact contents vary by day, but the store always provides the bag details, price, and pickup window before you reserve it." },
-      { question: "Why are the bags discounted?", answer: "Stores use StealDeals to recover value from food that may otherwise go unsold. The discount gives you a better price while helping reduce avoidable food waste." },
+      { question: "Why are the bags discounted?", answer: `Stores use ${BRAND_NAME} to recover value from food that may otherwise go unsold. The discount gives you a better price while helping reduce avoidable food waste.` },
       { question: "Can I choose the exact items inside?", answer: "No. Surprise bags are based on the store's available surplus, so the contents are intentionally flexible. You can review the store, category, pickup window, and availability before ordering." },
     ],
   },
@@ -48,7 +49,7 @@ export default function FaqMain() {
         <div className="container">
           <p className="info-page__eyebrow">Need a hand?</p>
           <h1>Frequently asked questions</h1>
-          <p>Find clear answers about surprise bags, pickup, orders, and your StealDeals account.</p>
+          <p>Find clear answers about surprise bags, pickup, orders, and your {BRAND_NAME} account.</p>
         </div>
       </section>
 
@@ -91,7 +92,7 @@ export default function FaqMain() {
           <section className="info-page__cta" aria-labelledby="faq-cta-title">
             <div>
               <p className="info-page__eyebrow">Still need help?</p>
-              <h2 id="faq-cta-title">Talk to the StealDeals team</h2>
+              <h2 id="faq-cta-title">Talk to the {BRAND_NAME} team</h2>
               <p>We can help you understand a pickup, account, or order question.</p>
             </div>
             <Link href="/contact" className="btn btn-primary">

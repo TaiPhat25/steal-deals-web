@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import ProductForm from "@/components/seller/ProductForm";
-import { DEMO_CATEGORIES, useSellerDemo } from "@/components/seller/SellerDemoProvider";
+import { DEMO_CATEGORIES, DEMO_STORE_NAME, useSellerDemo } from "@/components/seller/SellerDemoProvider";
 import { createBag } from "@/lib/api/store";
 
 export default function AddProduct() {
@@ -16,7 +16,7 @@ export default function AddProduct() {
       const demoBag = {
         id: crypto.randomUUID(),
         storeId: "20000000-0000-0000-0000-000000000001",
-        storeName: "Steal Deals Shop",
+        storeName: DEMO_STORE_NAME,
         name: request.name,
         description: request.description || null,
         imageUrl: image ? URL.createObjectURL(image) : null,

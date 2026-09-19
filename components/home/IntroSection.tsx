@@ -10,8 +10,8 @@ import Link from "next/link";
 
 const INTRO_SLIDES = [
   {
-    image: "/assets/images/demos/demo-28/intro-slider/1.jpg",
-    backgroundColor: "#2a323e",
+    image: "/assets/images/home/hero-rescue-market.webp",
+    backgroundColor: "#18251c",
     contentClassName: "intro-content-left",
     eyebrowClassName: "text-primary",
     eyebrow: "Rescue surplus food",
@@ -21,8 +21,8 @@ const INTRO_SLIDES = [
     action: "Browse surprise bags",
   },
   {
-    image: "/assets/images/demos/demo-28/intro-slider/2.jpg",
-    backgroundColor: "#dd6584",
+    image: "/assets/images/home/hero-local-pickup.webp",
+    backgroundColor: "#332820",
     contentClassName: "intro-content-right",
     eyebrowClassName: "text-white",
     eyebrow: "Make every meal count",
@@ -125,10 +125,7 @@ export default function IntroSection() {
   };
 
   return (
-    <div
-      className="intro-section bg-image"
-      style={{ backgroundImage: "url(/assets/images/demos/demo-28/background.jpg)" }}
-    >
+    <div className="intro-section">
       <div className="container">
         <div
           className={`home-intro-carousel${isDragging ? " is-dragging" : ""}`}

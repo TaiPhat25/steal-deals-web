@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import AuthProvider from "@/components/auth/AuthProvider";
+import { BRAND_NAME, withBrandTitle } from "@/lib/brand";
 import "../dashboard.css";
 
 export const metadata: Metadata = {
-  title: "Admin Login | Steal Deals",
-  description: "Sign in to the Steal Deals administration dashboard.",
+  title: withBrandTitle("Admin Login"),
+  description: `Sign in to the ${BRAND_NAME} administration dashboard.`,
 };
 
 export default function AdminAuthLayout({

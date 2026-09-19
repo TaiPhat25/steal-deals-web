@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { BRAND_NAME } from "@/lib/brand";
 
 type ContactForm = {
   name: string;
@@ -35,7 +36,7 @@ export default function ContactMain() {
         <div className="info-page__hero-overlay"></div>
         <div className="container info-page__hero-content">
           <p className="info-page__eyebrow">We are here to help</p>
-          <h1>Contact StealDeals</h1>
+          <h1>Contact {BRAND_NAME}</h1>
           <p>Have a question about a pickup, an order, or joining the food rescue community?</p>
         </div>
       </section>

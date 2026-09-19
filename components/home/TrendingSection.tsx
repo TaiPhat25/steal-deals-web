@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listBags } from "@/lib/api/store";
+import { BRAND_NAME } from "@/lib/brand";
 import { toListingBag } from "@/components/products/product-listing-data";
 import DragScrollRow from "./DragScrollRow";
 import SurpriseBagCard, { type SurpriseBag } from "./SurpriseBagCard";
@@ -123,7 +124,7 @@ export default function TrendingSection() {
       <div className="container">
         <div className="trending-section__heading">
           <div>
-            <p className="trending-section__eyebrow">Popular with StealDeals buyers</p>
+            <p className="trending-section__eyebrow">Popular with {BRAND_NAME} buyers</p>
             <h2 id="trending-title" className="title mb-1">
               Trending Now
             </h2>

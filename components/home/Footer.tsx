@@ -1,4 +1,5 @@
-import Link from "next/link";
+import BrandLogo from "@/components/home/BrandLogo";
+import { BRAND_NAME } from "@/lib/brand";
 
 export default function Footer() {
   return (
@@ -11,32 +12,9 @@ export default function Footer() {
           <div className="row">
             <div className="col-12 col-lg-2-5cols">
               <div className="widget widget-about mb-4">
-                {/*
-                <img
-                  src="/assets/images/demos/demo-26/logo-footer.png"
-                  className="footer-logo"
-                  alt="Footer Logo"
-                  width="105"
-                  height="25"
-                />
-                */}
-                <Link
-                  href="/"
-                  className="footer-logo"
-                  style={{
-                    display: "inline-block",
-                    color: "#22a642",
-                    fontSize: "2.6rem",
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    textDecoration: "none",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Steal Deals
-                </Link>
+                <BrandLogo className="footer-logo" />
                 <p className="font-weight-light second-primary-color text-light">
-                  StealDeals connects local stores with buyers who want affordable food
+                  {BRAND_NAME} connects local stores with buyers who want affordable food
                   while helping good surplus food stay in the community.
                 </p>
 
@@ -74,7 +52,7 @@ export default function Footer() {
 
                 <ul className="widget-list">
                   <li>
-                    <a href="/about">About Steal Deals</a>
+                    <a href="/about">About {BRAND_NAME}</a>
                   </li>
                   <li>
                     <a href="/faq">How to rescue a bag</a>
@@ -86,7 +64,7 @@ export default function Footer() {
                     <a href="/contact">Contact us</a>
                   </li>
                   <li>
-                    <a href="/register">Join StealDeals</a>
+                    <a href="/register">Join {BRAND_NAME}</a>
                   </li>
                 </ul>
               </div>
@@ -152,18 +130,18 @@ export default function Footer() {
       <div className="footer-bottom font-weight-normal">
         <div className="container">
           <p className="footer-copyright font-weight-light text-light">
-                Copyright (c) 2026 StealDeals. All Rights Reserved.
+                Copyright (c) 2026 {BRAND_NAME}. All Rights Reserved.
           </p>
           <ul className="footer-menu justify-content-center">
             <li>
-              <a href="/about">About StealDeals</a>
+              <a href="/about">About {BRAND_NAME}</a>
             </li>
             <li>
               <a href="/contact">Contact us</a>
             </li>
           </ul>
 
-          {/* Social links will be enabled when official StealDeals accounts are available.
+          {/* Social links will be enabled when official brand accounts are available.
           <div className="social-icons social-icons-color justify-content-center">
             <span className="social-label">Social Media</span>
             <a href="#" className="social-icon social-facebook" title="Facebook" target="_blank">

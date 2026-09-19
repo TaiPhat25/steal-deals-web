@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import { BAG_FALLBACK_IMAGE } from "@/lib/image-assets";
 
 function classes(...values: Array<string | false | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -134,7 +135,7 @@ export function Avatar({
   );
 }
 
-export const BAG_PLACEHOLDER_IMAGE = "/assets/images/demos/demo-28/flash/13.png";
+export const BAG_PLACEHOLDER_IMAGE = BAG_FALLBACK_IMAGE;
 
 export function ProductImage({
   alt,

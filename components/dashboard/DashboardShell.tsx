@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { BRAND_NAME } from "@/lib/brand";
 import { Avatar } from "./ui";
 
 export type DashboardRole = "admin" | "seller";
@@ -33,7 +34,7 @@ const navigation: Record<
   { brand: string; items: NavItem[]; communications: NavItem[] }
 > = {
   admin: {
-    brand: "StealDeal Admin",
+    brand: `${BRAND_NAME} Admin`,
     items: [
       { label: "Dashboard", href: "/admin", icon: "dashboard" },
       { label: "Buyer Management", href: "/admin/buyers", icon: "users" },
@@ -45,7 +46,7 @@ const navigation: Record<
     communications: [],
   },
   seller: {
-    brand: "StealDeal Seller",
+    brand: `${BRAND_NAME} Seller`,
     items: [
       { label: "Dashboard", href: "/seller", icon: "dashboard" },
       { label: "Surprise Bags", href: "/seller/products", icon: "products" },

@@ -45,7 +45,7 @@ export default function NewStoresSection() {
           <div>
             <p className="new-stores-section__eyebrow">Discover local businesses</p>
             <h2 id="new-stores-title" className="title mb-1">
-              New on StealDeals
+              Discovery New Stores
             </h2>
             <p className="new-stores-section__description mb-0">
               Meet new stores joining the food rescue community in your area.

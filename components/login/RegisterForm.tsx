@@ -12,6 +12,7 @@ import {
   type FieldErrors,
 } from "@/components/login/auth-form-utils";
 import { ApiClientError } from "@/lib/api/client";
+import { BRAND_NAME } from "@/lib/brand";
 
 type RegisterField =
   | "firstName"
@@ -148,7 +149,7 @@ export default function RegisterForm({
         <h1 id="register-heading" tabIndex={-1}>
           Create your account
         </h1>
-        <p>Join Steal Deals and discover surprise bags near you.</p>
+        <p>Join {BRAND_NAME} and discover surprise bags near you.</p>
       </div>
 
       <form

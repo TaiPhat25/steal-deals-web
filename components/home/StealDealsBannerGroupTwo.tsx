@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { BRAND_NAME } from "@/lib/brand";
 
 export default function StealDealsBannerGroupTwo() {
   return (
-    <section className="banner-group-2 mb-4" aria-label="StealDeals guides">
+    <section className="banner-group-2 mb-4" aria-label={`${BRAND_NAME} guides`}>
       <div className="container">
         <div className="row row-sm">
           <div className="col-md-6">
@@ -20,7 +21,7 @@ export default function StealDealsBannerGroupTwo() {
             <div className="banner bg-image d-flex align-items-center" style={{ backgroundImage: "url(/assets/images/demos/demo-28/banners/6.jpg)" }}>
               <div className="banner-content">
                 <h4 className="banner-subtitle mb-1 mt-0 text-light font-weight-normal">Support local stores</h4>
-                <h3 className="banner-title font-weight-bold">Discover new sellers<br />joining StealDeals</h3>
+                <h3 className="banner-title font-weight-bold">Discover new sellers<br />joining {BRAND_NAME}</h3>
                 <Link href="/products?sort=newest" className="banner-link text-decoration-none">
                   Meet new stores<i className="icon-angle-right"></i>
                 </Link>

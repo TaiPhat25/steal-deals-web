@@ -6,12 +6,14 @@ import type { MouseEvent } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cartBagKey, useCart } from "@/components/cart/CartProvider";
+import BrandLogo from "@/components/home/BrandLogo";
 import HeaderSearch from "@/components/home/HeaderSearch";
 import {
   AUTH_TAB_CHANGE_EVENT,
   type AuthTab,
   type AuthTabChangeDetail,
 } from "@/components/login/auth-navigation";
+import { BRAND_TITLE } from "@/lib/brand";
 
 function formatHeaderPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
@@ -102,7 +104,7 @@ export default function Header() {
             </div>
           </div> */}
           <div className="header-left">
-            <span className="header-site-label">Steal Deals E-commerce Website</span>
+            <span className="header-site-label">{BRAND_TITLE}</span>
           </div>
           <div className="header-right">
             <ul className="top-menu">
@@ -180,28 +182,7 @@ export default function Header() {
                 <span className="sr-only">Toggle mobile menu</span>
                 <i className="icon-bars"></i>
               </button>
-              <Link
-                href="/"
-                className="logo"
-                style={{
-                  color: "#22a642",
-                  fontSize: "2.6rem",
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  textDecoration: "none",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {/*
-                <img
-                  src="/assets/images/demos/demo-28/logo.png"
-                  alt="Steal Deals Logo"
-                  width="105"
-                  height="25"
-                />
-                */}
-                Steal Deals
-              </Link>
+              <BrandLogo className="logo" />
               <nav className="main-nav">
                 <ul className="menu sf-arrows">
                   <li

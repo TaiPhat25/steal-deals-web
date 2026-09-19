@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { BRAND_NAME } from "@/lib/brand";
 
 const principles = [
   {
@@ -32,7 +33,7 @@ export default function AboutMain() {
         />
         <div className="info-page__hero-overlay"></div>
         <div className="container info-page__hero-content">
-          <p className="info-page__eyebrow">About StealDeals</p>
+          <p className="info-page__eyebrow">About {BRAND_NAME}</p>
           <h1>Good food deserves another chance</h1>
           <p>We connect local stores with buyers who want affordable food and a more responsible way to shop.</p>
         </div>
@@ -53,7 +54,7 @@ export default function AboutMain() {
             <p className="info-page__eyebrow">Our purpose</p>
             <h2>A simpler way to rescue surplus food</h2>
             <p>
-              StealDeals is a food rescue marketplace for local stores and nearby buyers. Stores list
+              {BRAND_NAME} is a food rescue marketplace for local stores and nearby buyers. Stores list
               surprise bags from their daily surplus, and buyers reserve them for pickup at a lower price.
             </p>
             <p>
