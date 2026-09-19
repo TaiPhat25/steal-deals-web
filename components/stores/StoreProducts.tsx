@@ -40,7 +40,7 @@ function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
   return {
     // Store APIs use GUIDs; storefront product flows use the shared listing slug.
     slug: listingBag?.slug ?? bag.id,
-    imageSrc: PRODUCT_LISTING_IMAGE,
+    imageSrc: bag.imageUrl || PRODUCT_LISTING_IMAGE,
     imageAlt: bag.name,
     name: bag.name,
     storeName: store.name,

@@ -1,22 +1,41 @@
 import Image from "next/image";
 import Link from "next/link";
+import { BRAND_NAME } from "@/lib/brand";
 
 const campaigns = [
-  { image: "banner-1.jpg", imageAlt: "Bakery food rescue deals", eyebrow: "Daily rescue deals", title: "Save up to 60% on bags near you", href: "/products?sort=near-expiry" },
-  { image: "banner-2.jpg", imageAlt: "Surprise bags from local stores", eyebrow: "Local pickup", title: "Good food, lower prices, less waste", href: "/products?sort=distance" },
-  { image: "banner-3.jpg", imageAlt: "New food rescue categories", eyebrow: "Explore more", title: "Find a surprise bag for every taste", href: "/products" },
+  {
+    image: "/assets/images/home/campaign-bakery-rescue.webp",
+    imageAlt: "A surprise bag filled with rescued bakery food",
+    eyebrow: "Daily rescue deals",
+    title: "Save up to 60% on bags near you",
+    href: "/products?sort=near-expiry",
+  },
+  {
+    image: "/assets/images/home/campaign-local-pickup.webp",
+    imageAlt: "Fresh food packed and ready for local pickup",
+    eyebrow: "Local pickup",
+    title: "Good food, lower prices, less waste",
+    href: "/products?sort=distance",
+  },
+  {
+    image: "/assets/images/home/campaign-variety.webp",
+    imageAlt: "A variety of rescued food from local stores",
+    eyebrow: "Explore more",
+    title: "Find a surprise bag for every taste",
+    href: "/products",
+  },
 ];
 
 export default function StealDealsBannerGroupOne() {
   return (
-    <section className="banner-group-1 mt-1 mb-1" aria-label="StealDeals campaigns">
+    <section className="banner-group-1 mt-1 mb-1" aria-label={`${BRAND_NAME} campaigns`}>
       <div className="container">
         <div className="home-campaign-grid">
           {campaigns.map((campaign) => (
             <div key={campaign.eyebrow} className="banner mb-0">
               <Link href={campaign.href}>
                 <Image
-                  src={`/assets/images/demos/demo-28/banners/${campaign.image}`}
+                  src={campaign.image}
                   width={460}
                   height={210}
                   alt={campaign.imageAlt}

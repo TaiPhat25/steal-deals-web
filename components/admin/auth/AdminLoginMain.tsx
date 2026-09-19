@@ -2,6 +2,7 @@
 
 import { useState, type SubmitEvent } from "react";
 import Image from "next/image";
+import { BRAND_NAME } from "@/lib/brand";
 import { useRouter } from "next/navigation";
 import { ApiClientError } from "@/lib/api/client";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -34,7 +35,7 @@ export default function AdminLoginMain() {
       <section className="w-full max-w-md rounded-2xl border border-gray-500/20 bg-white p-6 shadow-xl sm:p-8">
         <div className="mb-8 text-center">
           <Image
-            alt="StealDeal Admin logo"
+            alt={`${BRAND_NAME} Admin logo`}
             className="mx-auto mb-3 size-12"
             height={48}
             src="/dashboard/favicon0a4b.ico"
@@ -42,7 +43,7 @@ export default function AdminLoginMain() {
             width={48}
           />
           <p className="text-xl font-bold tracking-wide text-primary">
-            StealDeal Admin
+            {BRAND_NAME} Admin
           </p>
           <h1 className="mt-3 text-2xl font-bold text-gray-900">Admin sign in</h1>
           <p className="mt-2 text-sm text-light-secondary-text">

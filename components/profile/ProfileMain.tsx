@@ -4,6 +4,7 @@ import { useEffect, useState, type SubmitEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { BRAND_NAME } from "@/lib/brand";
 import { ApiClientError } from "@/lib/api/client";
 import { getProfile } from "@/lib/api/account";
 import { verifyEmail } from "@/lib/api/auth";
@@ -716,7 +717,7 @@ export default function ProfileMain() {
                       ) : (
                         <>
                           <p className="text-center mb-3">
-                            Tell us about the store you want to register on Steal Deals.
+                            Tell us about the store you want to register on {BRAND_NAME}.
                           </p>
 
                           <form onSubmit={handleSubmitSellerApplication}>

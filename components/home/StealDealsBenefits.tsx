@@ -1,3 +1,5 @@
+import { BRAND_NAME } from "@/lib/brand";
+
 export default function StealDealsBenefits() {
   const benefits = [
     { icon: "icon-leaf", title: "Rescue good food", description: "Give surplus food a second chance instead of letting it go to waste." },
@@ -7,7 +9,7 @@ export default function StealDealsBenefits() {
   ];
 
   return (
-    <section className="icon-boxes-group" aria-label="Why use StealDeals">
+    <section className="icon-boxes-group" aria-label={`Why use ${BRAND_NAME}`}>
       <div className="container">
         <div className="row">
           {benefits.map((benefit) => (

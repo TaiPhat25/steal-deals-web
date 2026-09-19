@@ -15,13 +15,13 @@ export default function Home() {
       <main className="main">
         <div className="page-content">
           <IntroSection />
-          <StealDealsBannerGroupOne />
-          <StealDealsBenefits />
           <FoodCategorySection />
           <NearExpirySection />
+          <StealDealsBannerGroupOne />
           <NearbySection />
           <TrendingSection />
           <NewStoresSection />
+          <StealDealsBenefits />
           {/* <StealDealsNewsletterSection />
           <StealDealsBannerGroupTwo /> */}
           <SustainabilityNewsSection />

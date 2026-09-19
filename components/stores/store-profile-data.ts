@@ -24,6 +24,7 @@ export type StoreSurpriseBag = {
   storeId: string;
   name: string;
   description: string | null;
+  imageUrl?: string | null;
   originalPrice: number;
   salePrice: number;
   quantityTotal: number;

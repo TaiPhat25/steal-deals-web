@@ -3,11 +3,12 @@ import AuthProvider from "@/components/auth/AuthProvider";
 import RequireAuth from "@/components/auth/RequireAuth";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import SellerDemoProvider from "@/components/seller/SellerDemoProvider";
+import { BRAND_NAME, withBrandTitle } from "@/lib/brand";
 import "../dashboard.css";
 
 export const metadata: Metadata = {
-  title: "Seller Dashboard | StealDeal",
-  description: "StealDeal Seller Dashboard",
+  title: withBrandTitle("Seller Dashboard"),
+  description: `${BRAND_NAME} Seller Dashboard`,
 };
 
 export default function SellerRootLayout({

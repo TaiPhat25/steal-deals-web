@@ -1,3 +1,6 @@
+import BrandLogo from "@/components/home/BrandLogo";
+import { BRAND_NAME } from "@/lib/brand";
+
 export default function NewsletterPopup() {
   return (
     <div className="container newsletter-popup-container mfp-hide" id="newsletter-popup-form">
@@ -6,19 +9,13 @@ export default function NewsletterPopup() {
           <div className="row no-gutters bg-white newsletter-popup-content">
             <div className="col-xl-3-5col col-lg-7 banner-content-wrap">
               <div className="banner-content text-center">
-                <img
-                  src="/assets/images/popup/newsletter/logo.png"
-                  className="logo"
-                  alt="logo"
-                  width="60"
-                  height="15"
-                />
+                <BrandLogo className="logo" />
                 <h2 className="banner-title">
                   get <span>25</span>
                   <mark>%</mark> off
                 </h2>
                 <p>
-                  Subscribe to the Steal Deals eCommerce newsletter to receive timely updates from your favorite products.
+                  Subscribe to the {BRAND_NAME} newsletter to receive timely updates from your favorite products.
                 </p>
                 <form action="#">
                   <div className="input-group input-group-round">

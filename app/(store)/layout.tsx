@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Poppins } from "next/font/google";
 import SiteLayout from "@/components/layout/SiteLayout";
+import { BRAND_NAME, BRAND_TITLE } from "@/lib/brand";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -12,8 +13,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Steal Deals - Food Market Store",
-  description: "Steal Deals food market demo converted to Next.js App Router.",
+  title: BRAND_TITLE,
+  description:
+    "Discover discounted surplus food from local stores and collect it during convenient pickup windows.",
 };
 
 export default function RootLayout({
@@ -26,20 +28,33 @@ export default function RootLayout({
       <head>
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="keywords" content="HTML5 Template" />
-        <meta name="description" content="Steal Deals - Bootstrap eCommerce Template" />
-        <meta name="author" content="p-themes" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/icons/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/icons/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/icons/favicon-16x16.png" />
-        <link rel="manifest" href="/assets/images/icons/site.html" />
-        <link rel="mask-icon" href="/assets/images/icons/safari-pinned-tab.svg" color="#666666" />
-        <link rel="shortcut icon" href="/assets/images/icons/favicon.ico" />
-        <meta name="apple-mobile-web-app-title" content="Steal Deals" />
-        <meta name="application-name" content="Steal Deals" />
-        <meta name="msapplication-TileColor" content="#cc9966" />
-        <meta name="msapplication-config" content="/assets/images/icons/browserconfig.xml" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta
+          name="keywords"
+          content="food rescue, surprise bags, surplus food, local stores, discounted food"
+        />
+        <meta name="author" content={BRAND_NAME} />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/assets/images/brand/steal-deals-apple-touch-icon.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/assets/images/brand/steal-deals-icon-32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/assets/images/brand/steal-deals-icon-16.png"
+        />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <meta name="apple-mobile-web-app-title" content={BRAND_NAME} />
+        <meta name="application-name" content={BRAND_NAME} />
+        <meta name="msapplication-TileColor" content="#22a642" />
+        <meta name="theme-color" content="#22a642" />
         <link
           rel="stylesheet"
           href="/assets/vendor/line-awesome/line-awesome/line-awesome/css/line-awesome.min.css"

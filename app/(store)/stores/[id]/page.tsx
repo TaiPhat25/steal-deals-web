@@ -8,6 +8,7 @@ import StoreReviews from "@/components/stores/StoreReviews";
 import { mapStoreResponse } from "@/components/stores/store-api-mappers";
 import { ApiClientError } from "@/lib/api/client";
 import { getStore, listStoreBags, listStoreReviews } from "@/lib/api/store";
+import { withBrandTitle } from "@/lib/brand";
 
 type StoreDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -37,12 +38,12 @@ export async function generateMetadata({ params }: StoreDetailPageProps): Promis
 
   if (!store) {
     return {
-      title: "Store not found - Steal Deals",
+      title: withBrandTitle("Store not found"),
     };
   }
 
   return {
-    title: `${store.name} - Steal Deals`,
+    title: withBrandTitle(store.name),
     description: store.description,
   };
 }

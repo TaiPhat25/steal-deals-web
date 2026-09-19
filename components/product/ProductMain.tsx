@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
+import { BRAND_NAME } from "@/lib/brand";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import {
   surpriseBags,
@@ -518,7 +519,7 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
             >
               <div className="product-detail-section-heading">
                 <div>
-                  <p>More from StealDeals</p>
+                  <p>More from {BRAND_NAME}</p>
                   <h2 id="related-bags-title">You may also like</h2>
                 </div>
                 <Link

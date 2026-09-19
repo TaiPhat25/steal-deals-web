@@ -70,7 +70,7 @@ The storefront currently exposes 16 routes or route patterns:
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
 | `/orders` | `components/orders/OrderHistoryMain.tsx` | Authenticated order history with search and status filters |
 | `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using Store Service data with static presentation fallbacks |
-| `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing; all mapped listing cards currently use `/assets/images/demos/demo-28/flash/13.png` |
+| `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing; cards use the API `imageUrl` with the original StealDeals surprise-bag placeholder as fallback |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
 | `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable Store Service-backed store directory with pagination |
@@ -358,6 +358,9 @@ renders:
 - new-store promotions;
 - food rescue and sustainability news.
 
+Category cards use the Store Service `iconUrl` when present and the original
+`/assets/images/brand/category-placeholder.webp` asset when it is missing.
+
 `IntroSection` initializes Owl Carousel after jQuery and the plugin become
 available. `DragScrollRow` implements pointer-driven looping rows. The
 near-expiry section uses typed static FE data through `SurpriseBagCard`; it
@@ -437,8 +440,9 @@ and reviews. It loads `GET /api/stores/{id}`, `GET /api/bags/store/{id}`, and
 `GET /api/reviews/store/{id}`. Store bag cards map backend-shaped bag records to
 the shared listing slugs so product and cart links remain compatible. The
 store detail profile uses `/assets/images/demos/demo-28/banners/store.jpg` as
-its main store image, and the `Bags From` cards use the same
-`/assets/images/demos/demo-28/flash/13.png` image as `/products`. The
+its main store image. The `Bags From` cards and `/products` use each bag's API
+`imageUrl`, falling back to
+`/assets/images/brand/surprise-bag-placeholder.webp`. The
 store-detail profile does not show the verification badge; its status is
 presented as `Open` or `Closed`. Joined and Status now share a single bottom
 divider in the store information grid without duplicating the next row. Unknown
@@ -631,10 +635,8 @@ are the storefront authentication entry points.
 
 The active storefront still uses `public/assets`. Current notable state:
 
-- `public` contains 121 files and approximately 6.35 MB.
+- `public` contains 104 files and approximately 6.24 MB.
 - `public/assets/images/demos/demo-28` contains the active home assets.
-- `public/assets/images/demos/demo-26/logo-footer.png` was retained, although
-  it is still referenced by the current footer implementation.
 - `public/assets/images/menu/demos` was retained because the commented demo
   chooser still references those screenshots.
 - The original asset audit moved 344 unused or legacy template assets into
@@ -644,12 +646,15 @@ The active storefront still uses `public/assets`. Current notable state:
   unused standalone images.
 - A later audit moved another 166 safe cleanup candidates into the same archive:
   29 unused demo stylesheets, 23 unused skin stylesheets, and 114 legacy product
-  images. `demo-28.css`, `carousel-layout.css`, `skin-demo-28.css`, and the three
+  images. `demo-28.css`, `skin-demo-28.css`, and the three
   commented wishlist table images remain in `public`.
+- The latest audit moved 29 more safe candidates (approximately 1.14 MB),
+  including superseded login, logo, favicon, category, and product-placeholder
+  images plus the unmounted Owl Carousel JS/CSS bundle.
 - Assets referenced only by intentionally retained commented code were left in
   `public/assets`, including the menu screenshots, newsletter popup images, and
   wishlist/product template images.
-- The remaining 119 files in `public/assets` are the active storefront assets,
+- The remaining 104 files in `public/assets` are the active storefront assets,
   CSS/JS dependencies, and intentionally retained commented-code assets.
 - Nineteen category-only fashion images (approximately 115 KB) were removed
   after their source references were replaced. The remaining product-detail,
@@ -658,7 +663,7 @@ The active storefront still uses `public/assets`. Current notable state:
   currently removed from the working tree and appear as Git deletions.
 - `public/removedAssets` does not currently exist. Removed assets remain
   recoverable from Git history.
-- `remove-later/assets` now contains 510 files and approximately 17.11 MB.
+- `remove-later/assets` now contains 539 files and approximately 18.26 MB.
 - `.codex-runtime/` is ignored and is only for local logs, browser profiles,
   and screenshots.
 
