@@ -382,6 +382,7 @@ export default function ForgotPasswordMain() {
                     error={resetErrors.newPassword}
                     hint="Use at least 8 characters."
                     minLength={8}
+                    disabled={isSubmitting}
                   />
 
                   <PasswordField
@@ -400,6 +401,7 @@ export default function ForgotPasswordMain() {
                     }}
                     error={resetErrors.confirmPassword}
                     minLength={8}
+                    disabled={isSubmitting}
                   />
 
                   {formMessage && (

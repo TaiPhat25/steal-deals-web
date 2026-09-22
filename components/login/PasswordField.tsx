@@ -12,6 +12,7 @@ type PasswordFieldProps = {
   error?: string;
   hint?: string;
   minLength?: number;
+  disabled?: boolean;
 };
 
 export default function PasswordField({
@@ -24,6 +25,7 @@ export default function PasswordField({
   error,
   hint,
   minLength,
+  disabled = false,
 }: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
   const hintId = hint ? `${id}-requirements` : undefined;
@@ -45,6 +47,7 @@ export default function PasswordField({
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           minLength={minLength}
+          disabled={disabled}
           required
         />
         <button
