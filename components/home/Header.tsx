@@ -1060,10 +1060,10 @@ export default function Header() {
                   </div>
 
                   <div className="dropdown-cart-action">
-                    <a href="/cart" className="btn btn-primary">
+                    <a href="/newcart" className="btn btn-primary">
                       View Cart
                     </a>
-                    <a href="/checkout" className="btn btn-outline-primary-2">
+                    <a href="/newcheckout" className="btn btn-outline-primary-2">
                       <span>Checkout</span>
                       <i className="icon-long-arrow-right"></i>
                     </a>

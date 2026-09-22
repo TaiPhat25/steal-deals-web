@@ -1,0 +1,504 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useRedisCart } from "@/components/cart/useRedisCart";
+import { getProfile } from "@/lib/api/account";
+import { checkoutFromCart } from "@/lib/api/order";
+import { BAG_FALLBACK_IMAGE } from "@/lib/image-assets";
+import type { OrderResponse } from "@/lib/api/dashboard-types";
+import type { UserAddress } from "@/lib/api/store-types";
+
+type DeliveryType = "Pickup" | "Delivery";
+
+function formatPrice(value: number) {
+  return `${value.toLocaleString("en-US")} VND`;
+}
+
+function formatAddress(address: UserAddress) {
+  return [address.address, address.district, address.city].filter(Boolean).join(", ");
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+function formatPickupWindow(start: string, end: string) {
+  return `${formatDate(start)}, ${formatTime(start)} - ${formatTime(end)}`;
+}
+
+function formatRemainingTime(expiresAtUtc: string, now: number) {
+  const remainingMs = new Date(expiresAtUtc).getTime() - now;
+
+  if (!Number.isFinite(remainingMs) || remainingMs <= 0) {
+    return "Expired";
+  }
+
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+  }
+
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+}
+
+export default function NewCheckoutMain() {
+  const { accessToken, currentUser } = useAuth();
+  const {
+    groups,
+    isLoading,
+    isMutating,
+    error: cartError,
+    setError: setCartError,
+    refresh,
+    updateQuantity,
+  } = useRedisCart();
+  const [customerInfo, setCustomerInfo] = useState({
+    fullName: currentUser?.name ?? "",
+    email: currentUser?.email ?? "",
+    phone: "",
+  });
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>("Pickup");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("new");
+  const [paymentMethod, setPaymentMethod] = useState("CashOnPickup");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [createdOrders, setCreatedOrders] = useState<OrderResponse[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [deselectedStoreIds, setDeselectedStoreIds] = useState<string[]>([]);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    let active = true;
+
+    void getProfile(accessToken)
+      .then((profile) => {
+        if (!active) return;
+
+        setCustomerInfo((current) => ({
+          ...current,
+          fullName: profile.fullName ?? current.fullName,
+          email: profile.email ?? current.email,
+          phone: profile.phone ?? current.phone,
+        }));
+
+        setSavedAddresses(profile.userAddresses);
+        const defaultAddress = profile.userAddresses.find((address) => address.isDefault);
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+          setDeliveryAddress(formatAddress(defaultAddress));
+        }
+      })
+      .catch(() => {
+        // The current-user response still provides the essential checkout fields.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
+  const selectedGroups = useMemo(
+    () => groups.filter((group) => !deselectedStoreIds.includes(group.storeId)),
+    [deselectedStoreIds, groups],
+  );
+  const selectedStoreIds = useMemo(
+    () => selectedGroups.map((group) => group.storeId),
+    [selectedGroups],
+  );
+  const selectedItemCount = useMemo(
+    () => selectedGroups.reduce((count, group) => count + group.totalQuantity, 0),
+    [selectedGroups],
+  );
+  const selectedSubtotal = useMemo(
+    () => selectedGroups.reduce((total, group) => total + group.subtotal, 0),
+    [selectedGroups],
+  );
+  const deliveryFee = deliveryType === "Delivery" ? selectedGroups.length * 25000 : 0;
+  const appliedVoucherDiscount = selectedGroups.length > 0 ? voucherDiscount : 0;
+  const total = Math.max(0, selectedSubtotal + deliveryFee - appliedVoucherDiscount);
+  const allGroupsSelected = groups.length > 0 && selectedGroups.length === groups.length;
+
+  function applyVoucher() {
+    setVoucherDiscount(voucherCode.trim().toUpperCase() === "STEAL10" ? 10000 : 0);
+  }
+
+  function toggleStoreSelection(storeId: string) {
+    setDeselectedStoreIds((current) =>
+      current.includes(storeId)
+        ? current.filter((currentStoreId) => currentStoreId !== storeId)
+        : [...current, storeId],
+    );
+  }
+
+  function toggleAllStoreSelections() {
+    setDeselectedStoreIds(allGroupsSelected ? groups.map((group) => group.storeId) : []);
+  }
+
+  async function submitOrders() {
+    setError("");
+    setCartError("");
+
+    if (groups.length === 0) {
+      setError("Your cart is empty. Add a surprise bag before placing an order.");
+      return;
+    }
+
+    if (selectedGroups.length === 0) {
+      setError("Select at least one store cart before placing an order.");
+      return;
+    }
+
+    if (!accessToken) {
+      setError("Your session has expired. Please sign in again before placing an order.");
+      return;
+    }
+
+    if (!customerInfo.fullName.trim() || !customerInfo.phone.trim()) {
+      setError("Enter your full name and phone number before placing an order.");
+      return;
+    }
+
+    if (deliveryType === "Delivery" && !deliveryAddress.trim()) {
+      setError("Enter a delivery address before placing an order.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const orders = await Promise.all(
+        selectedGroups.map((group) =>
+          checkoutFromCart(accessToken, {
+            storeId: group.storeId,
+            contactNameSnapshot: customerInfo.fullName.trim(),
+            contactPhoneSnapshot: customerInfo.phone.trim(),
+            deliveryType,
+            deliveryAddress: deliveryType === "Delivery" ? deliveryAddress.trim() : "",
+          }),
+        ),
+      );
+
+      setCreatedOrders(orders);
+      await refresh();
+      setSubmitted(true);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to place the order. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleAddressSelection(addressId: string) {
+    setSelectedAddressId(addressId);
+
+    if (addressId === "new") {
+      setDeliveryAddress("");
+      return;
+    }
+
+    const selectedAddress = savedAddresses.find((address) => address.id === addressId);
+    setDeliveryAddress(selectedAddress ? formatAddress(selectedAddress) : "");
+  }
+
+  return (
+    <main className="main checkout-page">
+      <nav aria-label="Breadcrumb" className="breadcrumb-nav border-0 mb-0">
+        <div className="container">
+          <ol className="breadcrumb">
+            <li className="breadcrumb-item"><Link href="/">Home</Link></li>
+            <li className="breadcrumb-item"><Link href="/newcart">Cart</Link></li>
+            <li className="breadcrumb-item active" aria-current="page">Checkout</li>
+          </ol>
+        </div>
+      </nav>
+
+      <div className="page-content">
+        <div className="container">
+          <header className="checkout-heading">
+            <div>
+              <p>One step closer to rescuing good food</p>
+              <h1>Checkout</h1>
+            </div>
+            <span>{selectedItemCount} {selectedItemCount === 1 ? "bag" : "bags"} selected</span>
+          </header>
+
+          {submitted ? (
+            <section className="checkout-success" aria-live="polite">
+              <span className="checkout-success__icon" aria-hidden="true">&#10003;</span>
+              <p>Order details ready</p>
+              <h2>Your rescue order has been placed</h2>
+              <span>The store now has your saved contact details for this order.</span>
+              <div className="checkout-success__orders">
+                {createdOrders.map((order) => (
+                  <span key={order.id}>Order #{order.id.slice(0, 8)} &#183; {order.status}</span>
+                ))}
+              </div>
+              <div className="checkout-success__actions">
+                <Link href="/products" className="btn btn-primary">Continue browsing</Link>
+                <Link href="/" className="btn btn-outline-primary-2">Back to home</Link>
+              </div>
+            </section>
+          ) : (
+            <form
+              className="checkout-layout"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void submitOrders();
+              }}
+            >
+              <div className="checkout-main-column">
+                <section className="checkout-panel" aria-labelledby="customer-information-title">
+                  <div className="checkout-panel__heading">
+                    <div>
+                      <p>Customer information</p>
+                      <h2 id="customer-information-title">Who should we contact about this order?</h2>
+                    </div>
+                    <span className="checkout-panel__step">1</span>
+                  </div>
+
+                  <div className="checkout-customer-info__grid">
+                    <label className="checkout-field">
+                      <span>Full name *</span>
+                      <input
+                        type="text"
+                        value={customerInfo.fullName}
+                        onChange={(event) =>
+                          setCustomerInfo((current) => ({ ...current, fullName: event.target.value }))
+                        }
+                        autoComplete="name"
+                        required
+                      />
+                    </label>
+                    <label className="checkout-field">
+                      <span>Email address *</span>
+                      <input
+                        type="email"
+                        value={customerInfo.email}
+                        onChange={(event) =>
+                          setCustomerInfo((current) => ({ ...current, email: event.target.value }))
+                        }
+                        autoComplete="email"
+                        required
+                      />
+                    </label>
+                    <label className="checkout-field checkout-field--full">
+                      <span>Phone number</span>
+                      <input
+                        type="tel"
+                        value={customerInfo.phone}
+                        onChange={(event) =>
+                          setCustomerInfo((current) => ({ ...current, phone: event.target.value }))
+                        }
+                        autoComplete="tel"
+                        placeholder="Add a phone number"
+                        required
+                      />
+                    </label>
+                  </div>
+                  <p className="checkout-customer-info__note">
+                    These details are used for this order and can be edited before you place it.
+                  </p>
+                </section>
+
+                <section className="checkout-panel" aria-labelledby="delivery-title">
+                  <div className="checkout-panel__heading">
+                    <div>
+                      <p>Delivery details</p>
+                      <h2 id="delivery-title">How would you like to receive your bags?</h2>
+                    </div>
+                    <span className="checkout-panel__step">2</span>
+                  </div>
+
+                  <div className="checkout-choice-grid">
+                    <label className={`checkout-choice${deliveryType === "Pickup" ? " is-selected" : ""}`}>
+                      <input type="radio" name="deliveryType" value="Pickup" checked={deliveryType === "Pickup"} onChange={() => setDeliveryType("Pickup")} />
+                      <span><strong>Pickup at store</strong><small>Collect each bag during the store&apos;s pickup window.</small></span>
+                    </label>
+                    <label className={`checkout-choice${deliveryType === "Delivery" ? " is-selected" : ""}`}>
+                      <input type="radio" name="deliveryType" value="Delivery" checked={deliveryType === "Delivery"} onChange={() => setDeliveryType("Delivery")} />
+                      <span><strong>Delivery</strong><small>Have your rescued food delivered to one address.</small></span>
+                    </label>
+                  </div>
+
+                  {deliveryType === "Delivery" ? (
+                    <div className="checkout-delivery-address">
+                      {savedAddresses.length > 0 && (
+                        <label className="checkout-field checkout-field--full">
+                          <span>Saved address</span>
+                          <select value={selectedAddressId} onChange={(event) => handleAddressSelection(event.target.value)}>
+                            {savedAddresses.map((address) => (
+                              <option key={address.id} value={address.id}>
+                                {address.label || "Address"} - {formatAddress(address)}
+                              </option>
+                            ))}
+                            <option value="new">Enter a new address</option>
+                          </select>
+                        </label>
+                      )}
+
+                      {savedAddresses.length === 0 || selectedAddressId === "new" ? (
+                        <label className="checkout-field checkout-field--full">
+                          <span>Delivery address *</span>
+                          <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="House number, street, district, city" required rows={3} />
+                        </label>
+                      ) : (
+                        <div className="checkout-selected-address" aria-live="polite">
+                          <span>Delivering to</span>
+                          <strong>{deliveryAddress}</strong>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="checkout-pickup-note">
+                      <span className="checkout-pickup-note__icon" aria-hidden="true">&#9906;</span>
+                      <div><strong>Pickup locations are shown below</strong><p>Each store will provide its pickup instructions with the order confirmation.</p></div>
+                    </div>
+                  )}
+                </section>
+
+                <section className="checkout-panel" aria-labelledby="bags-title">
+                  <div className="checkout-panel__heading">
+                    <div><p>Your rescue bags</p><h2 id="bags-title">Choose carts to checkout</h2></div>
+                    <span className="checkout-panel__step">3</span>
+                  </div>
+
+                  {groups.length > 1 ? (
+                    <div className="checkout-pickup-note checkout-cart-selection-note">
+                      <span className="checkout-pickup-note__icon" aria-hidden="true">&#10003;</span>
+                      <div>
+                        <strong>{selectedGroups.length} of {groups.length} store carts selected</strong>
+                        <p>Each selected store cart will create one order when you place the order.</p>
+                      </div>
+                      <button type="button" className="btn btn-outline-primary-2" onClick={toggleAllStoreSelections}>
+                        {allGroupsSelected ? "Deselect all" : "Select all"}
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {isLoading ? (
+                    <div className="checkout-pickup-note" aria-live="polite">
+                      <div><strong>Loading your cart</strong><p>Checking the saved Redis cart before checkout.</p></div>
+                    </div>
+                  ) : (
+                    <div className="checkout-store-list">
+                      {groups.map((group) => (
+                        <section className="checkout-store" key={group.storeId}>
+                          <header>
+                            <label className={`checkout-store-selector${selectedStoreIds.includes(group.storeId) ? " is-selected" : ""}`}>
+                              <input
+                                type="checkbox"
+                                checked={selectedStoreIds.includes(group.storeId)}
+                                onChange={() => toggleStoreSelection(group.storeId)}
+                              />
+                              <span>
+                                <strong>{group.storeName}</strong>
+                                <small>Cart expires in {formatRemainingTime(group.expiresAtUtc, now)}</small>
+                              </span>
+                            </label>
+                          </header>
+                          {group.items.map((line) => (
+                            <div className="checkout-line" key={line.bagId}>
+                              <img src={line.imageUrlSnapshot || BAG_FALLBACK_IMAGE} width={88} height={68} alt={line.bagNameSnapshot} />
+                              <div className="checkout-line__details">
+                                <Link href={`/product?bag=${encodeURIComponent(line.bagId)}`}>{line.bagNameSnapshot}</Link>
+                                <span>{formatPickupWindow(line.pickupStartUtc, line.pickupEndUtc)}</span>
+                                <strong>{formatPrice(line.unitPriceSnapshot)}</strong>
+                              </div>
+                              <div className="checkout-line__quantity">
+                                <button type="button" aria-label={`Decrease quantity of ${line.bagNameSnapshot}`} onClick={() => void updateQuantity(group.storeId, line.bagId, line.quantity - 1)} disabled={isMutating || line.quantity <= 1}>-</button>
+                                <input aria-label={`Quantity of ${line.bagNameSnapshot}`} type="text" inputMode="numeric" pattern="[0-9]*" value={line.quantity} disabled={isMutating} onChange={(event) => void updateQuantity(group.storeId, line.bagId, Number(event.target.value.replace(/\D/g, "") || 1))} />
+                                <button type="button" aria-label={`Increase quantity of ${line.bagNameSnapshot}`} onClick={() => void updateQuantity(group.storeId, line.bagId, line.quantity + 1)} disabled={isMutating}>+</button>
+                              </div>
+                              <strong className="checkout-line__total">{formatPrice(line.lineTotal)}</strong>
+                            </div>
+                          ))}
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                  <Link href="/newcart" className="checkout-edit-cart">Edit cart</Link>
+                </section>
+
+                <section className="checkout-panel" aria-labelledby="payment-title">
+                  <div className="checkout-panel__heading">
+                    <div><p>Payment</p><h2 id="payment-title">Choose a payment method</h2></div>
+                    <span className="checkout-panel__step">4</span>
+                  </div>
+                  <div className="checkout-payment-list">
+                    <label className={`checkout-payment${paymentMethod === "CashOnPickup" ? " is-selected" : ""}`}>
+                      <input type="radio" name="paymentMethod" value="CashOnPickup" checked={paymentMethod === "CashOnPickup"} onChange={(event) => setPaymentMethod(event.target.value)} />
+                      <span><strong>Cash on pickup</strong><small>Pay when you collect your bags from the store.</small></span>
+                    </label>
+                    <label className={`checkout-payment${paymentMethod === "BankTransfer" ? " is-selected" : ""}`}>
+                      <input type="radio" name="paymentMethod" value="BankTransfer" checked={paymentMethod === "BankTransfer"} onChange={(event) => setPaymentMethod(event.target.value)} />
+                      <span><strong>Bank transfer</strong><small>Receive payment instructions after placing the order.</small></span>
+                    </label>
+                    <label className={`checkout-payment${paymentMethod === "OnlinePayment" ? " is-selected" : ""}`}>
+                      <input type="radio" name="paymentMethod" value="OnlinePayment" checked={paymentMethod === "OnlinePayment"} onChange={(event) => setPaymentMethod(event.target.value)} />
+                      <span><strong>Online payment</strong><small>Use an online payment gateway when it is connected.</small></span>
+                    </label>
+                  </div>
+                </section>
+              </div>
+
+              <aside className="checkout-summary" aria-labelledby="checkout-summary-title">
+                <p>Order summary</p>
+                <h2 id="checkout-summary-title">Your total</h2>
+                <div className="checkout-summary__stores"><span>Stores</span><strong>{selectedGroups.length}</strong></div>
+                <div className="checkout-summary__row"><span>Bags</span><strong>{selectedItemCount}</strong></div>
+                <div className="checkout-summary__row"><span>Subtotal</span><strong>{formatPrice(selectedSubtotal)}</strong></div>
+                <div className="checkout-summary__row"><span>{deliveryType === "Delivery" ? "Delivery fee" : "Pickup"}</span><strong>{deliveryFee ? formatPrice(deliveryFee) : "Free"}</strong></div>
+                <div className="checkout-voucher">
+                  <label htmlFor="voucher-code">Voucher code</label>
+                  <div><input id="voucher-code" type="text" value={voucherCode} onChange={(event) => setVoucherCode(event.target.value)} placeholder="Optional" /><button type="button" onClick={applyVoucher}>Apply</button></div>
+                </div>
+                <div className="checkout-summary__row"><span>Voucher discount</span><strong>{appliedVoucherDiscount ? `- ${formatPrice(appliedVoucherDiscount)}` : "-"}</strong></div>
+                <div className="checkout-summary__total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
+                {(error || cartError) && <div className="alert alert-danger" role="alert">{error || cartError}</div>}
+                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting || isLoading || isMutating || selectedGroups.length === 0}>{submitting ? "Placing order..." : "Place order"} <span aria-hidden="true">&#8594;</span></button>
+                <p className="checkout-summary__note">By placing your order, you agree to collect the bags during the listed pickup window.</p>
+              </aside>
+            </form>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}

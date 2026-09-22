@@ -20,6 +20,22 @@ export function createOrder(accessToken: string, request: CreateOrderRequest) {
   );
 }
 
+export type CheckoutFromCartRequest = {
+  storeId: string;
+  contactNameSnapshot: string;
+  contactPhoneSnapshot: string;
+  deliveryType: string;
+  deliveryAddress: string;
+};
+
+export function checkoutFromCart(accessToken: string, request: CheckoutFromCartRequest) {
+  return apiRequest<OrderResponse>(
+    "/api/orders/checkout-from-cart",
+    { method: "POST", headers: bearer(accessToken), body: request },
+    orderApiBaseUrl(),
+  );
+}
+
 export function getOrder(accessToken: string, id: string) {
   return apiRequest<OrderResponse>(
     `/api/orders/${encodeURIComponent(id)}`,
