@@ -76,7 +76,7 @@ export default function Footer() {
 
                 <ul className="widget-list">
                   <li>
-                    <a href="/checkout">Payment methods</a>
+                    <a href="/newcheckout">Payment methods</a>
                   </li>
                   <li>
                     <a href="/faq">Pickup and order help</a>
@@ -106,7 +106,7 @@ export default function Footer() {
                     <a href="/login">Sign In</a>
                   </li>
                   <li>
-                    <a href="/cart">View Cart</a>
+                    <a href="/newcart">View Cart</a>
                   </li>
                   {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
                   {/*
@@ -115,7 +115,7 @@ export default function Footer() {
                   </li>
                   */}
                   <li>
-                    <a href="/checkout">Track my pickup</a>
+                    <a href="/newcheckout">Track my pickup</a>
                   </li>
                   <li>
                     <a href="/contact">Help and contact</a>

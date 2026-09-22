@@ -176,7 +176,7 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
 
   function addToCart() {
     addItem(bag, quantity);
-    router.push("/cart");
+    router.push("/newcart");
   }
 
   return (

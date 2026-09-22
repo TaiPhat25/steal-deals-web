@@ -1,7 +1,14 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { SurpriseBag } from "@/components/home/SurpriseBagCard";
+import {
+  addCartItem,
+  clearAllCarts,
+  removeCartItem,
+  updateCartItemQuantity,
+} from "@/lib/api/cart";
 
 export type CartItem = {
   bag: SurpriseBag;
@@ -30,7 +37,16 @@ function clampQuantity(quantity: number, maximum: number) {
 }
 
 export default function CartProvider({ children }: { children: React.ReactNode }) {
+  const { accessToken } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
+
+  function mirrorCartRequest(request: () => Promise<unknown>) {
+    if (!accessToken) return;
+
+    void request().catch(() => {
+      // Keep the legacy cart usable if the Redis cart service is unavailable.
+    });
+  }
 
   function addItem(bag: SurpriseBag, requestedQuantity = 1) {
     const key = cartBagKey(bag);
@@ -45,16 +61,42 @@ export default function CartProvider({ children }: { children: React.ReactNode }
         ? { ...item, bag, quantity: clampQuantity(item.quantity + quantity, bag.remainingQuantity) }
         : item);
     });
+
+    if (bag.backendId) {
+      mirrorCartRequest(() => addCartItem(accessToken as string, {
+        bagId: bag.backendId as string,
+        quantity,
+      }));
+    }
   }
 
   function updateQuantity(bagKey: string, quantity: number) {
     setItems((current) => current.map((item) => item.bag.backendId === bagKey || item.bag.slug === bagKey
       ? { ...item, quantity: clampQuantity(quantity, item.bag.remainingQuantity) }
       : item));
+
+    const item = items.find((current) => current.bag.backendId === bagKey || current.bag.slug === bagKey);
+    if (item?.bag.backendId && item.bag.storeId) {
+      mirrorCartRequest(() => updateCartItemQuantity(
+        accessToken as string,
+        item.bag.storeId as string,
+        item.bag.backendId as string,
+        { quantity: clampQuantity(quantity, item.bag.remainingQuantity) },
+      ));
+    }
   }
 
   function removeItem(bagKey: string) {
     setItems((current) => current.filter((item) => item.bag.backendId !== bagKey && item.bag.slug !== bagKey));
+
+    const item = items.find((current) => current.bag.backendId === bagKey || current.bag.slug === bagKey);
+    if (item?.bag.backendId && item.bag.storeId) {
+      mirrorCartRequest(() => removeCartItem(
+        accessToken as string,
+        item.bag.storeId as string,
+        item.bag.backendId as string,
+      ));
+    }
   }
 
   const value = useMemo<CartContextValue>(() => ({
@@ -64,8 +106,11 @@ export default function CartProvider({ children }: { children: React.ReactNode }
     addItem,
     updateQuantity,
     removeItem,
-    clearCart: () => setItems([]),
-  }), [items]);
+    clearCart: () => {
+      setItems([]);
+      mirrorCartRequest(() => clearAllCarts(accessToken as string));
+    },
+  }), [items, accessToken]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

@@ -87,7 +87,7 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
           <Link href={productHref} className="btn btn-outline-primary-2">
             View Details
           </Link>
-          <button type="button" onClick={() => { addItem(bag, 1); router.push("/cart"); }} className="btn btn-primary">
+          <button type="button" onClick={() => { addItem(bag, 1); router.push("/newcart"); }} className="btn btn-primary">
             Add to Cart
           </button>
         </div>
