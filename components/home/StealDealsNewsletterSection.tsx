@@ -5,7 +5,7 @@ export default function StealDealsNewsletterSection() {
   return (
     <section className="bg-lighter py-5" aria-labelledby="newsletter-title">
       <div className="container">
-        <div className="newsletter-section bg-image d-flex align-items-center justify-content-center pt-2 pb-2 px-3" style={{ backgroundImage: "url(/assets/images/demos/demo-28/banners/4.jpg)" }}>
+        <div className="newsletter-section bg-image d-flex align-items-center justify-content-center pt-2 pb-2 px-3" style={{ backgroundImage: "url(/assets/images/home/hero-rescue-market.webp)" }}>
           <div className="banner-content position-relative pt-0">
             <h3 className="newsletter-title font-weight-bold text-center mb-1">Stay close to local food rescue</h3>
             <h2 id="newsletter-title" className="newsletter-text font-weight-bold text-center my-4 mt-0">Discover new bags and stores on {BRAND_NAME}</h2>

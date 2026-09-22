@@ -59,17 +59,6 @@ export default function Header() {
 
   return (
     <header className="header header-28 bg-transparent">
-      {/* <div
-        className="promo-top w-100 h-auto text-center"
-        style={{
-          backgroundImage: "url(/assets/images/demos/demo-28/promo.jpg)",
-          backgroundColor: "#87bbc7",
-        }}
-      >
-        <h4 className="font-weight-normal text-uppercase text-white m-0">
-          Free Shipping For All Orders Over $50
-        </h4>
-      </div> */}
       <div className="header-top font-weight-normal text-light">
         <div className="container">
           {/* <div className="header-left">

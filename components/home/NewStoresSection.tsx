@@ -9,7 +9,7 @@ import HomeCollectionState from "./HomeCollectionState";
 import { useHomeData } from "./HomeDataProvider";
 import NewStoreCard from "./NewStoreCard";
 
-const STORE_LISTING_IMAGE = "/assets/images/demos/demo-28/banners/store.jpg";
+const STORE_FALLBACK_IMAGE = "/assets/images/home/store-fallback.webp";
 
 export default function NewStoresSection() {
   const { bags, retry, stores: storeResource } = useHomeData();
@@ -34,7 +34,7 @@ export default function NewStoresSection() {
           <div>
             <p className="new-stores-section__eyebrow">Discover local businesses</p>
             <h2 id="new-stores-title" className="title mb-1">
-              Discovery New Stores
+              Discover New Stores
             </h2>
             <p className="new-stores-section__description mb-0">
               Meet new stores joining the food rescue community in your area.
@@ -67,7 +67,7 @@ export default function NewStoresSection() {
               <NewStoreCard
                 key={store.id}
                 store={store}
-                imageSrc={store.avatarUrl || STORE_LISTING_IMAGE}
+                imageSrc={store.avatarUrl || STORE_FALLBACK_IMAGE}
               />
             ))}
           </DragScrollRow>
