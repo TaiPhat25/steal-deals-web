@@ -1,42 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { listBags, listStores } from "@/lib/api/store";
 import { mapStoreResponse } from "@/components/stores/store-api-mappers";
 import { newStoreProfiles, type StoreProfile } from "@/components/stores/store-profile-data";
 import DragScrollRow from "./DragScrollRow";
+import { useHomeData } from "./HomeDataProvider";
 import NewStoreCard from "./NewStoreCard";
 
 const STORE_LISTING_IMAGE = "/assets/images/demos/demo-28/banners/store.jpg";
 
 export default function NewStoresSection() {
-  const [stores, setStores] = useState<StoreProfile[]>(newStoreProfiles);
+  const { bags: bagResponses, stores: storeResponses } = useHomeData();
+  const stores = useMemo<StoreProfile[]>(() => {
+    if (!bagResponses || !storeResponses) return newStoreProfiles;
 
-  useEffect(() => {
-    let active = true;
+    const activeStores = storeResponses
+      .filter((store) => store.isActive)
+      .map((store) => mapStoreResponse(store, bagResponses))
+      .sort(
+        (a, b) =>
+          (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0),
+      );
 
-    Promise.all([listStores(), listBags()])
-      .then(([storesResponse, bagsResponse]) => {
-        if (!active) return;
-
-        const activeStores = storesResponse
-          .filter((store) => store.isActive)
-          .map((store) => mapStoreResponse(store, bagsResponse))
-          .sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
-
-        if (activeStores.length > 0) {
-          setStores(activeStores.slice(0, 10));
-        }
-      })
-      .catch(() => {
-        // keep fallback newStoreProfiles
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    return activeStores.length > 0 ? activeStores.slice(0, 10) : newStoreProfiles;
+  }, [bagResponses, storeResponses]);
 
   return (
     <section className="new-stores-section py-5" aria-labelledby="new-stores-title">

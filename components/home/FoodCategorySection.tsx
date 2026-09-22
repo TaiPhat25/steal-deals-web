@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listCategories, listBags } from "@/lib/api/store";
 import { CATEGORY_FALLBACK_IMAGE } from "@/lib/image-assets";
+import { useHomeData } from "./HomeDataProvider";
 
 type CategoryItem = {
   name: string;
@@ -23,45 +22,28 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
 ];
 
 export default function FoodCategorySection() {
-  const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
+  const { bags: bagResponses, categories: categoryResponses } = useHomeData();
+  const activeBags = bagResponses?.filter(
+    (bag) => (bag.status || "").toLowerCase() === "active",
+  );
+  const activeCategories = categoryResponses?.filter((category) => category.isActive);
+  const categories: CategoryItem[] = activeBags && activeCategories?.length
+    ? activeCategories.map((category) => {
+        const bagCount = activeBags.filter((bag) =>
+          bag.categories?.some(
+            (bagCategory) =>
+              bagCategory.id === category.id ||
+              bagCategory.name.toLowerCase() === category.name.toLowerCase(),
+          ),
+        ).length;
 
-  useEffect(() => {
-    let active = true;
-
-    Promise.all([listCategories(), listBags()])
-      .then(([categoriesRes, bagsRes]) => {
-        if (!active) return;
-
-        const activeBags = bagsRes.filter(
-          (bag) => (bag.status || "").toLowerCase() === "active"
-        );
-
-        const activeCategories = categoriesRes.filter((cat) => cat.isActive);
-
-        if (activeCategories.length > 0) {
-          const mapped: CategoryItem[] = activeCategories.map((cat) => {
-            const bagCount = activeBags.filter((bag) =>
-              bag.categories?.some((c) => c.id === cat.id || c.name.toLowerCase() === cat.name.toLowerCase())
-            ).length;
-
-            return {
-              name: cat.name,
-              count: `${bagCount} ${bagCount === 1 ? "bag" : "bags"}`,
-              image: cat.iconUrl || CATEGORY_FALLBACK_IMAGE,
-            };
-          });
-
-          setCategories(mapped);
-        }
+        return {
+          name: category.name,
+          count: `${bagCount} ${bagCount === 1 ? "bag" : "bags"}`,
+          image: category.iconUrl || CATEGORY_FALLBACK_IMAGE,
+        };
       })
-      .catch(() => {
-        // keep DEFAULT_CATEGORIES on API fallback
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    : DEFAULT_CATEGORIES;
 
   return (
     <section className="home-category-section container" aria-labelledby="category-title">

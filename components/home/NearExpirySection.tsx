@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listBags } from "@/lib/api/store";
 import { toListingBag } from "@/components/products/product-listing-data";
 import DragScrollRow from "./DragScrollRow";
+import { useHomeData } from "./HomeDataProvider";
 import SurpriseBagCard, { type SurpriseBag } from "./SurpriseBagCard";
 
 const DEFAULT_NEAR_EXPIRY_BAGS: SurpriseBag[] = [
@@ -86,36 +85,16 @@ const DEFAULT_NEAR_EXPIRY_BAGS: SurpriseBag[] = [
 ];
 
 export default function NearExpirySection() {
-  const [bags, setBags] = useState<SurpriseBag[]>(DEFAULT_NEAR_EXPIRY_BAGS);
-
-  useEffect(() => {
-    let active = true;
-
-    listBags()
-      .then((response) => {
-        if (!active) return;
-
-        const activeBags = response
-          .filter((bag) => (bag.status || "").toLowerCase() === "active")
-          .map(toListingBag)
-          .sort((a, b) => {
-            const timeA = Date.parse(a.pickupStartTime) || 0;
-            const timeB = Date.parse(b.pickupStartTime) || 0;
-            return timeA - timeB;
-          });
-
-        if (activeBags.length > 0) {
-          setBags(activeBags);
-        }
-      })
-      .catch(() => {
-        // keep DEFAULT_NEAR_EXPIRY_BAGS
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { bags: bagResponses } = useHomeData();
+  const activeBags = bagResponses
+    ?.filter((bag) => (bag.status || "").toLowerCase() === "active")
+    .map(toListingBag)
+    .sort((a, b) => {
+      const timeA = Date.parse(a.pickupStartTime) || 0;
+      const timeB = Date.parse(b.pickupStartTime) || 0;
+      return timeA - timeB;
+    });
+  const bags = activeBags?.length ? activeBags : DEFAULT_NEAR_EXPIRY_BAGS;
 
   return (
     <section className="near-expiry-section bg-lighter py-5" aria-labelledby="near-expiry-title">

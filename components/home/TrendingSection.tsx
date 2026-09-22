@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listBags } from "@/lib/api/store";
 import { BRAND_NAME } from "@/lib/brand";
 import { toListingBag } from "@/components/products/product-listing-data";
 import DragScrollRow from "./DragScrollRow";
+import { useHomeData } from "./HomeDataProvider";
 import SurpriseBagCard, { type SurpriseBag } from "./SurpriseBagCard";
 
 const DEFAULT_TRENDING_BAGS: SurpriseBag[] = [
@@ -92,32 +91,15 @@ const DEFAULT_TRENDING_BAGS: SurpriseBag[] = [
 ];
 
 export default function TrendingSection() {
-  const [bags, setBags] = useState<SurpriseBag[]>(DEFAULT_TRENDING_BAGS);
-
-  useEffect(() => {
-    let active = true;
-
-    listBags()
-      .then((response) => {
-        if (!active) return;
-
-        const activeBags = response
-          .filter((bag) => (bag.status || "").toLowerCase() === "active")
-          .map(toListingBag)
-          .sort((a, b) => (b.popularity - a.popularity) || (b.discountPercent - a.discountPercent));
-
-        if (activeBags.length > 0) {
-          setBags(activeBags);
-        }
-      })
-      .catch(() => {
-        // keep DEFAULT_TRENDING_BAGS
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { bags: bagResponses } = useHomeData();
+  const activeBags = bagResponses
+    ?.filter((bag) => (bag.status || "").toLowerCase() === "active")
+    .map(toListingBag)
+    .sort(
+      (a, b) =>
+        b.popularity - a.popularity || b.discountPercent - a.discountPercent,
+    );
+  const bags = activeBags?.length ? activeBags : DEFAULT_TRENDING_BAGS;
 
   return (
     <section className="trending-section bg-lighter py-5" aria-labelledby="trending-title">

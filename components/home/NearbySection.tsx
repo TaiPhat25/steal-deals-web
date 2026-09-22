@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listBags } from "@/lib/api/store";
 import { toListingBag } from "@/components/products/product-listing-data";
 import DragScrollRow from "./DragScrollRow";
+import { useHomeData } from "./HomeDataProvider";
 import SurpriseBagCard, { type SurpriseBag } from "./SurpriseBagCard";
 
 const DEFAULT_NEARBY_BAGS: SurpriseBag[] = [
@@ -91,32 +90,12 @@ const DEFAULT_NEARBY_BAGS: SurpriseBag[] = [
 ];
 
 export default function NearbySection() {
-  const [bags, setBags] = useState<SurpriseBag[]>(DEFAULT_NEARBY_BAGS);
-
-  useEffect(() => {
-    let active = true;
-
-    listBags()
-      .then((response) => {
-        if (!active) return;
-
-        const activeBags = response
-          .filter((bag) => (bag.status || "").toLowerCase() === "active")
-          .map(toListingBag)
-          .sort((a, b) => a.distanceKm - b.distanceKm);
-
-        if (activeBags.length > 0) {
-          setBags(activeBags);
-        }
-      })
-      .catch(() => {
-        // keep DEFAULT_NEARBY_BAGS
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+  const { bags: bagResponses } = useHomeData();
+  const activeBags = bagResponses
+    ?.filter((bag) => (bag.status || "").toLowerCase() === "active")
+    .map(toListingBag)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+  const bags = activeBags?.length ? activeBags : DEFAULT_NEARBY_BAGS;
 
   return (
     <section className="nearby-section py-5" aria-labelledby="nearby-title">
