@@ -3,28 +3,29 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { mapStoreResponse } from "@/components/stores/store-api-mappers";
-import { newStoreProfiles, type StoreProfile } from "@/components/stores/store-profile-data";
+import type { StoreProfile } from "@/components/stores/store-profile-data";
 import DragScrollRow from "./DragScrollRow";
+import HomeCollectionState from "./HomeCollectionState";
 import { useHomeData } from "./HomeDataProvider";
 import NewStoreCard from "./NewStoreCard";
 
 const STORE_LISTING_IMAGE = "/assets/images/demos/demo-28/banners/store.jpg";
 
 export default function NewStoresSection() {
-  const { bags: bagResponses, stores: storeResponses } = useHomeData();
+  const { bags, retry, stores: storeResource } = useHomeData();
   const stores = useMemo<StoreProfile[]>(() => {
-    if (!bagResponses || !storeResponses) return newStoreProfiles;
-
-    const activeStores = storeResponses
+    return storeResource.data
       .filter((store) => store.isActive)
-      .map((store) => mapStoreResponse(store, bagResponses))
+      .map((store) => mapStoreResponse(store, bags.data))
       .sort(
         (a, b) =>
           (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0),
-      );
-
-    return activeStores.length > 0 ? activeStores.slice(0, 10) : newStoreProfiles;
-  }, [bagResponses, storeResponses]);
+      )
+      .slice(0, 10);
+  }, [bags.data, storeResource.data]);
+  const isLoading =
+    bags.status === "loading" || storeResource.status === "loading";
+  const error = storeResource.error || bags.error;
 
   return (
     <section className="new-stores-section py-5" aria-labelledby="new-stores-title">
@@ -45,15 +46,32 @@ export default function NewStoresSection() {
           </Link>
         </div>
 
-        <DragScrollRow className="drag-scroll-row new-stores-scroll-row" visibleItems={5}>
-          {stores.map((store) => (
-            <NewStoreCard
-              key={store.id}
-              store={store}
-              imageSrc={store.avatarUrl || STORE_LISTING_IMAGE}
-            />
-          ))}
-        </DragScrollRow>
+        {isLoading ? (
+          <HomeCollectionState state="loading" message="Loading new stores" />
+        ) : error ? (
+          <HomeCollectionState
+            state="error"
+            title="New stores are temporarily unavailable"
+            message={error}
+            onRetry={retry}
+          />
+        ) : stores.length === 0 ? (
+          <HomeCollectionState
+            state="empty"
+            title="No new stores yet"
+            message="Recently joined stores will appear here."
+          />
+        ) : (
+          <DragScrollRow className="drag-scroll-row new-stores-scroll-row" visibleItems={5}>
+            {stores.map((store) => (
+              <NewStoreCard
+                key={store.id}
+                store={store}
+                imageSrc={store.avatarUrl || STORE_LISTING_IMAGE}
+              />
+            ))}
+          </DragScrollRow>
+        )}
       </div>
     </section>
   );

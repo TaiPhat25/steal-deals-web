@@ -4,102 +4,19 @@ import Link from "next/link";
 import { BRAND_NAME } from "@/lib/brand";
 import { toListingBag } from "@/components/products/product-listing-data";
 import DragScrollRow from "./DragScrollRow";
+import HomeCollectionState from "./HomeCollectionState";
 import { useHomeData } from "./HomeDataProvider";
-import SurpriseBagCard, { type SurpriseBag } from "./SurpriseBagCard";
-
-const DEFAULT_TRENDING_BAGS: SurpriseBag[] = [
-  {
-    slug: "trending-bakery-mix",
-    imageSrc: "/assets/images/demos/demo-28/flash/7.jpg",
-    imageAlt: "Trending bakery surprise bag",
-    name: "Bakery Mix Surprise Bag",
-    storeName: "Morning Oven Bakery",
-    storeSlug: "morning-oven-bakery",
-    category: "Bakery",
-    originalPrice: 150000,
-    salePrice: 69000,
-    discountPercent: 54,
-    pickupWindow: "Today, 5:00 - 7:00 PM",
-    distance: "1.2 km away",
-    remainingQuantity: 8,
-    availabilityLabel: "Popular this week",
-  },
-  {
-    slug: "trending-seafood-box",
-    imageSrc: "/assets/images/demos/demo-28/flash/8.jpg",
-    imageAlt: "Trending seafood surprise bag",
-    name: "Seafood Weekend Surprise Bag",
-    storeName: "Harbor Fresh Foods",
-    storeSlug: "harbor-fresh-foods",
-    category: "Seafood",
-    originalPrice: 420000,
-    salePrice: 219000,
-    discountPercent: 48,
-    pickupWindow: "Today, 4:30 - 6:30 PM",
-    distance: "2.4 km away",
-    remainingQuantity: 5,
-    availabilityLabel: "Popular this week",
-  },
-  {
-    slug: "trending-fruit-box",
-    imageSrc: "/assets/images/demos/demo-28/flash/9.jpg",
-    imageAlt: "Trending fruit surprise bag",
-    name: "Fresh Fruit Surprise Bag",
-    storeName: "Daily Harvest Shop",
-    storeSlug: "daily-harvest-shop",
-    category: "Fruits",
-    originalPrice: 180000,
-    salePrice: 85000,
-    discountPercent: 53,
-    pickupWindow: "Today, 5:30 - 7:30 PM",
-    distance: "1.8 km away",
-    remainingQuantity: 6,
-    availabilityLabel: "Popular this week",
-  },
-  {
-    slug: "trending-vegetable-box",
-    imageSrc: "/assets/images/demos/demo-28/flash/10.jpg",
-    imageAlt: "Trending vegetable surprise bag",
-    name: "Vegetable Harvest Surprise Bag",
-    storeName: "Green Basket Market",
-    storeSlug: "green-basket-market",
-    category: "Vegetables",
-    originalPrice: 140000,
-    salePrice: 65000,
-    discountPercent: 54,
-    pickupWindow: "Today, 6:00 - 8:00 PM",
-    distance: "2.1 km away",
-    remainingQuantity: 7,
-    availabilityLabel: "Popular this week",
-  },
-  {
-    slug: "trending-cafe-treats",
-    imageSrc: "/assets/images/demos/demo-28/flash/11.jpg",
-    imageAlt: "Trending cafe treats surprise bag",
-    name: "Cafe Treats Surprise Bag",
-    storeName: "Local Table Kitchen",
-    storeSlug: "local-table-kitchen",
-    category: "Prepared Meals",
-    originalPrice: 200000,
-    salePrice: 95000,
-    discountPercent: 53,
-    pickupWindow: "Today, 7:00 - 9:00 PM",
-    distance: "3.5 km away",
-    remainingQuantity: 4,
-    availabilityLabel: "Popular this week",
-  },
-];
+import SurpriseBagCard from "./SurpriseBagCard";
 
 export default function TrendingSection() {
-  const { bags: bagResponses } = useHomeData();
-  const activeBags = bagResponses
-    ?.filter((bag) => (bag.status || "").toLowerCase() === "active")
+  const { bags: bagResource, retry } = useHomeData();
+  const bags = bagResource.data
+    .filter((bag) => (bag.status || "").toLowerCase() === "active")
     .map(toListingBag)
     .sort(
       (a, b) =>
         b.popularity - a.popularity || b.discountPercent - a.discountPercent,
     );
-  const bags = activeBags?.length ? activeBags : DEFAULT_TRENDING_BAGS;
 
   return (
     <section className="trending-section bg-lighter py-5" aria-labelledby="trending-title">
@@ -120,11 +37,28 @@ export default function TrendingSection() {
           </Link>
         </div>
 
-        <DragScrollRow className="drag-scroll-row trending-scroll-row" visibleItems={5}>
-          {bags.map((bag) => (
-            <SurpriseBagCard key={bag.backendId ?? bag.slug} bag={bag} />
-          ))}
-        </DragScrollRow>
+        {bagResource.status === "loading" ? (
+          <HomeCollectionState state="loading" message="Loading trending bags" />
+        ) : bagResource.status === "error" ? (
+          <HomeCollectionState
+            state="error"
+            title="Trending bags are temporarily unavailable"
+            message={bagResource.error ?? "Please try again."}
+            onRetry={retry}
+          />
+        ) : bags.length === 0 ? (
+          <HomeCollectionState
+            state="empty"
+            title="No trending bags available"
+            message="Popular surprise bags will appear here as buyers discover them."
+          />
+        ) : (
+          <DragScrollRow className="drag-scroll-row trending-scroll-row" visibleItems={5}>
+            {bags.map((bag) => (
+              <SurpriseBagCard key={bag.backendId ?? bag.slug} bag={bag} />
+            ))}
+          </DragScrollRow>
+        )}
       </div>
     </section>
   );
