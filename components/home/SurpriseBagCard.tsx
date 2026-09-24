@@ -29,7 +29,13 @@ function formatPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
 }
 
-export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
+export default function SurpriseBagCard({
+  bag,
+  eager = false,
+}: {
+  bag: SurpriseBag;
+  eager?: boolean;
+}) {
   const router = useRouter();
   const { addItem } = useCart();
   const productKey = bag.backendId ?? bag.slug;
@@ -46,6 +52,7 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
             height={225}
             sizes="(max-width: 575px) 78vw, (max-width: 991px) 40vw, (max-width: 1199px) 30vw, 228px"
             alt={bag.imageAlt}
+            loading={eager ? "eager" : "lazy"}
             unoptimized={shouldUseUnoptimizedImage(bag.imageSrc)}
           />
         </Link>

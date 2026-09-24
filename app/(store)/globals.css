@@ -910,13 +910,13 @@ img {
 
 .surprise-bag-card__category {
   color: #777;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .surprise-bag-card__title {
   min-height: 3.2rem;
   margin: 0.35rem 0 0.3rem;
-  font-size: 1.45rem;
+  font-size: 1.55rem;
   line-height: 1.25;
 }
 
@@ -928,7 +928,7 @@ img {
   min-height: 1.5rem;
   margin: 0;
   color: #777;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .surprise-bag-card__store-row {
@@ -943,7 +943,7 @@ img {
 .surprise-bag-card__store-link {
   flex: 0 0 auto;
   color: #61ab00;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 600;
 }
 
@@ -957,18 +957,18 @@ img {
 
 .surprise-bag-card__pricing strong {
   color: #61ab00;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 
 .surprise-bag-card__pricing del {
   color: #999;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
 .surprise-bag-card__details {
   margin: 0 0 1rem;
   color: #555;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
 }
 
 .surprise-bag-card__details div {
@@ -1473,11 +1473,11 @@ img {
 }
 
 .store-products-scroll-row .surprise-bag-card__title {
-  font-size: 1.35rem;
+  font-size: 1.45rem;
 }
 
 .store-products-scroll-row .surprise-bag-card__pricing strong {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 
 .store-products-scroll-row .surprise-bag-card__actions .btn {
@@ -4643,23 +4643,29 @@ img {
 }
 
 .store-listing-grid .new-store-card__category {
-  font-size: 1.15rem;
+  font-size: 1.5rem;
+  font-weight: 400;
 }
 
 .store-listing-grid .new-store-card__title {
-  font-size: 1.65rem;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .store-listing-grid .new-store-card__description {
-  font-size: 1.15rem;
+  font-size: 1.5rem;
+  font-weight: 400;
 }
 
 .store-listing-grid .new-store-card__details {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
+  font-weight: 400;
 }
 
 .store-listing-grid .new-store-card__action {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
+  font-weight: 500;
 }
 
 .store-listing-empty {

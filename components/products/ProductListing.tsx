@@ -304,9 +304,9 @@ export default function ProductListing({
 
               {visibleBags.length ? (
                 <div className="row product-listing-grid">
-                  {visibleBags.map((bag) => (
+                  {visibleBags.map((bag, index) => (
                     <div className="col-12 col-sm-6 col-xl-4" key={bag.slug}>
-                      <SurpriseBagCard bag={bag} />
+                      <SurpriseBagCard bag={bag} eager={index === 0} />
                     </div>
                   ))}
                 </div>
