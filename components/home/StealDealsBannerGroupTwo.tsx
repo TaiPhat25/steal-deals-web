@@ -7,7 +7,7 @@ export default function StealDealsBannerGroupTwo() {
       <div className="container">
         <div className="row row-sm">
           <div className="col-md-6">
-            <div className="banner bg-image d-flex align-items-center" style={{ backgroundImage: "url(/assets/images/demos/demo-28/banners/5.jpg)" }}>
+            <div className="banner bg-image d-flex align-items-center" style={{ backgroundImage: "url(/assets/images/home/campaign-local-pickup.webp)" }}>
               <div className="banner-content">
                 <h4 className="banner-subtitle mb-1 mt-0 text-light font-weight-normal">Simple pickup</h4>
                 <h3 className="banner-title font-weight-bold">Choose a nearby bag<br />and collect it today</h3>
@@ -18,7 +18,7 @@ export default function StealDealsBannerGroupTwo() {
             </div>
           </div>
           <div className="col-md-6">
-            <div className="banner bg-image d-flex align-items-center" style={{ backgroundImage: "url(/assets/images/demos/demo-28/banners/6.jpg)" }}>
+            <div className="banner bg-image d-flex align-items-center" style={{ backgroundImage: "url(/assets/images/home/campaign-variety.webp)" }}>
               <div className="banner-content">
                 <h4 className="banner-subtitle mb-1 mt-0 text-light font-weight-normal">Support local stores</h4>
                 <h3 className="banner-title font-weight-bold">Discover new sellers<br />joining {BRAND_NAME}</h3>

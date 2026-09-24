@@ -211,7 +211,7 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
                         width={900}
                         height={675}
                         sizes="(max-width: 767px) 100vw, 50vw"
-                        priority
+                        loading="eager"
                       />
                       <span className="product-detail-page__discount-badge">
                         Save {bag.discountPercent}%

@@ -1,4 +1,5 @@
 import FoodCategorySection from "@/components/home/FoodCategorySection";
+import HomeDataProvider from "@/components/home/HomeDataProvider";
 import IntroSection from "@/components/home/IntroSection";
 import NearExpirySection from "@/components/home/NearExpirySection";
 import NewStoresSection from "@/components/home/NewStoresSection";
@@ -15,12 +16,14 @@ export default function Home() {
       <main className="main">
         <div className="page-content">
           <IntroSection />
-          <FoodCategorySection />
-          <NearExpirySection />
-          <StealDealsBannerGroupOne />
-          <NearbySection />
-          <TrendingSection />
-          <NewStoresSection />
+          <HomeDataProvider>
+            <FoodCategorySection />
+            <NearExpirySection />
+            <StealDealsBannerGroupOne />
+            <NearbySection />
+            <TrendingSection />
+            <NewStoresSection />
+          </HomeDataProvider>
           <StealDealsBenefits />
           {/* <StealDealsNewsletterSection />
           <StealDealsBannerGroupTwo /> */}
