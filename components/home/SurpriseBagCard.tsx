@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/CartProvider";
+import { shouldUseUnoptimizedImage } from "@/lib/image-assets";
 
 export type SurpriseBag = {
   backendId?: string;
@@ -38,7 +40,14 @@ export default function SurpriseBagCard({ bag }: { bag: SurpriseBag }) {
     <article className="surprise-bag-card">
       <div className="surprise-bag-card__media">
         <Link href={productHref} aria-label={`View ${bag.name}`}>
-          <img src={bag.imageSrc} width="300" height="225" alt={bag.imageAlt} />
+          <Image
+            src={bag.imageSrc}
+            width={300}
+            height={225}
+            sizes="(max-width: 575px) 78vw, (max-width: 991px) 40vw, (max-width: 1199px) 30vw, 228px"
+            alt={bag.imageAlt}
+            unoptimized={shouldUseUnoptimizedImage(bag.imageSrc)}
+          />
         </Link>
         <span className="surprise-bag-card__badge">Save {bag.discountPercent}%</span>
         <span className="surprise-bag-card__expiry">{bag.availabilityLabel}</span>

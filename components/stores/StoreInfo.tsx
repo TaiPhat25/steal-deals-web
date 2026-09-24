@@ -1,6 +1,9 @@
+import Image from "next/image";
 import type { StoreProfile } from "@/components/stores/store-profile-data";
-
-const STORE_DETAIL_IMAGE = "/assets/images/demos/demo-28/banners/store.jpg";
+import {
+  shouldUseUnoptimizedImage,
+  STORE_FALLBACK_IMAGE,
+} from "@/lib/image-assets";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -19,17 +22,20 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
     (bag) => bag.status === "Active" && bag.quantityRemaining > 0,
   ).length;
   const reviewCount = store.storeReviews.length;
+  const storeImage = store.avatarUrl || STORE_FALLBACK_IMAGE;
 
   return (
     <section className="store-detail-page__section store-info-section" aria-labelledby="store-info-title">
       <div className="container">
         <article className="store-info">
           <div className="store-info__media">
-            <img
-              src={STORE_DETAIL_IMAGE}
-              width="570"
-              height="380"
+            <Image
+              src={storeImage}
+              width={570}
+              height={380}
+              sizes="(max-width: 767px) 100vw, 50vw"
               alt={`${store.name} storefront`}
+              unoptimized={shouldUseUnoptimizedImage(storeImage)}
             />
           </div>
 

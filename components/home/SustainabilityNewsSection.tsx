@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const articles = [
   {
     image: "/assets/images/home/food-rescue-packing.webp",
@@ -46,10 +48,11 @@ export default function SustainabilityNewsSection() {
             <article key={article.title} className="col-12 col-sm-6 col-lg-3 mb-3 mb-lg-0">
               <div className="sustainability-news-card">
                 <div className="sustainability-news-card__media">
-                  <img
+                  <Image
                     src={article.image}
-                    width="334"
-                    height="200"
+                    width={334}
+                    height={200}
+                    sizes="(max-width: 575px) 100vw, (max-width: 991px) 50vw, 25vw"
                     alt={article.imageAlt}
                   />
                 </div>

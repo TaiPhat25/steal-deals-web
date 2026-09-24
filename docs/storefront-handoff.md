@@ -40,6 +40,10 @@ admin and seller dashboards.
   `/seller`; customer-only accounts continue to go to `/`.
 - The `/products` catalog now loads active bags from the Store Service and runs
   its existing client-side filters and sorting against the API response.
+- Home category, surprise-bag, new-store, campaign, and sustainability content
+  images use `next/image` with stable dimensions and responsive `sizes`. API
+  image URLs outside the configured optimizer allowlist fall back to direct
+  loading instead of causing an unconfigured-host runtime error.
 - Product detail now loads the selected bag from the Store Service. The legacy
   `/cart` and `/checkout` routes use the in-memory cart, while the current
   product/header actions point to the parallel Redis-backed `/newcart` and
@@ -78,8 +82,8 @@ The storefront currently exposes 19 routes or route patterns:
 | `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing; cards use the API `imageUrl` with the original StealDeals surprise-bag placeholder as fallback |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |
 | `/register` | `components/login/LoginMain.tsx` | Identity Service registration and OTP prompt |
-| `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable Store Service-backed store directory with pagination |
-| `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store Service-backed profile, active surprise bags, and reviews |
+| `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable Store Service-backed store directory with pagination and API avatar/fallback imagery |
+| `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store Service-backed profile, active surprise bags, reviews, and API avatar/fallback imagery |
 | `/shipping` | `components/shipping/ShippingMain.tsx` | Authenticated order progress, pickup/delivery details, and order summary |
 | `/wishlist` | `components/wishlist/WishlistMain.tsx` | Temporarily disabled; previous static template retained in comments |
 
@@ -685,6 +689,12 @@ The active storefront still uses `public/assets`. Current notable state:
 - `public/assets/images/home` contains ten Home-owned hero, campaign, store
   fallback, and sustainability images. The five generated step-4 additions are
   optimized WebP files rather than shipping their full-resolution PNG sources.
+- All Home content images now use `next/image`; CSS backgrounds remain only on
+  the hero, guide campaigns, and newsletter compositions that place copy over
+  decorative media.
+- Bag, category, and store fallback paths are centralized in
+  `lib/image-assets.ts`. Store cards and store detail prefer the API
+  `avatarUrl`, then use the shared store fallback instead of a Molla image.
 - `public/assets/images/demos/demo-28` remains active for some catalog and store
   fallback imagery, but the rendered Home route no longer depends on it.
 - `public/assets/images/menu/demos` was retained because the commented demo
@@ -770,11 +780,12 @@ At this handoff:
 - TypeScript passes with `--incremental false`.
 - Vitest passes 11 files and 92 tests, covering authentication components,
   password reset, OTP/focus behavior, header search, and shared Home data states.
-- Store-scoped ESLint has 0 errors and 17 warnings. Seven are manual stylesheet
-  warnings in the legacy store layout, nine are native `<img>` warnings, and one
-  is a `CartProvider` hook-dependency warning.
-- The production build was not rerun during the September 22 documentation
-  audit; run it before merging deployment-related work.
+- The changed Home/store image files pass ESLint. The complete storefront lint
+  is temporarily blocked by a parsing error in the separate untracked
+  `components/auth/ResendOtpButton.test.tsx` work; excluding that file, the
+  scope has 12 warnings: seven legacy stylesheet warnings, four remaining
+  native `<img>` warnings, and one `CartProvider` hook-dependency warning.
+- The production build passes after the Home content-image migration.
 - Local HTTP checks return `200` for `/products`, category-filtered products,
   a known store, and all 12 listing images; unknown stores return `404`.
 - The public `/stores` listing now loads stores and their available bags from
@@ -816,8 +827,8 @@ At this handoff:
 - Legacy jQuery scripts are globally loaded for all store pages and increase
   bundle/runtime cost.
 - Many internal links still target `.html` template files or `#`.
-- Several storefront content images still use `<img>` instead of `next/image`,
-  producing lint warnings.
+- Four storefront images still use `<img>` instead of `next/image`, producing
+  lint warnings in cart, checkout, Footer, and NewsletterPopup.
 - Unit/component coverage now exists for core authentication behavior, header
   search, product-listing helpers, and Home data sharing. End-to-end browser
   coverage does not exist yet.
@@ -836,11 +847,11 @@ Home is in progress, and seven packages still require work or final validation.
    states are complete. Visible Molla/demo imagery has been replaced with
    Home-owned assets. Ranking semantics and final desktop/mobile validation
    remain.
-3. [ ] **Image standardization:** the shared bag/category fallbacks and S3 bag
-   path allowlist are complete. Replace remaining content-bearing native `<img>`
-   elements with `next/image`, add stable dimensions and responsive `sizes`,
-   preserve CSS backgrounds only for decorative media, and narrowly allowlist
-   any additional remote storage paths.
+3. [ ] **Image standardization:** the shared bag/category/store fallbacks, S3
+   bag path allowlist, and Home content-image migration are complete. Replace
+   the four remaining content-bearing native `<img>` elements with `next/image`, add
+   stable dimensions and responsive `sizes`, preserve CSS backgrounds only for
+   decorative media, and narrowly allowlist any additional remote storage paths.
 4. [ ] **Shared storefront shell:** active navigation, authentication controls,
    product search, branding, and cart presentation are implemented. Remove
    hidden Molla navigation markup and dead `.html`/hash links, then finish
@@ -863,7 +874,7 @@ Home is in progress, and seven packages still require work or final validation.
 
 ## Safe continuation points
 
-1. Finish Home ranking semantics, image migration, and responsive validation.
+1. Finish Home ranking semantics and responsive validation.
 2. Add `NEXT_PUBLIC_CART_API_URL`, decide whether `/newcart` and `/newcheckout`
    replace the legacy route names, and remove duplicate cart state afterward.
 3. Add a secret-free `.env.example` once canonical local service ports are

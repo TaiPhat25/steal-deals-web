@@ -1,7 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { CATEGORY_FALLBACK_IMAGE } from "@/lib/image-assets";
+import {
+  CATEGORY_FALLBACK_IMAGE,
+  shouldUseUnoptimizedImage,
+} from "@/lib/image-assets";
 import HomeCollectionState from "./HomeCollectionState";
 import { useHomeData } from "./HomeDataProvider";
 
@@ -85,11 +89,13 @@ export default function FoodCategorySection() {
                   <div className="cat bg-white pt-1 mb-2">
                     <div className="cat-image d-flex justify-content-center align-items-center">
                       <Link href={categoryHref}>
-                        <img
+                        <Image
                           src={category.image}
-                          width="137"
-                          height="137"
+                          width={137}
+                          height={137}
+                          sizes="137px"
                           alt={`${category.name} surprise bags`}
+                          unoptimized={shouldUseUnoptimizedImage(category.image)}
                         />
                       </Link>
                     </div>

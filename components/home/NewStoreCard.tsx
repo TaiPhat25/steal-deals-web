@@ -1,28 +1,29 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { StoreProfile } from "@/components/stores/store-profile-data";
+import {
+  shouldUseUnoptimizedImage,
+  STORE_FALLBACK_IMAGE,
+} from "@/lib/image-assets";
 
 export type NewStore = StoreProfile;
 
-export default function NewStoreCard({
-  store,
-  imageSrc,
-}: {
-  store: NewStore;
-  imageSrc?: string;
-}) {
+export default function NewStoreCard({ store }: { store: NewStore }) {
   const storeHref = `/stores/${encodeURIComponent(store.id)}`;
   const productCount = store.surpriseBags.length;
+  const storeImage = store.avatarUrl || STORE_FALLBACK_IMAGE;
 
   return (
     <article className="new-store-card">
       <Link href={storeHref} className="new-store-card__media" aria-label={`View ${store.name}`}>
-        {imageSrc ?? store.avatarUrl ? (
-          <img src={imageSrc ?? store.avatarUrl!} width="300" height="200" alt={`${store.name} storefront`} />
-        ) : (
-          <span className="new-store-card__placeholder" aria-hidden="true">
-            {store.name.charAt(0)}
-          </span>
-        )}
+        <Image
+          src={storeImage}
+          width={300}
+          height={200}
+          sizes="(max-width: 575px) 78vw, (max-width: 991px) 40vw, (max-width: 1199px) 30vw, 228px"
+          alt={`${store.name} storefront`}
+          unoptimized={shouldUseUnoptimizedImage(storeImage)}
+        />
         <span className="new-store-card__badge">{store.isVerify ? "Verified" : "New store"}</span>
       </Link>
       <div className="new-store-card__body">

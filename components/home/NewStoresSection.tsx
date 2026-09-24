@@ -9,8 +9,6 @@ import HomeCollectionState from "./HomeCollectionState";
 import { useHomeData } from "./HomeDataProvider";
 import NewStoreCard from "./NewStoreCard";
 
-const STORE_FALLBACK_IMAGE = "/assets/images/home/store-fallback.webp";
-
 export default function NewStoresSection() {
   const { bags, retry, stores: storeResource } = useHomeData();
   const stores = useMemo<StoreProfile[]>(() => {
@@ -64,11 +62,7 @@ export default function NewStoresSection() {
         ) : (
           <DragScrollRow className="drag-scroll-row new-stores-scroll-row" visibleItems={5}>
             {stores.map((store) => (
-              <NewStoreCard
-                key={store.id}
-                store={store}
-                imageSrc={store.avatarUrl || STORE_FALLBACK_IMAGE}
-              />
+              <NewStoreCard key={store.id} store={store} />
             ))}
           </DragScrollRow>
         )}
