@@ -18,9 +18,18 @@ import type { OrderResponse } from "@/lib/api/dashboard-types";
 
 type OrderFilter = "all" | string;
 
+const ORDERS_PER_PAGE = 5;
+
 function formatOrderDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
+  }).format(new Date(value));
+}
+
+function formatOrderDateTime(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
   }).format(new Date(value));
 }
 
@@ -38,11 +47,28 @@ function getOrderPaymentText(order: OrderResponse, transaction: TransactionRespo
   return "No online payment";
 }
 
+function getOrderItemCount(order: OrderResponse) {
+  return order.items.reduce((total, item) => total + item.quantity, 0);
+}
+
+function getFulfillmentLabel(order: OrderResponse) {
+  return order.deliveryType === "Pickup" ? "Store pickup" : "Delivery";
+}
+
+function getFulfillmentDetail(order: OrderResponse) {
+  if (order.deliveryType === "Pickup") {
+    return order.deliveryAddress || order.storeNameSnapshot;
+  }
+
+  return order.deliveryAddress || "Delivery address saved";
+}
+
 export default function OrderHistoryMain() {
   const searchParams = useSearchParams();
   const { accessToken } = useAuth();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<OrderFilter>("all");
+  const [page, setPage] = useState(1);
   const [orders, setOrders] = useState<OrderResponse[]>([]);
   const [transactionsByOrderId, setTransactionsByOrderId] = useState<Record<string, TransactionResponse>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -64,6 +90,7 @@ export default function OrderHistoryMain() {
   useEffect(() => {
     if (!accessToken) return;
 
+    const orderAccessToken = accessToken;
     let active = true;
 
     async function loadOrders() {
@@ -72,8 +99,8 @@ export default function OrderHistoryMain() {
 
       try {
         const [nextOrders, nextTransactions] = await Promise.all([
-          listMyOrders(accessToken),
-          getMyTransactions(accessToken).catch(() => [] as TransactionResponse[]),
+          listMyOrders(orderAccessToken),
+          getMyTransactions(orderAccessToken).catch(() => [] as TransactionResponse[]),
         ]);
 
         if (!active) return;
@@ -125,6 +152,11 @@ export default function OrderHistoryMain() {
     () => Array.from(new Set(orders.map((order) => order.status))).sort(),
     [orders],
   );
+  const pageCount = Math.max(1, Math.ceil(visibleOrders.length / ORDERS_PER_PAGE));
+  const activePage = Math.min(page, pageCount);
+  const paginationStart = visibleOrders.length ? (activePage - 1) * ORDERS_PER_PAGE + 1 : 0;
+  const paginationEnd = Math.min(activePage * ORDERS_PER_PAGE, visibleOrders.length);
+  const paginatedOrders = visibleOrders.slice(paginationStart - 1, paginationEnd);
 
   return (
     <main className="main order-history-page">
@@ -162,13 +194,19 @@ export default function OrderHistoryMain() {
               <input
                 type="search"
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search order, store, surprise bag, or payment"
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search store, surprise bag, or payment"
               />
             </label>
             <label className="order-history-status-filter">
               <span>Filter by status</span>
-              <select value={filter} onChange={(event) => setFilter(event.target.value)}>
+              <select value={filter} onChange={(event) => {
+                setFilter(event.target.value);
+                setPage(1);
+              }}>
                 <option value="all">All orders</option>
                 {statusOptions.map((status) => (
                   <option key={status} value={status}>{getOrderStatusLabel(status)}</option>
@@ -178,7 +216,11 @@ export default function OrderHistoryMain() {
           </section>
 
           <div className="order-history-result-count">
-            {isLoading ? "Loading orders" : `Showing ${visibleOrders.length} ${visibleOrders.length === 1 ? "order" : "orders"}`}
+            {isLoading
+              ? "Loading orders"
+              : visibleOrders.length
+                ? `Showing ${paginationStart}-${paginationEnd} of ${visibleOrders.length} ${visibleOrders.length === 1 ? "order" : "orders"}`
+                : "Showing 0 orders"}
           </div>
 
           {isLoading ? (
@@ -188,11 +230,13 @@ export default function OrderHistoryMain() {
               <p>Checking your latest order and payment activity.</p>
             </section>
           ) : visibleOrders.length ? (
+            <>
             <section className="order-history-list" aria-label="Orders">
-              {visibleOrders.map((order) => {
+              {paginatedOrders.map((order) => {
                 const transaction = transactionsByOrderId[order.id] ?? null;
                 const remainingSeconds = getRemainingSeconds(transaction?.expiresAt ?? null, now);
                 const canPay = canPayTransaction(transaction, now);
+                const itemCount = getOrderItemCount(order);
 
                 return (
                   <article className="order-history-card" key={order.id}>
@@ -216,8 +260,12 @@ export default function OrderHistoryMain() {
                         ))}
                       </div>
                       <dl className="order-history-card__facts">
-                        <div><dt>Order ID</dt><dd>{order.id}</dd></div>
-                        <div><dt>Type</dt><dd>{order.deliveryType}</dd></div>
+                        <div><dt>Items</dt><dd>{itemCount} {itemCount === 1 ? "bag" : "bags"}</dd></div>
+                        <div><dt>Receive by</dt><dd>{getFulfillmentLabel(order)}</dd></div>
+                        <div><dt>Location</dt><dd>{getFulfillmentDetail(order)}</dd></div>
+                        {order.pickupDeadline ? (
+                          <div><dt>Pickup before</dt><dd>{formatOrderDateTime(order.pickupDeadline)}</dd></div>
+                        ) : null}
                         <div><dt>Total</dt><dd>{formatPaymentPrice(order.totalAmount)}</dd></div>
                       </dl>
                     </div>
@@ -234,7 +282,7 @@ export default function OrderHistoryMain() {
                         {canPay ? (
                           <a
                             href={transaction?.checkoutUrl ?? "#"}
-                            className="btn btn-primary"
+                            className="btn btn-primary order-history-pay-button"
                             onClick={() => {
                               if (transaction?.gatewayRef) {
                                 window.localStorage.setItem(`vnpay-order:${transaction.gatewayRef}`, order.id);
@@ -254,6 +302,18 @@ export default function OrderHistoryMain() {
                 );
               })}
             </section>
+            {pageCount > 1 ? (
+              <nav className="order-history-pagination" aria-label="Order history pagination">
+                <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={activePage === 1}>
+                  Previous
+                </button>
+                <span>Page {activePage} of {pageCount}</span>
+                <button type="button" onClick={() => setPage((current) => Math.min(pageCount, current + 1))} disabled={activePage === pageCount}>
+                  Next
+                </button>
+              </nav>
+            ) : null}
+            </>
           ) : (
             <section className="order-history-empty" aria-live="polite">
               <i className="icon-shopping-cart" aria-hidden="true" />

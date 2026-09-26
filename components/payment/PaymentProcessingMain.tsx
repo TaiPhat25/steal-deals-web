@@ -8,7 +8,6 @@ import {
   formatPaymentPrice,
   formatRemainingSeconds,
   getRemainingSeconds,
-  getTransactionStatusLabel,
 } from "@/components/payment/payment-view-utils";
 import { ApiClientError } from "@/lib/api/client";
 import { getTransactionByOrderId, type TransactionResponse } from "@/lib/api/payment";
@@ -132,9 +131,31 @@ export default function PaymentProcessingMain() {
   const remainingSeconds = getRemainingSeconds(transaction?.expiresAt ?? null, now);
   const canOpenOrder = Boolean(orderId);
   const isTimedOut = elapsedMs >= MAX_WAIT_MS && !hasRedirected;
-  const progressPercent = Math.min(100, Math.round((elapsedMs / MAX_WAIT_MS) * 100));
   const elapsedLabel = formatElapsedTime(elapsedMs);
   const maxWaitLabel = formatElapsedTime(MAX_WAIT_MS);
+  const isWaitingForRedirect =
+    !isTimedOut
+    && !hasRedirected
+    && (!transaction || transaction.status === "Pending");
+  const nextStepLabel = transaction
+    ? transaction.status === "Pending"
+      ? transaction.checkoutUrl
+        ? "Redirecting to VNPAY"
+        : "Waiting for VNPAY checkout"
+      : "Review this order"
+    : "Preparing VNPAY checkout";
+  const checkoutLinkLabel = transaction
+    ? transaction.status === "Pending"
+      ? transaction.checkoutUrl
+        ? "Ready"
+        : "Still being created"
+      : "No active checkout link"
+    : "Creating secure link";
+  const paymentWindowLabel = transaction?.status === "Pending" && transaction.checkoutUrl
+    ? formatRemainingSeconds(remainingSeconds)
+    : transaction
+      ? "Not available"
+      : "Starts once the link is ready";
 
   return (
     <main className="main payment-page">
@@ -151,35 +172,34 @@ export default function PaymentProcessingMain() {
       <div className="page-content">
         <div className="container">
           <section className="payment-result-card" aria-live="polite">
-            <span className="payment-result-card__icon is-pending" aria-hidden="true">
+            <span className={`payment-result-card__icon is-pending${isWaitingForRedirect ? " is-spinning" : ""}`} aria-hidden="true">
               <i className="icon-refresh" />
             </span>
             <p>VNPAY payment</p>
             <h1>Preparing secure checkout</h1>
             <span>{message}</span>
 
-            <div className="payment-processing-progress" role="status">
-              <div className="payment-processing-progress__bar" aria-hidden="true">
-                <span style={{ width: `${progressPercent}%` }} />
+            <div className="payment-processing-wait" role="status">
+              <span className="payment-processing-wait__spinner" aria-hidden="true" />
+              <div className="payment-processing-wait__copy">
+                <strong>Waiting for VNPAY</strong>
+                <span>Keep this page open. We will redirect you automatically when checkout is ready.</span>
               </div>
-              <div className="payment-processing-progress__meta">
-                <span>Checking every {POLL_INTERVAL_MS / 1000}s</span>
-                <span>{elapsedLabel} / {maxWaitLabel}</span>
-              </div>
+              <span className="payment-processing-wait__time">{elapsedLabel} / {maxWaitLabel}</span>
             </div>
 
             {orderId ? (
               <dl className="payment-facts">
-                <div><dt>Order ID</dt><dd>{orderId}</dd></div>
+                <div><dt>Order</dt><dd>Created and saved</dd></div>
+                <div><dt>Next step</dt><dd>{nextStepLabel}</dd></div>
                 {transaction ? (
                   <>
-                    <div><dt>Payment status</dt><dd>{getTransactionStatusLabel(transaction.status)}</dd></div>
-                    <div><dt>Amount</dt><dd>{formatPaymentPrice(transaction.amount)}</dd></div>
-                    <div><dt>Link expires in</dt><dd>{formatRemainingSeconds(remainingSeconds)}</dd></div>
-                    <div><dt>Payment link</dt><dd>{transaction.checkoutUrl ? "Ready" : "Waiting"}</dd></div>
+                    <div><dt>Total to pay</dt><dd>{formatPaymentPrice(transaction.amount)}</dd></div>
+                    <div><dt>VNPAY link</dt><dd>{checkoutLinkLabel}</dd></div>
+                    <div><dt>Payment window</dt><dd>{paymentWindowLabel}</dd></div>
                   </>
                 ) : (
-                  <div><dt>Payment status</dt><dd>Waiting for transaction</dd></div>
+                  <div><dt>VNPAY link</dt><dd>{checkoutLinkLabel}</dd></div>
                 )}
               </dl>
             ) : (
@@ -189,6 +209,11 @@ export default function PaymentProcessingMain() {
             )}
 
             {error ? <div className="alert alert-danger" role="alert">{error}</div> : null}
+            {isTimedOut && canOpenOrder ? (
+              <div className="alert alert-warning" role="status">
+                VNPAY is taking longer than expected. You can open the order details page and use the VNPAY payment link manually when it appears.
+              </div>
+            ) : null}
 
             <div className="payment-result-card__actions">
               {transaction?.checkoutUrl && transaction.status === "Pending" && remainingSeconds !== 0 ? (

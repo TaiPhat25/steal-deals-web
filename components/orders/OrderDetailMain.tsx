@@ -25,6 +25,10 @@ function getOrderStatusLabel(status: string) {
   return status;
 }
 
+function getOrderReference(orderId: string) {
+  return `#${orderId.slice(0, 8).toUpperCase()}`;
+}
+
 function getPaymentHeadline(order: OrderResponse | null, transaction: TransactionResponse | null) {
   if (!order) return "Loading order";
   if (!transaction) return order.status === "Pending" ? "Preparing payment" : "Payment details";
@@ -51,6 +55,24 @@ function getPaymentDescription(order: OrderResponse | null, transaction: Transac
   }
   if (transaction.failureReason) return transaction.failureReason;
   return "This is the latest payment state from the payment service.";
+}
+
+function getPaymentWindowLabel(transaction: TransactionResponse | null, remainingSeconds: number | null) {
+  if (!transaction) return "Preparing";
+  if (transaction.status === "Pending" && transaction.checkoutUrl) {
+    return formatRemainingSeconds(remainingSeconds);
+  }
+  if (transaction.status === "Pending") return "Waiting for link";
+  if (transaction.status === "Success") return "Completed";
+  if (transaction.status === "Expired") return "Expired";
+  return "Not available";
+}
+
+function getPaymentLinkLabel(transaction: TransactionResponse | null, remainingSeconds: number | null) {
+  if (!transaction) return "Creating secure link";
+  if (transaction.status === "Pending" && transaction.checkoutUrl && remainingSeconds !== 0) return "Ready to open";
+  if (transaction.status === "Pending") return "Still being created";
+  return "No active payment link";
 }
 
 export default function OrderDetailMain({ orderId }: { orderId: string }) {
@@ -124,8 +146,11 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
   }, [loadOrderDetail]);
 
   useEffect(() => {
-    if (!accessToken || !order || transaction) return;
+    if (!accessToken || !orderId || !order || transaction) return;
     if (order.status !== "Pending") return;
+
+    const paymentAccessToken = accessToken;
+    const paymentOrderId = orderId;
 
     let cancelled = false;
     let attempts = 0;
@@ -135,16 +160,16 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
       attempts += 1;
 
       try {
-        const nextTransaction = await getTransactionByOrderId(accessToken, orderId);
+        const nextTransaction = await getTransactionByOrderId(paymentAccessToken, paymentOrderId);
         if (cancelled) return;
 
         setTransaction(nextTransaction);
         setPaymentNotice("");
 
         if (nextTransaction.gatewayRef) {
-          window.localStorage.setItem(`vnpay-order:${nextTransaction.gatewayRef}`, orderId);
+          window.localStorage.setItem(`vnpay-order:${nextTransaction.gatewayRef}`, paymentOrderId);
         }
-        window.localStorage.setItem("vnpay-last-order-id", orderId);
+        window.localStorage.setItem("vnpay-last-order-id", paymentOrderId);
         return;
       } catch (requestError) {
         if (cancelled) return;
@@ -178,6 +203,10 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
   const canPay = canPayTransaction(transaction, now);
   const hasCheckoutUrl = hasPendingCheckoutUrl(transaction);
   const paymentTone = transaction ? getPaymentStatusTone(transaction.status) : "pending";
+  const orderReference = getOrderReference(orderId);
+  const paymentWindowLabel = getPaymentWindowLabel(transaction, remainingSeconds);
+  const paymentLinkLabel = getPaymentLinkLabel(transaction, remainingSeconds);
+  const paymentAmount = transaction ? transaction.amount : order?.totalAmount ?? 0;
 
   function handlePayNow() {
     if (!transaction?.checkoutUrl) return;
@@ -222,8 +251,8 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
             <>
               <section className="shipping-order-banner">
                 <div>
-                  <span>Order ID</span>
-                  <strong>{order.id}</strong>
+                  <span>Store</span>
+                  <strong>{order.storeNameSnapshot}</strong>
                 </div>
                 <div>
                   <span>Placed</span>
@@ -248,13 +277,16 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
 
                     <dl className="payment-facts payment-facts--compact">
                       <div><dt>Payment method</dt><dd>{transaction?.paymentMethod ?? "VNPAY"}</dd></div>
-                      <div><dt>Amount</dt><dd>{transaction ? formatPaymentPrice(transaction.amount) : formatPaymentPrice(order.totalAmount)}</dd></div>
-                      <div><dt>Expires in</dt><dd>{formatRemainingSeconds(remainingSeconds)}</dd></div>
-                      <div><dt>Gateway ref</dt><dd>{transaction?.gatewayRef ?? "-"}</dd></div>
-                      <div><dt>VNPAY transaction</dt><dd>{transaction?.gatewayTransactionNo ?? "-"}</dd></div>
-                      <div><dt>Paid at</dt><dd>{formatPaymentDate(transaction?.paidAt ?? null)}</dd></div>
+                      <div><dt>Amount</dt><dd>{formatPaymentPrice(paymentAmount)}</dd></div>
+                      <div><dt>Payment window</dt><dd>{paymentWindowLabel}</dd></div>
+                      {transaction?.paidAt ? (
+                        <div><dt>Paid at</dt><dd>{formatPaymentDate(transaction.paidAt)}</dd></div>
+                      ) : null}
+                      {transaction?.failureReason ? (
+                        <div className="payment-link-fact"><dt>Issue</dt><dd>{transaction.failureReason}</dd></div>
+                      ) : null}
                       <div className="payment-link-fact">
-                        <dt>Payment link</dt>
+                        <dt>VNPAY link</dt>
                         <dd>
                           {transaction?.checkoutUrl ? (
                             <a href={transaction.checkoutUrl} onClick={() => {
@@ -265,7 +297,7 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
                             }}>
                               Open VNPAY checkout
                             </a>
-                          ) : "-"}
+                          ) : paymentLinkLabel}
                         </dd>
                       </div>
                     </dl>
@@ -274,7 +306,7 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
 
                     <div className="payment-panel__actions">
                       {hasCheckoutUrl ? (
-                        <button type="button" className="btn btn-primary" onClick={handlePayNow}>
+                        <button type="button" className="btn btn-primary order-detail-pay-button" onClick={handlePayNow}>
                           {canPay ? "Pay with VNPAY" : "Open saved VNPAY link"}
                         </button>
                       ) : null}
@@ -321,6 +353,8 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
                 <aside className="shipping-summary" aria-labelledby="order-summary-title">
                   <p>Order summary</p>
                   <h2 id="order-summary-title">{formatPaymentPrice(order.totalAmount)}</h2>
+                  <div><span>Order reference</span><strong>{orderReference}</strong></div>
+                  <div><span>Store</span><strong>{order.storeNameSnapshot}</strong></div>
                   <div><span>Subtotal</span><strong>{formatPaymentPrice(order.totalAmount - order.deliveryFee + order.voucherDiscount)}</strong></div>
                   <div><span>Delivery fee</span><strong>{order.deliveryFee ? formatPaymentPrice(order.deliveryFee) : "Free"}</strong></div>
                   <div><span>Voucher discount</span><strong>{order.voucherDiscount ? `- ${formatPaymentPrice(order.voucherDiscount)}` : "-"}</strong></div>
