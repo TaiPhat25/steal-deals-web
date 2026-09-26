@@ -14,6 +14,7 @@ type IconName =
   | "users"
   | "sellers"
   | "categories"
+  | "requests"
   | "support"
   | "products"
   | "orders"
@@ -41,6 +42,7 @@ const navigation: Record<
       { label: "Seller Management", href: "/admin/sellers", icon: "sellers" },
       { label: "Admin Management", href: "/admin/admins", icon: "users" },
       { label: "Food Categories", href: "/admin/categories", icon: "categories" },
+      { label: "Category Requests", href: "/admin/category-requests", icon: "requests" },
       { label: "Support & Reports", href: "/admin/support", icon: "support" },
     ],
     communications: [],
@@ -52,6 +54,7 @@ const navigation: Record<
       { label: "Surprise Bags", href: "/seller/products", icon: "products" },
       { label: "Orders", href: "/seller/orders", icon: "orders" },
       { label: "Store Reviews", href: "/seller/store-reviews", icon: "reviews" },
+      { label: "Category Requests", href: "/seller/category-requests", icon: "requests" },
       { label: "Store Profile", href: "/seller/settings", icon: "settings" },
     ],
     communications: [
@@ -67,6 +70,8 @@ const iconPaths: Record<IconName, string> = {
   sellers:
     "M3 10h18M5 6h14l1 4H4zM5 10v10h14V10M9 20v-6h6v6",
   categories: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
+  requests:
+    "M7 7h.01M7 3h5a2 2 0 0 1 1.414.586l7 7a2 2 0 0 1 0 2.828l-7 7a2 2 0 0 1-2.828 0l-7-7A2 2 0 0 1 3 12V5a2 2 0 0 1 2-2h2z",
   support:
     "M4 13a8 8 0 0 1 16 0M4 13v4a2 2 0 0 0 2 2h1v-6H4zM20 13v4a2 2 0 0 1-2 2h-1v-6h3z",
   products: "M4 7h16l-1 13H5zM8 7a4 4 0 0 1 8 0",

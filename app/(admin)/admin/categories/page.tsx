@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { DashboardButton, DashboardCard, PageHeader, ProductImage, StatusBadge } from "@/components/dashboard/ui";
@@ -163,7 +164,19 @@ export default function AdminCategories() {
       {toast && <DashboardToast key={toast}>{toast}</DashboardToast>}
       <DashboardCard className="w-full overflow-hidden">
         <div className="p-4 sm:p-6">
-          <PageHeader title="Categories" action={<DashboardButton disabled={loading} onClick={() => setEditing("new")}>+ Create category</DashboardButton>} />
+          <PageHeader
+            title="Categories"
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href="/admin/category-requests">
+                  <DashboardButton variant="secondary">Review requests →</DashboardButton>
+                </Link>
+                <DashboardButton disabled={loading} onClick={() => setEditing("new")}>
+                  + Create category
+                </DashboardButton>
+              </div>
+            }
+          />
           <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <label className="relative w-full lg:w-72"><span className="sr-only">Search categories</span><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-light-secondary-text">⌕</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); resetPage(); }} placeholder="Search name or slug..." className="h-9 w-full rounded-full border-none bg-gray-100 pl-9 pr-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary" /></label>
             <div className="flex flex-wrap items-center gap-3"><select aria-label="Category status" value={active} onChange={(event) => { setActive(event.target.value); resetPage(); }} className="h-9 rounded-full border-none bg-gray-100 px-3 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Disabled</option></select>{(search || active) && <button type="button" onClick={() => { setSearch(""); setActive(""); resetPage(); }} className="h-9 rounded-full px-3 text-sm font-semibold text-primary hover:bg-primary-lighter">Clear</button>}{selected.length > 0 && <DashboardButton variant="danger" onClick={() => setDeleting("selected")}>Delete {selected.length}</DashboardButton>}</div>
