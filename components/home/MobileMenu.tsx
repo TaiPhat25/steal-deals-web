@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function MobileMenu() {
   const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
 
-  const isNavItemActive = (item: "home" | "products" | "stores" | "about" | "contact") => {
+  const isNavItemActive = (item: "home" | "products" | "stores" | "orders" | "about" | "contact") => {
     switch (item) {
       case "home":
         return pathname === "/";
@@ -14,6 +16,8 @@ export default function MobileMenu() {
         return pathname === "/products" || pathname === "/product" || pathname.startsWith("/product/");
       case "stores":
         return pathname === "/stores" || pathname.startsWith("/stores/");
+      case "orders":
+        return pathname === "/orders" || pathname.startsWith("/orders/");
       case "about":
         return pathname === "/about";
       case "contact":
@@ -222,6 +226,16 @@ export default function MobileMenu() {
                   </li>
                 </ul> */}
               </li>
+              {isAuthenticated ? (
+                <li className={isNavItemActive("orders") ? "active" : undefined}>
+                  <Link
+                    href="/orders"
+                    className={isNavItemActive("orders") ? "active" : undefined}
+                  >
+                    My Orders
+                  </Link>
+                </li>
+              ) : null}
               <li className={isNavItemActive("about") ? "active" : undefined}>
                 <Link
                   href="/about"

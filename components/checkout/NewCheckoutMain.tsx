@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRedisCart } from "@/components/cart/useRedisCart";
@@ -59,6 +60,7 @@ function formatRemainingTime(expiresAtUtc: string, now: number) {
 }
 
 export default function NewCheckoutMain() {
+  const router = useRouter();
   const { accessToken, currentUser } = useAuth();
   const {
     groups,
@@ -78,7 +80,7 @@ export default function NewCheckoutMain() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("new");
-  const [paymentMethod, setPaymentMethod] = useState("CashOnPickup");
+  const [paymentMethod, setPaymentMethod] = useState("OnlinePayment");
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -197,6 +199,7 @@ export default function NewCheckoutMain() {
     }
 
     setSubmitting(true);
+    setSubmitted(false);
 
     try {
       const orders = await Promise.all(
@@ -213,7 +216,14 @@ export default function NewCheckoutMain() {
 
       setCreatedOrders(orders);
       await refresh();
-      setSubmitted(true);
+
+      if (orders.length === 1) {
+        router.push(`/checkout/payment-processing?orderId=${encodeURIComponent(orders[0].id)}`);
+        return;
+      }
+
+      router.push(`/orders?payment=multiple&orders=${encodeURIComponent(orders.map((order) => order.id).join(","))}`);
+      return;
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -462,17 +472,17 @@ export default function NewCheckoutMain() {
                     <span className="checkout-panel__step">4</span>
                   </div>
                   <div className="checkout-payment-list">
-                    <label className={`checkout-payment${paymentMethod === "CashOnPickup" ? " is-selected" : ""}`}>
-                      <input type="radio" name="paymentMethod" value="CashOnPickup" checked={paymentMethod === "CashOnPickup"} onChange={(event) => setPaymentMethod(event.target.value)} />
-                      <span><strong>Cash on pickup</strong><small>Pay when you collect your bags from the store.</small></span>
+                    <label className="checkout-payment is-disabled">
+                      <input type="radio" name="paymentMethod" value="CashOnPickup" checked={paymentMethod === "CashOnPickup"} onChange={(event) => setPaymentMethod(event.target.value)} disabled />
+                      <span><strong>Cash on pickup</strong><small>Coming soon.</small></span>
                     </label>
-                    <label className={`checkout-payment${paymentMethod === "BankTransfer" ? " is-selected" : ""}`}>
-                      <input type="radio" name="paymentMethod" value="BankTransfer" checked={paymentMethod === "BankTransfer"} onChange={(event) => setPaymentMethod(event.target.value)} />
-                      <span><strong>Bank transfer</strong><small>Receive payment instructions after placing the order.</small></span>
+                    <label className="checkout-payment is-disabled">
+                      <input type="radio" name="paymentMethod" value="BankTransfer" checked={paymentMethod === "BankTransfer"} onChange={(event) => setPaymentMethod(event.target.value)} disabled />
+                      <span><strong>Bank transfer</strong><small>Coming soon.</small></span>
                     </label>
                     <label className={`checkout-payment${paymentMethod === "OnlinePayment" ? " is-selected" : ""}`}>
                       <input type="radio" name="paymentMethod" value="OnlinePayment" checked={paymentMethod === "OnlinePayment"} onChange={(event) => setPaymentMethod(event.target.value)} />
-                      <span><strong>Online payment</strong><small>Use an online payment gateway when it is connected.</small></span>
+                      <span><strong>VNPAY online payment</strong><small>Pay through VNPAY after the store inventory is reserved.</small></span>
                     </label>
                   </div>
                 </section>
@@ -492,7 +502,7 @@ export default function NewCheckoutMain() {
                 <div className="checkout-summary__row"><span>Voucher discount</span><strong>{appliedVoucherDiscount ? `- ${formatPrice(appliedVoucherDiscount)}` : "-"}</strong></div>
                 <div className="checkout-summary__total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
                 {(error || cartError) && <div className="alert alert-danger" role="alert">{error || cartError}</div>}
-                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting || isLoading || isMutating || selectedGroups.length === 0}>{submitting ? "Placing order..." : "Place order"} <span aria-hidden="true">&#8594;</span></button>
+                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting || isLoading || isMutating || selectedGroups.length === 0}>{submitting ? "Preparing VNPAY..." : "Place order and pay"} <span aria-hidden="true">&#8594;</span></button>
                 <p className="checkout-summary__note">By placing your order, you agree to collect the bags during the listed pickup window.</p>
               </aside>
             </form>

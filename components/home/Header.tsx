@@ -25,7 +25,7 @@ export default function Header() {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const { items: headerCartItems, itemCount: headerCartCount, subtotal: headerCartTotal } = useCart();
 
-  const isNavItemActive = (item: "home" | "products" | "stores" | "about" | "contact") => {
+  const isNavItemActive = (item: "home" | "products" | "stores" | "orders" | "about" | "contact") => {
     switch (item) {
       case "home":
         return pathname === "/";
@@ -33,6 +33,8 @@ export default function Header() {
         return pathname === "/products" || pathname === "/product" || pathname.startsWith("/product/");
       case "stores":
         return pathname === "/stores" || pathname.startsWith("/stores/");
+      case "orders":
+        return pathname === "/orders" || pathname.startsWith("/orders/");
       case "about":
         return pathname === "/about";
       case "contact":
@@ -116,6 +118,12 @@ export default function Header() {
                     <li className="account-inline">
                       <Link href="/profile" className="account-link">
                         Welcome, {currentUser.name}
+                      </Link>
+                      <span className="account-separator" aria-hidden="true">
+                        |
+                      </span>
+                      <Link href="/orders" className="account-link">
+                        My Orders
                       </Link>
                       <span className="account-separator" aria-hidden="true">
                         |
@@ -797,6 +805,16 @@ export default function Header() {
                       </div>
                     </div> */}
                   </li>
+                  {isAuthenticated ? (
+                    <li className={isNavItemActive("orders") ? "active" : undefined}>
+                      <Link
+                        href="/orders"
+                        className={isNavItemActive("orders") ? "active" : undefined}
+                      >
+                        My Orders
+                      </Link>
+                    </li>
+                  ) : null}
                   <li className={isNavItemActive("about") ? "active" : undefined}>
                     <Link
                       href="/about"
