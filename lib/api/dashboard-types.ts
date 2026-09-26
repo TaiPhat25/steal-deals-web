@@ -133,3 +133,31 @@ export const CURRENT_ORDER_STATUSES = [
   "Confirmed",
   "Cancelled",
 ] as const;
+
+export type CategorySuggestionStatus =
+  | "Pending"
+  | "Approved"
+  | "Rejected"
+  | string;
+
+export type CategorySuggestionResponse = {
+  id: string;
+  storeId: string;
+  storeName: string;
+  suggestedName: string;
+  status: CategorySuggestionStatus;
+  adminComment?: string | null;
+  createdAt: string;
+};
+
+export type CreateCategorySuggestionRequest = {
+  suggestedName: string;
+};
+
+export type ReviewCategorySuggestionRequest = {
+  status: "Approved" | "Rejected" | string;
+  adminComment?: string | null;
+  iconUrl?: string | null;
+  officialCategoryName?: string | null;
+};
+

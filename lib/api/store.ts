@@ -1,8 +1,11 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
   CategoryResponse,
+  CategorySuggestionResponse,
+  CreateCategorySuggestionRequest,
   PagedResult,
   PendingStoreResponse,
+  ReviewCategorySuggestionRequest,
   StoreProfileResponse,
   StoreReviewResponse,
   SurpriseBagResponse,
@@ -447,3 +450,43 @@ export function toggleStoreActive(accessToken: string, id: string) {
     storeApiBaseUrl(),
   );
 }
+
+export function listMyCategorySuggestions(accessToken: string) {
+  return apiRequest<CategorySuggestionResponse[]>(
+    "/api/category-suggestions/me",
+    { method: "GET", headers: bearer(accessToken) },
+    storeApiBaseUrl(),
+  );
+}
+
+export function createCategorySuggestion(
+  accessToken: string,
+  request: CreateCategorySuggestionRequest,
+) {
+  return apiRequest<CategorySuggestionResponse>(
+    "/api/category-suggestions",
+    { method: "POST", headers: bearer(accessToken), body: request },
+    storeApiBaseUrl(),
+  );
+}
+
+export function listPendingCategorySuggestions(accessToken: string) {
+  return apiRequest<CategorySuggestionResponse[]>(
+    "/api/category-suggestions/pending",
+    { method: "GET", headers: bearer(accessToken) },
+    storeApiBaseUrl(),
+  );
+}
+
+export function reviewCategorySuggestion(
+  accessToken: string,
+  id: string,
+  request: ReviewCategorySuggestionRequest,
+) {
+  return apiRequest<CategorySuggestionResponse>(
+    `/api/category-suggestions/${encodeURIComponent(id)}/review`,
+    { method: "POST", headers: bearer(accessToken), body: request },
+    storeApiBaseUrl(),
+  );
+}
+
