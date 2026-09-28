@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { cache } from "react";
 import { notFound } from "next/navigation";
@@ -56,17 +57,23 @@ export default async function StoreDetailPage({ params }: StoreDetailPageProps) 
 
   return (
     <main className="main store-detail-page">
-      <div
-        className="page-header text-center"
-        style={{ backgroundImage: "url('/assets/images/page-header-bg.jpg')" }}
-      >
-        <div className="container">
-          <h1 className="page-title">
-            {store.name}
-            <span>Store profile</span>
-          </h1>
+      <section className="info-page__hero info-page__hero--image">
+        <Image
+          src="/assets/images/page-headers/store-detail-v2.webp"
+          alt="A local food shop preparing surprise bags for pickup"
+          fill
+          preload
+          sizes="100vw"
+        />
+        <div className="info-page__hero-overlay" aria-hidden="true" />
+        <div className="container info-page__hero-content">
+          <p className="info-page__eyebrow">Local food rescue partner</p>
+          <h1>{store.name}</h1>
+          <p>
+            Browse available surprise bags, pickup details, and customer reviews from {store.name}.
+          </p>
         </div>
-      </div>
+      </section>
 
       <nav aria-label="breadcrumb" className="breadcrumb-nav mb-2">
         <div className="container">

@@ -27,10 +27,10 @@ export default function ContactMain() {
     <main className="main info-page contact-page">
       <section className="info-page__hero info-page__hero--image">
         <Image
-          src="/assets/images/demos/demo-28/banners/4.jpg"
-          alt="Fresh food arranged on a table"
+          src="/assets/images/page-headers/contact-support.webp"
+          alt="A local food shop team member helping a customer with a rescue bag pickup"
           fill
-          priority
+          preload
           sizes="100vw"
         />
         <div className="info-page__hero-overlay"></div>

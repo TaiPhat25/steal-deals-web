@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import { ApiClientError } from "@/lib/api/client";
@@ -210,16 +211,27 @@ export default function ProductListing({
 
   return (
     <main className="main product-listing-page">
-      <div
-        className="page-header text-center"
-        style={{ backgroundImage: "url('/assets/images/page-header-bg.jpg')" }}
-      >
-        <div className="container">
-          <h1 className="page-title">
-            {pageTitle}<span>{storeName ? "Store" : "Food rescue marketplace"}</span>
-          </h1>
+      <section className="info-page__hero info-page__hero--image">
+        <Image
+          src="/assets/images/page-headers/products-marketplace-v2.webp"
+          alt="Surprise bags filled with rescued food at a local market"
+          fill
+          preload
+          sizes="100vw"
+        />
+        <div className="info-page__hero-overlay" aria-hidden="true" />
+        <div className="container info-page__hero-content">
+          <p className="info-page__eyebrow">
+            {storeName ? "Explore this local partner" : "Rescue good food nearby"}
+          </p>
+          <h1>{pageTitle}</h1>
+          <p>
+            {storeName
+              ? `Browse active surprise bags from ${storeName} and choose a pickup window that works for you.`
+              : "Discover discounted surplus food from local stores and collect it during the listed pickup window."}
+          </p>
         </div>
-      </div>
+      </section>
 
       <nav aria-label="breadcrumb" className="breadcrumb-nav mb-2">
         <div className="container">

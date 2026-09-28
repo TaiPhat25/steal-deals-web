@@ -115,10 +115,10 @@ export default function StoreListing() {
     <main className="main store-listing-page">
       <section className="store-listing-hero">
         <Image
-          src="/assets/images/demos/demo-28/banners/5.jpg"
-          alt="Fresh food prepared by local stores"
+          src="/assets/images/page-headers/stores-local-market.webp"
+          alt="Independent local food businesses preparing rescue bags for pickup"
           fill
-          priority
+          preload
           sizes="100vw"
         />
         <div className="store-listing-hero__overlay" aria-hidden="true" />

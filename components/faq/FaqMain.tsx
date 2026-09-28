@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BRAND_NAME } from "@/lib/brand";
 
@@ -45,8 +46,16 @@ const faqGroups: FaqGroup[] = [
 export default function FaqMain() {
   return (
     <main className="main info-page faq-page">
-      <section className="info-page__hero info-page__hero--faq">
-        <div className="container">
+      <section className="info-page__hero info-page__hero--image info-page__hero--faq">
+        <Image
+          src="/assets/images/page-headers/faq-support.webp"
+          alt="A customer receiving help with a surprise bag pickup at a local food shop"
+          fill
+          preload
+          sizes="100vw"
+        />
+        <div className="info-page__hero-overlay" aria-hidden="true" />
+        <div className="container info-page__hero-content">
           <p className="info-page__eyebrow">Need a hand?</p>
           <h1>Frequently asked questions</h1>
           <p>Find clear answers about surprise bags, pickup, orders, and your {BRAND_NAME} account.</p>

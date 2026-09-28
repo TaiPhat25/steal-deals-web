@@ -85,7 +85,6 @@ The storefront currently exposes 19 routes or route patterns:
 | `/stores` | `components/stores/StoreListing.tsx` | Searchable, filterable Store Service-backed store directory with pagination and API avatar/fallback imagery |
 | `/stores/[id]` | `components/stores/StoreInfo.tsx`, `StoreProducts.tsx`, `StoreReviews.tsx` | Store Service-backed profile, active surprise bags, reviews, and API avatar/fallback imagery |
 | `/shipping` | `components/shipping/ShippingMain.tsx` | Authenticated order progress, pickup/delivery details, and order summary |
-| `/wishlist` | `components/wishlist/WishlistMain.tsx` | Temporarily disabled; previous static template retained in comments |
 
 ## Storefront structure
 
@@ -103,11 +102,12 @@ Shared storefront shell components are re-exported through
 `components/layout/Header.tsx` and `components/layout/Footer.tsx`; their
 implementations currently live in `components/home`.
 
-The original HTML templates are in the sibling `molla` project. Product and
-wishlist pages retain converted Molla markup; the former category conversion
-has been replaced by the StealDeals product listing. New conversions should
-reuse the shared shell instead of copying Molla headers, footers, mobile menus,
-modals, or script tags.
+The original HTML templates are in the sibling `molla` project. Product pages
+retain some converted Molla markup; the former category conversion has been
+replaced by the StealDeals product listing. The unused Wishlist route and
+component are archived under `remove-later`. New conversions should reuse the
+shared shell instead of copying Molla headers, footers, mobile menus, modals, or
+script tags.
 
 ## Identity and API integration
 
@@ -469,6 +469,15 @@ shows the pickup-day radio filter; pickup timing remains available through the
 thumbnails, fake layout controls, and presentation-only
 pagination were removed.
 
+The `/products`, `/about`, `/contact`, `/faq`, `/profile`, `/stores`, and
+`/stores/[id]` page headers use StealDeals-owned WebP photographs from
+`public/assets/images/page-headers` instead of low-resolution Molla banners or
+plain backgrounds. Products, Profile, and Store Detail now use the same
+left-aligned eyebrow, title, description, image, and overlay structure as the
+other information-page headers. Their photographs reserve dark copy space only
+on the left and keep the people, food, and store activity across the center and
+right; Store Detail has a dedicated local-shop image.
+
 `/stores` renders the Store Service-backed store directory with a half-width
 desktop search field, old/new store filters, and rating, bag-count, or name
 sorting. Store cards use a four-column desktop grid, use the shared
@@ -497,7 +506,7 @@ now the single marketplace listing route. Category, store, and sort query
 parameters are read on initial load, but interactive filter changes are not
 written back to the URL or sent to the Store Service.
 
-### Product, cart, wishlist, and checkout
+### Product, cart, and checkout
 
 The Product Detail page reads the `bag` query parameter and loads API-backed
 items through `getBag(id)` from the Store Service. API listing cards pass the
@@ -549,10 +558,10 @@ a second layer of vertical padding.
 
 Current commerce status:
 
-- Wishlist controls and the wishlist route are intentionally disabled because
-  short-lived near-expiry surprise bags are not suitable for long-term saving.
-  The previous implementation is retained in comments for possible future
-  saved-store or notification functionality.
+- Wishlist is not part of the current product. Its route and component are
+  archived at `remove-later/app/(store)/wishlist/page.tsx` and
+  `remove-later/components/wishlist/WishlistMain.tsx`; `/wishlist` now returns
+  `404`. The related controls remain disabled in active components.
 - The legacy `/checkout` route is authentication-gated and submits one Order
   Service request per
   store in the cart. It validates the backend-required contact fields, shows
@@ -645,13 +654,15 @@ The shared header currently provides:
 - About Us, linking to `/about`;
 - Contact Us, linking to `/contact`;
 - an implemented product search overlay and cart presentation; wishlist is
-  intentionally disabled;
+  omitted;
 - Inline `Register | Sign In` links for visitors, using the same bold, slightly
   larger style and right-aligned account area as the authenticated Welcome
   link; and
-- Clickable `Welcome, <name>` profile link followed by `| Logout` for
-  authenticated users; the full account row is bold and slightly larger, and
-  both interactive items use pointer cursors.
+- Clickable `Welcome, <name>` profile and `My Orders` links followed by
+  `Sign Out` for authenticated users; the full account row is bold and slightly
+  larger, and its interactive items use pointer cursors. `My Orders` is omitted
+  from the desktop main navigation to avoid duplicating the account-bar link,
+  but remains in the mobile menu where the account bar is constrained.
 
 The utility bar shows the centralized `StealDeals | Rescue Food Marketplace`
 title on the far left using the same bold, slightly larger styling as the
@@ -689,6 +700,10 @@ The active storefront still uses `public/assets`. Current notable state:
 - `public/assets/images/home` contains ten Home-owned hero, campaign, store
   fallback, and sustainability images. The five generated step-4 additions are
   optimized WebP files rather than shipping their full-resolution PNG sources.
+- `public/assets/images/page-headers` contains seven generated and optimized
+  WebP headers for Products, About, Contact, FAQ, Profile, Stores, and Store
+  Detail. These active headers do not use the old Molla page-header,
+  intro-slider, or banner images.
 - All Home content images now use `next/image`; CSS backgrounds remain only on
   the hero, guide campaigns, and newsletter compositions that place copy over
   decorative media.
@@ -715,12 +730,15 @@ The active storefront still uses `public/assets`. Current notable state:
   94 KB): the old promo, banner 6, and blog images 3 and 4.
 - Assets referenced only by intentionally retained commented code were left in
   `public/assets`, including the menu screenshots, newsletter popup images, and
-  wishlist/product template images.
+  product template images.
 - The remaining 104 files in `public/assets` are the active storefront assets,
   CSS/JS dependencies, and intentionally retained commented-code assets.
 - Nineteen category-only fashion images (approximately 115 KB) were removed
   after their source references were replaced. The remaining product-detail,
-  cart, wishlist, and header fashion assets stay until those screens are adapted.
+  cart, and header fashion assets stay until those screens are adapted.
+- The archived Wishlist route includes its disabled component and three Molla
+  table images. The now-unused generic Molla page header and former Contact
+  banner are archived alongside them under `remove-later/assets`.
 - Unused Molla demo folders, landing-page assets, and default Next SVGs are
   currently removed from the working tree and appear as Git deletions.
 - `public/removedAssets` does not currently exist. Removed assets remain
@@ -845,8 +863,18 @@ Home is in progress, and seven packages still require work or final validation.
 2. [ ] **Home - in progress:** the requested section order, React hero, branding,
    API mapping, shared `HomeDataProvider`, and explicit loading/error/empty/retry
    states are complete. Visible Molla/demo imagery has been replaced with
-   Home-owned assets. Ranking semantics and final desktop/mobile validation
-   remain.
+   Home-owned assets. Remaining Home work is intentionally deferred:
+   - sort Near-Expiry by `expiryDate`, exclude expired bags, and cap the
+     collection to a practical top set instead of rendering every active bag;
+   - replace the current zero/static distance fallback with ranking based on
+     buyer and store coordinates for Near You;
+   - define a real Trending metric from backend order/view activity instead of
+     the current zero/static popularity fallback;
+   - validate desktop, tablet, and mobile layouts, long content, hero controls,
+     drag/cycle behavior, loading/error/empty/retry states, accessibility,
+     layout stability, and Lighthouse performance; and
+   - decide whether to archive the unmounted newsletter and secondary-banner
+     components after the final Home composition is approved.
 3. [ ] **Image standardization:** the shared bag/category/store fallbacks, S3
    bag path allowlist, and Home content-image migration are complete. Replace
    the four remaining content-bearing native `<img>` elements with `next/image`, add
@@ -884,8 +912,8 @@ Home is in progress, and seven packages still require work or final validation.
 5. Complete the seller approval/event flow and refresh the profile role after
    approval.
 6. Decide whether to add saved-store or availability-notification state; do not
-   restore wishlist state for short-lived surprise bags without a clear product
-   requirement.
+   restore the archived Wishlist route for short-lived surprise bags without a
+   clear product requirement.
 7. Replace obsolete `.html`/hash links as each destination becomes available.
 8. Incrementally replace legacy jQuery widgets with React-owned components,
    then remove unused scripts and styles.

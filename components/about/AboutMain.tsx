@@ -25,10 +25,10 @@ export default function AboutMain() {
     <main className="main info-page about-page">
       <section className="info-page__hero info-page__hero--image">
         <Image
-          src="/assets/images/demos/demo-28/intro-slider/1.jpg"
-          alt="Fresh surplus food ready for a local pickup"
+          src="/assets/images/page-headers/about-food-rescue.webp"
+          alt="A local food shop handing a surplus food rescue bag to a customer"
           fill
-          priority
+          preload
           sizes="100vw"
         />
         <div className="info-page__hero-overlay"></div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type SubmitEvent } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -290,17 +291,22 @@ export default function ProfileMain() {
   };
 
   return (
-    <main className="main">
-      <div
-        className="page-header text-center"
-        style={{ backgroundImage: "url('/assets/images/page-header-bg.jpg')" }}
-      >
-        <div className="container">
-          <h1 className="page-title">
-            Profile<span>Account</span>
-          </h1>
+    <main className="main profile-page">
+      <section className="info-page__hero info-page__hero--image">
+        <Image
+          src="/assets/images/page-headers/profile-account-v2.webp"
+          alt="A customer checking account details at a local food market"
+          fill
+          preload
+          sizes="100vw"
+        />
+        <div className="info-page__hero-overlay" aria-hidden="true" />
+        <div className="container info-page__hero-content">
+          <p className="info-page__eyebrow">Your StealDeals account</p>
+          <h1>Profile</h1>
+          <p>Review your account details, saved addresses, roles, and verification status.</p>
         </div>
-      </div>
+      </section>
 
       <nav aria-label="breadcrumb" className="breadcrumb-nav">
         <div className="container">
