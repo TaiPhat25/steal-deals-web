@@ -44,8 +44,8 @@ export default function PrivacyPolicyDialog({
             <div className="privacy-policy-dialog__body">
               <p id="privacy-policy-summary">
                 This policy explains how {BRAND_NAME} collects, uses, and
-                protects information when you create an account and use our
-                food rescue marketplace.
+                protects information when you create an account and use our food
+                rescue marketplace.
               </p>
 
               <section>
@@ -72,9 +72,9 @@ export default function PrivacyPolicyDialog({
                 <h3>3. When information is shared</h3>
                 <p>
                   We share information only as needed with stores involved in
-                  your activity, service providers that support the platform,
-                  or authorities when required by law. We do not sell your
-                  personal information.
+                  your activity, service providers that support the platform, or
+                  authorities when required by law. We do not sell your personal
+                  information.
                 </p>
               </section>
 
@@ -82,10 +82,9 @@ export default function PrivacyPolicyDialog({
                 <h3>4. Retention and security</h3>
                 <p>
                   We retain information for as long as needed to provide the
-                  service, meet legal obligations, resolve disputes, and
-                  protect the platform. We use reasonable technical and
-                  organizational safeguards, but no system can guarantee
-                  absolute security.
+                  service, meet legal obligations, resolve disputes, and protect
+                  the platform. We use reasonable technical and organizational
+                  safeguards, but no system can guarantee absolute security.
                 </p>
               </section>
 
@@ -94,8 +93,8 @@ export default function PrivacyPolicyDialog({
                 <p>
                   You may review or update available account information from
                   your profile. You may contact {BRAND_NAME} to request help
-                  correcting or deleting personal information, subject to
-                  legal and operational retention requirements.
+                  correcting or deleting personal information, subject to legal
+                  and operational retention requirements.
                 </p>
               </section>
 
@@ -113,8 +112,7 @@ export default function PrivacyPolicyDialog({
                 <p>
                   We may update this policy as the service changes. The latest
                   version will be available through {BRAND_NAME}. Questions or
-                  privacy requests can be submitted through the Contact Us
-                  page.
+                  privacy requests can be submitted through the Contact Us page.
                 </p>
               </section>
             </div>
