@@ -8,9 +8,10 @@ import { ApiClientError } from "@/lib/api/client";
 import { listBags } from "@/lib/api/store";
 import {
   filterBags,
+  isBagAvailable,
   normalizeSort,
-  storeNames,
   toListingBag,
+  validatePriceRange,
   type ListingBag,
 } from "./product-listing-data";
 
@@ -18,25 +19,17 @@ type ProductListingProps = {
   initialCategory?: string;
   initialQuery?: string;
   initialSort?: string;
-  storeSlug?: string;
+  storeId?: string;
 };
 
 const PRICE_MIN = 0;
 const PRICE_MAX = Number.POSITIVE_INFINITY;
-const DISTANCE_MIN = 0;
-const DISTANCE_MAX = Number.POSITIVE_INFINITY;
 
-function clampBound(value: string, fallback: number, min: number, max: number) {
-  const parsed = Number(value.replace(/,/g, ""));
-  return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
-}
-
-function stepDraftValue(value: string, step: number, fallback: number, min: number, max: number) {
-  const current = value.trim() === "" && !Number.isFinite(fallback)
-    ? step < 0 ? Math.max(min, Math.abs(step)) : Number.POSITIVE_INFINITY
-    : clampBound(value, fallback, min, max);
-  const next = Math.max(min, Math.min(max, current + step));
-  return Number.isFinite(next) ? Number.isInteger(next) ? String(next) : next.toFixed(1) : "";
+function stepPriceDraft(value: string, step: number, blankValue: number) {
+  const normalized = value.trim().replace(/,/g, "");
+  const parsed = /^\d+$/.test(normalized) ? Number(normalized) : blankValue;
+  const current = Number.isSafeInteger(parsed) ? parsed : blankValue;
+  return String(Math.max(PRICE_MIN, current + step));
 }
 
 function FilterWidget({
@@ -73,16 +66,13 @@ export default function ProductListing({
   initialCategory,
   initialQuery = "",
   initialSort,
-  storeSlug,
+  storeId,
 }: ProductListingProps) {
   const [query, setQuery] = useState(initialQuery);
   const [categories, setCategories] = useState(initialCategory ? [initialCategory] : []);
   const [minPrice, setMinPrice] = useState(PRICE_MIN);
   const [maxPrice, setMaxPrice] = useState(PRICE_MAX);
-  const [minDistance, setMinDistance] = useState(DISTANCE_MIN);
-  const [maxDistance, setMaxDistance] = useState(DISTANCE_MAX);
   const [priceDraft, setPriceDraft] = useState({ min: "", max: "" });
-  const [distanceDraft, setDistanceDraft] = useState({ min: "", max: "" });
   const [sort, setSort] = useState(normalizeSort(initialSort));
   const [bags, setBags] = useState<ListingBag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -98,7 +88,7 @@ export default function ProductListing({
 
         setBags(
           response
-            .filter((bag) => bag.status.toLowerCase() === "active")
+            .filter((bag) => isBagAvailable(bag))
             .map(toListingBag),
         );
       })
@@ -127,11 +117,11 @@ export default function ProductListing({
   }
 
   const scopedBags = useMemo(
-    () => bags.filter((bag) => !storeSlug || bag.storeSlug === storeSlug),
-    [bags, storeSlug],
+    () => bags.filter((bag) => !storeId || bag.storeId === storeId),
+    [bags, storeId],
   );
-  const storeName = storeSlug
-    ? scopedBags[0]?.storeName ?? storeNames[storeSlug]
+  const storeName = storeId
+    ? scopedBags[0]?.storeName
     : undefined;
   const categoryOptions = useMemo(
     () =>
@@ -143,6 +133,17 @@ export default function ProductListing({
         ] as const),
     [scopedBags],
   );
+  const priceStepCeiling = useMemo(() => {
+    const highestPrice = scopedBags.reduce(
+      (highest, bag) => Math.max(highest, bag.salePrice),
+      PRICE_MIN,
+    );
+    return Math.ceil(highestPrice / 10000) * 10000;
+  }, [scopedBags]);
+  const priceValidation = useMemo(
+    () => validatePriceRange(priceDraft.min, priceDraft.max),
+    [priceDraft],
+  );
   const visibleBags = useMemo(
     () =>
       filterBags(bags, {
@@ -151,12 +152,12 @@ export default function ProductListing({
         pickupDay: "all",
         minPrice,
         maxPrice,
-        minDistance,
-        maxDistance: storeSlug ? Number.POSITIVE_INFINITY : maxDistance,
+        minDistance: 0,
+        maxDistance: Number.POSITIVE_INFINITY,
         sort,
-        storeSlug,
+        storeId,
       }),
-    [bags, categories, maxDistance, maxPrice, minDistance, minPrice, query, sort, storeSlug],
+    [bags, categories, maxPrice, minPrice, query, sort, storeId],
   );
 
   function toggleCategory(category: string) {
@@ -172,38 +173,18 @@ export default function ProductListing({
     setCategories([]);
     setMinPrice(PRICE_MIN);
     setMaxPrice(PRICE_MAX);
-    setMinDistance(DISTANCE_MIN);
-    setMaxDistance(DISTANCE_MAX);
     setPriceDraft({ min: "", max: "" });
-    setDistanceDraft({ min: "", max: "" });
     setSort("popularity");
   }
 
   function applyPriceFilter() {
-    const normalizedMin = clampBound(priceDraft.min, PRICE_MIN, PRICE_MIN, PRICE_MAX);
-    const normalizedMax = clampBound(priceDraft.max, PRICE_MAX, PRICE_MIN, PRICE_MAX);
-    const lower = Math.min(normalizedMin, normalizedMax);
-    const upper = Math.max(normalizedMin, normalizedMax);
+    if (!priceValidation.isValid) return;
 
-    setMinPrice(lower);
-    setMaxPrice(upper);
+    setMinPrice(priceValidation.min);
+    setMaxPrice(priceValidation.max);
     setPriceDraft({
-      min: lower === PRICE_MIN ? "" : String(lower),
-      max: upper === PRICE_MAX ? "" : String(upper),
-    });
-  }
-
-  function applyDistanceFilter() {
-    const normalizedMin = clampBound(distanceDraft.min, DISTANCE_MIN, DISTANCE_MIN, DISTANCE_MAX);
-    const normalizedMax = clampBound(distanceDraft.max, DISTANCE_MAX, DISTANCE_MIN, DISTANCE_MAX);
-    const lower = Math.min(normalizedMin, normalizedMax);
-    const upper = Math.max(normalizedMin, normalizedMax);
-
-    setMinDistance(lower);
-    setMaxDistance(upper);
-    setDistanceDraft({
-      min: lower === DISTANCE_MIN ? "" : String(lower),
-      max: upper === DISTANCE_MAX ? "" : String(upper),
+      min: priceValidation.min === PRICE_MIN ? "" : String(priceValidation.min),
+      max: priceValidation.max === PRICE_MAX ? "" : String(priceValidation.max),
     });
   }
 
@@ -303,7 +284,6 @@ export default function ProductListing({
                         onChange={(event) => setSort(event.target.value)}
                       >
                         <option value="popularity">Most Popular</option>
-                        {!storeSlug ? <option value="distance">Nearest</option> : null}
                         <option value="pickup">Pickup Soonest</option>
                         <option value="price">Lowest Price</option>
                         <option value="discount">Highest Discount</option>
@@ -369,12 +349,12 @@ export default function ProductListing({
                 <FilterWidget id="price-filter" title="Price">
                   <div className="filter-range">
                     <div className="filter-range-fields">
-                      <div className="filter-range-input">
+                      <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
                         <span aria-hidden="true">VND</span>
                         <button
                           type="button"
                           className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepDraftValue(current.min, -10000, PRICE_MIN, PRICE_MIN, PRICE_MAX) }))}
+                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, -10000, PRICE_MIN) }))}
                           aria-label="Decrease minimum price"
                         >
                           -
@@ -387,23 +367,25 @@ export default function ProductListing({
                           onChange={(event) => setPriceDraft((current) => ({ ...current, min: event.target.value }))}
                           placeholder="MIN"
                           aria-label="Minimum price"
+                          aria-invalid={!priceValidation.isValid}
+                          aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
                         />
                         <button
                           type="button"
                           className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepDraftValue(current.min, 10000, PRICE_MIN, PRICE_MIN, PRICE_MAX) }))}
+                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, 10000, PRICE_MIN) }))}
                           aria-label="Increase minimum price"
                         >
                           +
                         </button>
                       </div>
                       <span className="filter-range-separator" aria-hidden="true">-</span>
-                      <div className="filter-range-input">
+                      <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
                         <span aria-hidden="true">VND</span>
                         <button
                           type="button"
                           className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepDraftValue(current.max, -10000, PRICE_MAX, PRICE_MIN, PRICE_MAX) }))}
+                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, -10000, priceStepCeiling) }))}
                           aria-label="Decrease maximum price"
                         >
                           -
@@ -416,91 +398,34 @@ export default function ProductListing({
                           onChange={(event) => setPriceDraft((current) => ({ ...current, max: event.target.value }))}
                           placeholder="MAX"
                           aria-label="Maximum price"
+                          aria-invalid={!priceValidation.isValid}
+                          aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
                         />
                         <button
                           type="button"
                           className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepDraftValue(current.max, 10000, PRICE_MAX, PRICE_MIN, PRICE_MAX) }))}
+                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, 10000, priceStepCeiling) }))}
                           aria-label="Increase maximum price"
                         >
                           +
                         </button>
                       </div>
                     </div>
-                    <button type="button" className="btn btn-outline-primary-2 filter-range-apply" onClick={applyPriceFilter}>
+                    {!priceValidation.isValid ? (
+                      <p className="filter-range-error" id="price-range-error" role="alert">
+                        {priceValidation.error}
+                      </p>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary-2 filter-range-apply"
+                      onClick={applyPriceFilter}
+                      disabled={!priceValidation.isValid}
+                    >
                       Apply
                     </button>
                   </div>
                 </FilterWidget>
-
-                {!storeSlug ? (
-                  <FilterWidget id="distance-filter" title="Distance">
-                    <div className="filter-range">
-                      <div className="filter-range-fields">
-                        <div className="filter-range-input">
-                          <span aria-hidden="true">KM</span>
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, min: stepDraftValue(current.min, -0.1, DISTANCE_MIN, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Decrease minimum distance"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="text"
-                            id="distance-min"
-                            inputMode="decimal"
-                            value={distanceDraft.min}
-                            onChange={(event) => setDistanceDraft((current) => ({ ...current, min: event.target.value }))}
-                            placeholder="MIN"
-                            aria-label="Minimum distance"
-                          />
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, min: stepDraftValue(current.min, 0.1, DISTANCE_MIN, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Increase minimum distance"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <span className="filter-range-separator" aria-hidden="true">-</span>
-                        <div className="filter-range-input">
-                          <span aria-hidden="true">KM</span>
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, max: stepDraftValue(current.max, -0.1, DISTANCE_MAX, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Decrease maximum distance"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="text"
-                            id="distance-max"
-                            inputMode="decimal"
-                            value={distanceDraft.max}
-                            onChange={(event) => setDistanceDraft((current) => ({ ...current, max: event.target.value }))}
-                            placeholder="MAX"
-                            aria-label="Maximum distance"
-                          />
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, max: stepDraftValue(current.max, 0.1, DISTANCE_MAX, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Increase maximum distance"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                      <button type="button" className="btn btn-outline-primary-2 filter-range-apply" onClick={applyDistanceFilter}>
-                        Apply
-                      </button>
-                    </div>
-                  </FilterWidget>
-                ) : null}
               </div>
             </aside>
           </div>

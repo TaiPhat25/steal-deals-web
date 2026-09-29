@@ -11,15 +11,15 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
   const category = first(query.category);
   const search = first(query.q);
   const sort = first(query.sort);
-  const storeSlug = first(query.store);
+  const storeId = first(query.store);
 
   return (
     <ProductListing
-      key={`${category ?? ""}:${search ?? ""}:${sort ?? ""}:${storeSlug ?? ""}`}
+      key={`${category ?? ""}:${search ?? ""}:${sort ?? ""}:${storeId ?? ""}`}
       initialCategory={category}
       initialQuery={search}
       initialSort={sort}
-      storeSlug={storeSlug}
+      storeId={storeId}
     />
   );
 }

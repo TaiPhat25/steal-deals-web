@@ -2077,6 +2077,10 @@ img {
   padding: 0 0.6rem;
 }
 
+.filter-range-input--invalid {
+  border-color: #ce0000;
+}
+
 .filter-range-input span {
   color: #777;
   font-size: 1.1rem;
@@ -2129,6 +2133,13 @@ img {
   flex: 0 0 auto;
 }
 
+.filter-range-error {
+  color: #ce0000;
+  font-size: 1.2rem;
+  line-height: 1.4;
+  margin: -0.25rem 0 0;
+}
+
 .filter-range-apply {
   align-self: stretch;
   background: transparent;
@@ -2145,6 +2156,15 @@ img {
   background: #4d8b00;
   border-color: #4d8b00;
   color: #fff;
+}
+
+.filter-range-apply:disabled,
+.filter-range-apply:disabled:hover,
+.filter-range-apply:disabled:focus {
+  background: transparent;
+  border-color: #b7b7b7;
+  color: #888;
+  cursor: not-allowed;
 }
 
 @media (max-width: 767px) {

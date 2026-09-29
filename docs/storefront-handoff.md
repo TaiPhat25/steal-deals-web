@@ -457,13 +457,18 @@ not affect application type-checking.
 ### Product listings
 
 `/products` is the marketplace-wide surprise-bag listing. It renders active
-Store Service bags using the same `SurpriseBagCard` used by Home and local food
-imagery from `public/assets/images/demos/demo-28/flash` when the API does not
-provide media. Search, category, price, distance, and sorting controls work
-against the Store Service response. Price and
-Distance now use min/max numeric fields with functional storefront-owned
-minus/plus steppers and an Apply button instead of sliders; both ranges default
-to 0 with no upper limit, and blank bounds mean no lower or upper limit. The sidebar no longer
+Store Service bags using the same `SurpriseBagCard` used by Home and the shared
+StealDeals bag fallback when the API does not provide media. API bags map
+directly from backend IDs, store IDs, categories, timestamps, quantities, and
+prices instead of inheriting demo metadata by matching product names. The
+listing excludes inactive, sold-out, expired, and pickup-ended bags. Search,
+category, price, and supported sorting controls work against the Store Service
+response; Pickup Soonest compares the actual pickup-start timestamps. Price
+uses min/max numeric fields with storefront-owned minus/plus steppers and an
+Apply button instead of a slider. Blank bounds mean zero and unlimited;
+non-numeric, negative, and reversed ranges show validation and cannot be
+applied. Distance filtering and Nearest sorting are hidden because the current
+API response does not provide a calculated buyer-to-store distance. The sidebar no longer
 shows the pickup-day radio filter; pickup timing remains available through the
 `Sort by` dropdown's `Pickup Soonest` option. Size, colour, brand, compare,
 thumbnails, fake layout controls, and presentation-only
@@ -499,9 +504,9 @@ presented as `Open` or `Closed`. Joined and Status now share a single bottom
 divider in the store information grid without duplicating the next row. Unknown
 or inactive store IDs return `404`.
 
-Product and store links now use `/products`, `/stores`, `/stores/[id]`, and
-`/products?store=`, and `/product?bag=`. Store detail marketplace links use the
-same store slug filter as the listing page. The old `/category` route was removed because `/products` is
+Product and store links now use `/products`, `/stores`, `/stores/[id]`,
+`/products?store=`, and `/product?bag=`. Store detail marketplace links pass the
+backend store ID used by the listing filter. The old `/category` route was removed because `/products` is
 now the single marketplace listing route. Category, store, and sort query
 parameters are read on initial load, but interactive filter changes are not
 written back to the URL or sent to the Store Service.
@@ -887,7 +892,14 @@ Home is in progress, and seven packages still require work or final validation.
 5. [ ] **Catalog:** Store Service listing/detail mapping, search/filter/sort,
    product fields, quantity controls, related cards, and cart actions are
    implemented. Complete responsive, accessibility, error-state, and
-   performance validation for `/products` and `/product`.
+   performance validation for `/products` and `/product`. Rework the listing
+   filters before final validation. Price bound handling and validation are
+   complete, and Distance/Nearest are hidden until real distance data exists.
+   Remaining filter work:
+   - keep Clear All, applied-filter labels, and the result count synchronized;
+   - restore Distance and Nearest with tested calculations after buyer/store
+     coordinates can produce real distance values;
+   - present filters in an Apply/Clear drawer on small screens.
 6. [ ] **Stores:** Store Service listing, detail, bags, reviews, filtering, and
    pagination are implemented. Complete responsive/accessibility validation and
    use API store imagery when its contract is available.
