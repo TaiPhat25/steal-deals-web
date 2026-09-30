@@ -468,7 +468,11 @@ uses min/max numeric fields with storefront-owned minus/plus steppers and an
 Apply button instead of a slider. Blank bounds mean zero and unlimited;
 non-numeric, negative, and reversed ranges show validation and cannot be
 applied. Distance filtering and Nearest sorting are hidden because the current
-API response does not provide a calculated buyer-to-store distance. The sidebar no longer
+API response does not provide a calculated buyer-to-store distance. Applied
+search, category, and price filters render as individually removable labels,
+the announced result count stays synchronized, and Clear All appears only when
+a filter is active. API failures, no available bags, and no filter matches have
+separate states; retrying a failed request preserves the filters. The sidebar no longer
 shows the pickup-day radio filter; pickup timing remains available through the
 `Sort by` dropdown's `Pickup Soonest` option. Size, colour, brand, compare,
 thumbnails, fake layout controls, and presentation-only
@@ -895,8 +899,8 @@ Home is in progress, and seven packages still require work or final validation.
    performance validation for `/products` and `/product`. Rework the listing
    filters before final validation. Price bound handling and validation are
    complete, and Distance/Nearest are hidden until real distance data exists.
-   Remaining filter work:
-   - keep Clear All, applied-filter labels, and the result count synchronized;
+   Applied-filter labels, synchronized Clear All/result counts, and distinct
+   loading/error/empty states are complete. Remaining filter work:
    - restore Distance and Nearest with tested calculations after buyer/store
      coordinates can produce real distance values;
    - present filters in an Apply/Clear drawer on small screens.

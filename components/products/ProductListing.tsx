@@ -24,12 +24,22 @@ type ProductListingProps = {
 
 const PRICE_MIN = 0;
 const PRICE_MAX = Number.POSITIVE_INFINITY;
+const priceFormatter = new Intl.NumberFormat("en-US");
 
 function stepPriceDraft(value: string, step: number, blankValue: number) {
   const normalized = value.trim().replace(/,/g, "");
   const parsed = /^\d+$/.test(normalized) ? Number(normalized) : blankValue;
   const current = Number.isSafeInteger(parsed) ? parsed : blankValue;
   return String(Math.max(PRICE_MIN, current + step));
+}
+
+function formatPriceFilter(minPrice: number, maxPrice: number) {
+  if (minPrice > PRICE_MIN && Number.isFinite(maxPrice)) {
+    return `${priceFormatter.format(minPrice)} - ${priceFormatter.format(maxPrice)} VND`;
+  }
+
+  if (minPrice > PRICE_MIN) return `From ${priceFormatter.format(minPrice)} VND`;
+  return `Up to ${priceFormatter.format(maxPrice)} VND`;
 }
 
 function FilterWidget({
@@ -144,6 +154,8 @@ export default function ProductListing({
     () => validatePriceRange(priceDraft.min, priceDraft.max),
     [priceDraft],
   );
+  const hasPriceFilter = minPrice > PRICE_MIN || Number.isFinite(maxPrice);
+  const hasActiveFilters = Boolean(query.trim()) || categories.length > 0 || hasPriceFilter;
   const visibleBags = useMemo(
     () =>
       filterBags(bags, {
@@ -186,6 +198,12 @@ export default function ProductListing({
       min: priceValidation.min === PRICE_MIN ? "" : String(priceValidation.min),
       max: priceValidation.max === PRICE_MAX ? "" : String(priceValidation.max),
     });
+  }
+
+  function clearPriceFilter() {
+    setMinPrice(PRICE_MIN);
+    setMaxPrice(PRICE_MAX);
+    setPriceDraft({ min: "", max: "" });
   }
 
   const pageTitle = storeName ? `${storeName} Surprise Bags` : "Surprise Bags";
@@ -264,11 +282,20 @@ export default function ProductListing({
                     Try again
                   </button>
                 </div>
+              ) : scopedBags.length === 0 ? (
+                <div className="product-listing-empty" role="status">
+                  <h2>No surprise bags available</h2>
+                  <p>
+                    {storeId
+                      ? "This store does not have any active surprise bags available for pickup."
+                      : "There are no active surprise bags available for pickup right now."}
+                  </p>
+                </div>
               ) : (
                 <>
               <div className="toolbox">
                 <div className="toolbox-left">
-                  <div className="toolbox-info">
+                  <div className="toolbox-info" role="status" aria-live="polite" aria-atomic="true">
                     Showing <span>{visibleBags.length} of {scopedBags.length}</span> surprise bags
                   </div>
                 </div>
@@ -294,6 +321,43 @@ export default function ProductListing({
                 </div>
               </div>
 
+              {hasActiveFilters ? (
+                <div className="product-listing-active-filters" role="group" aria-label="Applied filters">
+                  <span className="product-listing-active-filters__label">Applied:</span>
+                  {query.trim() ? (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      onClick={() => setQuery("")}
+                      aria-label={`Remove search filter: ${query.trim()}`}
+                    >
+                      Search: {query.trim()} <span aria-hidden="true">&times;</span>
+                    </button>
+                  ) : null}
+                  {categories.map((category) => (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      key={category}
+                      onClick={() => toggleCategory(category)}
+                      aria-label={`Remove category filter: ${category}`}
+                    >
+                      {category} <span aria-hidden="true">&times;</span>
+                    </button>
+                  ))}
+                  {hasPriceFilter ? (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      onClick={clearPriceFilter}
+                      aria-label={`Remove price filter: ${formatPriceFilter(minPrice, maxPrice)}`}
+                    >
+                      {formatPriceFilter(minPrice, maxPrice)} <span aria-hidden="true">&times;</span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
               {visibleBags.length ? (
                 <div className="row product-listing-grid">
                   {visibleBags.map((bag, index) => (
@@ -304,11 +368,13 @@ export default function ProductListing({
                 </div>
               ) : (
                 <div className="product-listing-empty">
-                  <h2>No surprise bags found</h2>
-                  <p>Try clearing a filter or searching for something else.</p>
-                  <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
-                    Clear filters
-                  </button>
+                  <h2>No surprise bags match your filters</h2>
+                  <p>Remove one or more filters, or clear them all to see available bags.</p>
+                  {hasActiveFilters ? (
+                    <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
+                      Clear filters
+                    </button>
+                  ) : null}
                 </div>
               )}
                 </>
@@ -319,9 +385,11 @@ export default function ProductListing({
               <div className="sidebar sidebar-shop">
                 <div className="widget widget-clean">
                   <label>Filters:</label>
-                  <button type="button" className="sidebar-filter-clear" onClick={clearFilters}>
-                    Clear All
-                  </button>
+                  {hasActiveFilters ? (
+                    <button type="button" className="sidebar-filter-clear" onClick={clearFilters}>
+                      Clear All
+                    </button>
+                  ) : null}
                 </div>
 
                 <FilterWidget id="category-filter" title="Food Category">
