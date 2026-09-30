@@ -88,6 +88,7 @@ export default function ProductListing({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -119,6 +120,24 @@ export default function ProductListing({
       active = false;
     };
   }, [reloadKey]);
+
+  useEffect(() => {
+    if (!isFilterDrawerOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const desktopQuery = window.matchMedia?.("(min-width: 992px)");
+    const closeAtDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setIsFilterDrawerOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    desktopQuery?.addEventListener("change", closeAtDesktop);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      desktopQuery?.removeEventListener("change", closeAtDesktop);
+    };
+  }, [isFilterDrawerOpen]);
 
   function retryLoad() {
     setError(null);
@@ -156,6 +175,7 @@ export default function ProductListing({
   );
   const hasPriceFilter = minPrice > PRICE_MIN || Number.isFinite(maxPrice);
   const hasActiveFilters = Boolean(query.trim()) || categories.length > 0 || hasPriceFilter;
+  const activeFilterCount = Number(Boolean(query.trim())) + categories.length + Number(hasPriceFilter);
   const visibleBags = useMemo(
     () =>
       filterBags(bags, {
@@ -261,6 +281,26 @@ export default function ProductListing({
               onChange={(event) => setQuery(event.target.value)}
               placeholder={storeName ? `Search ${storeName}` : "Search bags, stores, or food categories"}
             />
+          </div>
+
+          <div className="product-listing-mobile-actions">
+            <button
+              type="button"
+              className="btn btn-outline-primary-2 product-listing-filter-trigger"
+              aria-controls="product-listing-filters"
+              aria-expanded={isFilterDrawerOpen}
+              aria-label={activeFilterCount
+                ? `Filters, ${activeFilterCount} active`
+                : "Filters"}
+              onClick={() => setIsFilterDrawerOpen(true)}
+            >
+              <span>Filters</span>
+              {activeFilterCount ? (
+                <span className="product-listing-filter-trigger__count" aria-hidden="true">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </button>
           </div>
 
           <div className="row">
@@ -381,8 +421,26 @@ export default function ProductListing({
               )}
             </div>
 
-            <aside className="col-lg-3 order-lg-first">
-              <div className="sidebar sidebar-shop">
+            <aside
+              className={`col-lg-3 order-lg-first product-listing-filter-panel${isFilterDrawerOpen ? " is-open" : ""}`}
+              id="product-listing-filters"
+              aria-label="Product filters"
+            >
+              <div className="product-listing-filter-panel__surface">
+                <div className="product-listing-filter-panel__header">
+                  <h2>Filters</h2>
+                  <button
+                    type="button"
+                    className="product-listing-filter-panel__close"
+                    aria-label="Close filters"
+                    onClick={() => setIsFilterDrawerOpen(false)}
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+
+                <div className="product-listing-filter-panel__body">
+                  <div className="sidebar sidebar-shop">
                 <div className="widget widget-clean">
                   <label>Filters:</label>
                   {hasActiveFilters ? (
@@ -494,8 +552,36 @@ export default function ProductListing({
                     </button>
                   </div>
                 </FilterWidget>
+                  </div>
+                </div>
+
+                <div className="product-listing-filter-panel__footer">
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary-2"
+                    aria-label="Clear all filters in drawer"
+                    onClick={clearFilters}
+                    disabled={!hasActiveFilters}
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary-2"
+                    onClick={() => setIsFilterDrawerOpen(false)}
+                  >
+                    View {visibleBags.length} {visibleBags.length === 1 ? "Result" : "Results"}
+                  </button>
+                </div>
               </div>
             </aside>
+
+            <button
+              type="button"
+              className={`product-listing-filter-backdrop${isFilterDrawerOpen ? " is-open" : ""}`}
+              aria-label="Close filters"
+              onClick={() => setIsFilterDrawerOpen(false)}
+            />
           </div>
         </div>
       </div>

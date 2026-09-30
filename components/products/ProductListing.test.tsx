@@ -157,4 +157,27 @@ describe("ProductListing", () => {
     });
     expect(search).toHaveValue("Bakery");
   });
+
+  it("opens the mobile filter drawer and closes it from the result action", async () => {
+    const user = userEvent.setup();
+    renderListing();
+    await screen.findByText("Bakery Bag");
+
+    const trigger = screen.getByRole("button", { name: "Filters" });
+    const panel = screen.getByLabelText("Product filters");
+
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(panel).toHaveClass("is-open");
+    expect(document.body.style.overflow).toBe("hidden");
+
+    await user.click(screen.getByRole("checkbox", { name: "Bakery" }));
+    expect(screen.getByRole("button", { name: "Filters, 1 active" })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "View 1 Result" }));
+
+    expect(panel).not.toHaveClass("is-open");
+    expect(document.body.style.overflow).toBe("");
+  });
 });

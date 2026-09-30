@@ -478,6 +478,12 @@ shows the pickup-day radio filter; pickup timing remains available through the
 thumbnails, fake layout controls, and presentation-only
 pagination were removed.
 
+On desktop, filters remain in the listing sidebar. Below the desktop breakpoint,
+the same controls move into a viewport-constrained, scrollable drawer with a
+backdrop, active-filter count, body scroll lock, and persistent Clear All/View
+Results actions. The listing uses three product columns on wide desktop, two on
+tablet and small desktop, and one on narrow mobile screens.
+
 The `/products`, `/about`, `/contact`, `/faq`, `/profile`, `/stores`, and
 `/stores/[id]` page headers use StealDeals-owned WebP photographs from
 `public/assets/images/page-headers` instead of low-resolution Molla banners or
@@ -903,7 +909,9 @@ Home is in progress, and seven packages still require work or final validation.
    loading/error/empty states are complete. Remaining filter work:
    - restore Distance and Nearest with tested calculations after buyer/store
      coordinates can produce real distance values;
-   - present filters in an Apply/Clear drawer on small screens.
+   The responsive filter drawer is complete. Remaining work is restoring
+   Distance/Nearest when real distance values are available, followed by final
+   accessibility and performance validation.
 6. [ ] **Stores:** Store Service listing, detail, bags, reviews, filtering, and
    pagination are implemented. Complete responsive/accessibility validation and
    use API store imagery when its contract is available.
