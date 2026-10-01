@@ -9,6 +9,7 @@ type TestDialogProps = {
   onEscape: () => void;
   canEscape?: boolean;
   hasFocusableElements?: boolean;
+  isActive?: boolean;
 };
 
 function TestDialog({
@@ -16,6 +17,7 @@ function TestDialog({
   onEscape,
   canEscape = true,
   hasFocusableElements = true,
+  isActive = true,
 }: TestDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -24,6 +26,7 @@ function TestDialog({
     initialFocusSelector,
     onEscape,
     canEscape,
+    isActive,
   });
 
   return (
@@ -48,6 +51,19 @@ function TestDialog({
 }
 
 describe("useDialogFocusTrap", () => {
+  it("should leave focus and page scrolling unchanged while inactive", () => {
+    document.body.style.overflow = "auto";
+    render(
+      <>
+        <button type="button" autoFocus>Outside action</button>
+        <TestDialog onEscape={vi.fn()} isActive={false} />
+      </>,
+    );
+
+    expect(screen.getByRole("button", { name: "Outside action" })).toHaveFocus();
+    expect(document.body.style.overflow).toBe("auto");
+  });
+
   it("should focus the element matching the initial focus selector", async () => {
     render(<TestDialog onEscape={vi.fn()} />);
 

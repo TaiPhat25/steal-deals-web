@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
+import { useDialogFocusTrap } from "@/components/login/use-dialog-focus-trap";
 import { ApiClientError } from "@/lib/api/client";
 import { listBags } from "@/lib/api/store";
 import {
@@ -51,21 +52,22 @@ function FilterWidget({
   title: string;
   children: React.ReactNode;
 }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <div className="widget widget-collapsible">
       <h3 className="widget-title">
         <button
           type="button"
           className="category-widget-toggle"
-          data-toggle="collapse"
-          data-target={`#${id}`}
-          aria-expanded="true"
+          aria-expanded={isExpanded}
           aria-controls={id}
+          onClick={() => setIsExpanded((current) => !current)}
         >
           {title}
         </button>
       </h3>
-      <div className="collapse show" id={id}>
+      <div id={id} hidden={!isExpanded}>
         <div className="widget-body">{children}</div>
       </div>
     </div>
@@ -89,6 +91,14 @@ export default function ProductListing({
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const filterDialogRef = useRef<HTMLDivElement>(null);
+
+  useDialogFocusTrap({
+    dialogRef: filterDialogRef,
+    initialFocusSelector: "[data-filter-drawer-close]",
+    onEscape: () => setIsFilterDrawerOpen(false),
+    isActive: isFilterDrawerOpen,
+  });
 
   useEffect(() => {
     let active = true;
@@ -122,22 +132,17 @@ export default function ProductListing({
   }, [reloadKey]);
 
   useEffect(() => {
-    if (!isFilterDrawerOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
     const desktopQuery = window.matchMedia?.("(min-width: 992px)");
     const closeAtDesktop = (event: MediaQueryListEvent) => {
       if (event.matches) setIsFilterDrawerOpen(false);
     };
 
-    document.body.style.overflow = "hidden";
     desktopQuery?.addEventListener("change", closeAtDesktop);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       desktopQuery?.removeEventListener("change", closeAtDesktop);
     };
-  }, [isFilterDrawerOpen]);
+  }, []);
 
   function retryLoad() {
     setError(null);
@@ -426,14 +431,22 @@ export default function ProductListing({
               id="product-listing-filters"
               aria-label="Product filters"
             >
-              <div className="product-listing-filter-panel__surface">
+              <div
+                className="product-listing-filter-panel__surface"
+                ref={filterDialogRef}
+                role={isFilterDrawerOpen ? "dialog" : undefined}
+                aria-modal={isFilterDrawerOpen ? "true" : undefined}
+                aria-labelledby={isFilterDrawerOpen ? "product-filter-drawer-title" : undefined}
+                tabIndex={-1}
+              >
                 <div className="product-listing-filter-panel__header">
-                  <h2>Filters</h2>
+                  <h2 id="product-filter-drawer-title">Filters</h2>
                   <button
                     type="button"
                     className="product-listing-filter-panel__close"
                     aria-label="Close filters"
                     onClick={() => setIsFilterDrawerOpen(false)}
+                    data-filter-drawer-close
                   >
                     <span aria-hidden="true">&times;</span>
                   </button>
@@ -475,66 +488,74 @@ export default function ProductListing({
                 <FilterWidget id="price-filter" title="Price">
                   <div className="filter-range">
                     <div className="filter-range-fields">
-                      <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
-                        <span aria-hidden="true">VND</span>
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, -10000, PRICE_MIN) }))}
-                          aria-label="Decrease minimum price"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="text"
-                          id="price-min"
-                          inputMode="numeric"
-                          value={priceDraft.min}
-                          onChange={(event) => setPriceDraft((current) => ({ ...current, min: event.target.value }))}
-                          placeholder="MIN"
-                          aria-label="Minimum price"
-                          aria-invalid={!priceValidation.isValid}
-                          aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
-                        />
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, 10000, PRICE_MIN) }))}
-                          aria-label="Increase minimum price"
-                        >
-                          +
-                        </button>
+                      <div className="filter-range-field">
+                        <label className="filter-range-field-label" htmlFor="price-min">
+                          Minimum
+                        </label>
+                        <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
+                          <span aria-hidden="true">VND</span>
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, -10000, PRICE_MIN) }))}
+                            aria-label="Decrease minimum price"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="text"
+                            id="price-min"
+                            inputMode="numeric"
+                            value={priceDraft.min}
+                            onChange={(event) => setPriceDraft((current) => ({ ...current, min: event.target.value }))}
+                            placeholder="MIN"
+                            aria-invalid={!priceValidation.isValid}
+                            aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
+                          />
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, 10000, PRICE_MIN) }))}
+                            aria-label="Increase minimum price"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                       <span className="filter-range-separator" aria-hidden="true">-</span>
-                      <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
-                        <span aria-hidden="true">VND</span>
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, -10000, priceStepCeiling) }))}
-                          aria-label="Decrease maximum price"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="text"
-                          id="price-max"
-                          inputMode="numeric"
-                          value={priceDraft.max}
-                          onChange={(event) => setPriceDraft((current) => ({ ...current, max: event.target.value }))}
-                          placeholder="MAX"
-                          aria-label="Maximum price"
-                          aria-invalid={!priceValidation.isValid}
-                          aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
-                        />
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, 10000, priceStepCeiling) }))}
-                          aria-label="Increase maximum price"
-                        >
-                          +
-                        </button>
+                      <div className="filter-range-field">
+                        <label className="filter-range-field-label" htmlFor="price-max">
+                          Maximum
+                        </label>
+                        <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
+                          <span aria-hidden="true">VND</span>
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, -10000, priceStepCeiling) }))}
+                            aria-label="Decrease maximum price"
+                          >
+                            -
+                          </button>
+                          <input
+                            type="text"
+                            id="price-max"
+                            inputMode="numeric"
+                            value={priceDraft.max}
+                            onChange={(event) => setPriceDraft((current) => ({ ...current, max: event.target.value }))}
+                            placeholder="MAX"
+                            aria-invalid={!priceValidation.isValid}
+                            aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
+                          />
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, 10000, priceStepCeiling) }))}
+                            aria-label="Increase maximum price"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
                     {!priceValidation.isValid ? (
@@ -576,12 +597,14 @@ export default function ProductListing({
               </div>
             </aside>
 
-            <button
-              type="button"
-              className={`product-listing-filter-backdrop${isFilterDrawerOpen ? " is-open" : ""}`}
-              aria-label="Close filters"
-              onClick={() => setIsFilterDrawerOpen(false)}
-            />
+            {isFilterDrawerOpen ? (
+              <button
+                type="button"
+                className="product-listing-filter-backdrop is-open"
+                aria-label="Dismiss filter drawer"
+                onClick={() => setIsFilterDrawerOpen(false)}
+              />
+            ) : null}
           </div>
         </div>
       </div>

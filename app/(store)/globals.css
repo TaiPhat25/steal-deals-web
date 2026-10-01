@@ -2110,18 +2110,30 @@ img {
 }
 
 .filter-range-fields {
-  align-items: center;
+  align-items: flex-end;
   display: flex;
   gap: 0.75rem;
+}
+
+.filter-range-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.filter-range-field-label {
+  color: #555;
+  display: block;
+  font-size: 1.2rem;
+  margin-bottom: 0.45rem;
 }
 
 .filter-range-input {
   align-items: center;
   border: 1px solid #d9d9d9;
   display: flex;
-  flex: 1 1 0;
   min-width: 0;
   padding: 0 0.6rem;
+  width: 100%;
 }
 
 .filter-range-input--invalid {
@@ -2175,6 +2187,11 @@ img {
   -moz-appearance: textfield;
 }
 
+.filter-range-input:focus-within {
+  border-color: #61ab00;
+  box-shadow: 0 0 0 0.2rem rgba(97, 171, 0, 0.18);
+}
+
 .filter-range-separator {
   color: #999;
   flex: 0 0 auto;
@@ -2212,6 +2229,17 @@ img {
   border-color: #b7b7b7;
   color: #888;
   cursor: not-allowed;
+}
+
+.product-listing-filter-trigger:focus-visible,
+.category-widget-toggle:focus-visible,
+.sidebar-filter-clear:focus-visible,
+.filter-range-stepper:focus-visible,
+.filter-range-apply:focus-visible,
+.product-listing-filter-panel__close:focus-visible,
+.product-listing-filter-panel__footer .btn:focus-visible {
+  outline: 0.2rem solid #3f7800;
+  outline-offset: 0.2rem;
 }
 
 @media (max-width: 991px) {

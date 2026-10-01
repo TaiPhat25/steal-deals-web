@@ -102,7 +102,7 @@ describe("ProductListing", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Remove category filter: Dairy" }));
-    await user.type(screen.getByRole("textbox", { name: "Minimum price" }), "50000");
+    await user.type(screen.getByRole("textbox", { name: "Minimum" }), "50000");
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
     expect(screen.getByRole("button", { name: "Remove price filter: From 50,000 VND" })).toBeVisible();
@@ -112,7 +112,7 @@ describe("ProductListing", () => {
 
     await user.click(screen.getByRole("button", { name: "Remove price filter: From 50,000 VND" }));
 
-    expect(screen.getByRole("textbox", { name: "Minimum price" })).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Minimum" })).toHaveValue("");
     expect(screen.getByRole("status", { name: "" })).toHaveTextContent(
       "Showing 2 of 2 surprise bags",
     );
@@ -171,6 +171,18 @@ describe("ProductListing", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(panel).toHaveClass("is-open");
     expect(document.body.style.overflow).toBe("hidden");
+    const dialog = screen.getByRole("dialog", { name: "Filters" });
+    const closeButton = screen.getByRole("button", { name: "Close filters" });
+
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    await waitFor(() => {
+      expect(closeButton).toHaveFocus();
+    });
+
+    await user.keyboard("{Shift>}{Tab}{/Shift}");
+    expect(screen.getByRole("button", { name: "View 2 Results" })).toHaveFocus();
+
+    closeButton.focus();
 
     await user.click(screen.getByRole("checkbox", { name: "Bakery" }));
     expect(screen.getByRole("button", { name: "Filters, 1 active" })).toBeVisible();
@@ -179,5 +191,47 @@ describe("ProductListing", () => {
 
     expect(panel).not.toHaveClass("is-open");
     expect(document.body.style.overflow).toBe("");
+    expect(trigger).toHaveFocus();
+  });
+
+  it("closes the filter dialog with Escape and restores trigger focus", async () => {
+    const user = userEvent.setup();
+    renderListing();
+    await screen.findByText("Bakery Bag");
+
+    const trigger = screen.getByRole("button", { name: "Filters" });
+    await user.click(trigger);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Close filters" })).toHaveFocus();
+    });
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog", { name: "Filters" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("exposes collapsible filters and price validation to assistive technology", async () => {
+    const user = userEvent.setup();
+    renderListing();
+    await screen.findByText("Bakery Bag");
+
+    const categoryToggle = screen.getByRole("button", { name: "Food Category" });
+    const bakeryCheckbox = screen.getByRole("checkbox", { name: "Bakery" });
+
+    await user.click(categoryToggle);
+    expect(categoryToggle).toHaveAttribute("aria-expanded", "false");
+    expect(bakeryCheckbox).not.toBeVisible();
+
+    await user.type(screen.getByRole("textbox", { name: "Minimum" }), "invalid");
+
+    const error = screen.getByRole("alert");
+    const applyButton = screen.getByRole("button", { name: "Apply" });
+    expect(error).toHaveTextContent("Enter valid non-negative whole-number prices.");
+    expect(screen.getByRole("textbox", { name: "Minimum" })).toHaveAttribute(
+      "aria-describedby",
+      error.id,
+    );
+    expect(applyButton).toBeDisabled();
   });
 });

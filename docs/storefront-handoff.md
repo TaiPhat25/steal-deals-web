@@ -481,7 +481,11 @@ pagination were removed.
 On desktop, filters remain in the listing sidebar. Below the desktop breakpoint,
 the same controls move into a viewport-constrained, scrollable drawer with a
 backdrop, active-filter count, body scroll lock, and persistent Clear All/View
-Results actions. The listing uses three product columns on wide desktop, two on
+Results actions. The mobile drawer uses dialog semantics, traps keyboard focus,
+closes with Escape, restores focus to its trigger, and exposes React-owned
+collapsible filter sections with visible price labels and announced validation.
+Closed drawer content is removed from keyboard and assistive-technology access
+through its visibility state. The listing uses three product columns on wide desktop, two on
 tablet and small desktop, and one on narrow mobile screens.
 
 The `/products`, `/about`, `/contact`, `/faq`, `/profile`, `/stores`, and
@@ -911,7 +915,8 @@ Home is in progress, and seven packages still require work or final validation.
      coordinates can produce real distance values;
    The responsive filter drawer is complete. Remaining work is restoring
    Distance/Nearest when real distance values are available, followed by final
-   accessibility and performance validation.
+   performance validation; the listing drawer's keyboard and dialog
+   accessibility pass is complete.
 6. [ ] **Stores:** Store Service listing, detail, bags, reviews, filtering, and
    pagination are implemented. Complete responsive/accessibility validation and
    use API store imagery when its contract is available.
