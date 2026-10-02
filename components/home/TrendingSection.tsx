@@ -11,7 +11,6 @@ import SurpriseBagCard from "./SurpriseBagCard";
 export default function TrendingSection() {
   const { bags: bagResource, retry } = useHomeData();
   const bags = bagResource.data
-    .filter((bag) => (bag.status || "").toLowerCase() === "active")
     .map(toListingBag)
     .sort(
       (a, b) =>

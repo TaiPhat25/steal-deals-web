@@ -7,10 +7,7 @@ import { useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import { BRAND_NAME } from "@/lib/brand";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
-import {
-  surpriseBags,
-  type ListingBag,
-} from "@/components/products/product-listing-data";
+import type { ListingBag } from "@/components/products/product-listing-data";
 
 const galleryImagesBySlug: Record<string, string[]> = {
   "bakery-breakfast-box": [
@@ -87,6 +84,24 @@ const staticReviewsBySlug: Record<string, StaticReview[]> = {
   ],
 };
 
+const productDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  day: "2-digit",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+const productCalendarDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+const productTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+
 function formatPrice(value: number) {
   return `${value.toLocaleString("en-US")} VND`;
 }
@@ -97,40 +112,38 @@ function clampQuantity(value: number, maximum: number) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "2-digit",
-  }).format(new Date(value));
+  return productDateFormatter.format(new Date(value));
 }
 
 function formatTime(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
+  return productTimeFormatter.format(new Date(value));
 }
 
 function formatPickupRange(bag: ListingBag) {
-  return `${formatDate(bag.pickupStartTime)}, ${formatTime(bag.pickupStartTime)} - ${formatTime(bag.pickupEndTime)}`;
+  const start = new Date(bag.pickupStartTime);
+  const end = new Date(bag.pickupEndTime);
+  const sameDay =
+    productCalendarDateFormatter.format(start) ===
+    productCalendarDateFormatter.format(end);
+
+  if (sameDay) {
+    return `${formatDate(bag.pickupStartTime)}, ${formatTime(bag.pickupStartTime)} - ${formatTime(bag.pickupEndTime)}`;
+  }
+
+  return `${formatDate(bag.pickupStartTime)}, ${formatTime(bag.pickupStartTime)} - ${formatDate(bag.pickupEndTime)}, ${formatTime(bag.pickupEndTime)}`;
 }
 
 function formatAvailability(bag: ListingBag) {
   return `${bag.remainingQuantity} of ${bag.quantityTotal} bags left`;
 }
 
-function getRelatedBags(current: ListingBag) {
-  const sameCategory = surpriseBags.filter(
-    (bag) => bag.slug !== current.slug && bag.category === current.category,
-  );
-  const fallback = surpriseBags.filter(
-    (bag) => bag.slug !== current.slug && bag.category !== current.category,
-  );
-
-  return [...sameCategory, ...fallback].slice(0, 5);
-}
-
-export default function ProductMain({ bag }: { bag: ListingBag }) {
+export default function ProductMain({
+  bag,
+  relatedBags,
+}: {
+  bag: ListingBag;
+  relatedBags: ListingBag[];
+}) {
   const router = useRouter();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -139,7 +152,6 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
     imageSrc: bag.imageSrc,
   });
   const isAvailable = bag.remainingQuantity > 0;
-  const relatedBags = getRelatedBags(bag);
   const reviews = staticReviewsBySlug[bag.slug] ?? [
     {
       author: "Local shopper",
@@ -148,21 +160,11 @@ export default function ProductMain({ bag }: { bag: ListingBag }) {
       date: "July 31, 2026",
     },
   ];
-  const galleryImages =
-    galleryImagesBySlug[bag.slug] ??
-    [
+  const galleryImages = galleryImagesBySlug[bag.slug] ??
+    Array.from(new Set([
       bag.imageSrc,
-      ...surpriseBags
-        .filter(
-          (item) => item.slug !== bag.slug && item.category === bag.category,
-        )
-        .map((item) => item.imageSrc),
-      ...surpriseBags
-        .filter(
-          (item) => item.slug !== bag.slug && item.category !== bag.category,
-        )
-        .map((item) => item.imageSrc),
-    ].slice(0, 3);
+      ...relatedBags.map((item) => item.imageSrc),
+    ])).slice(0, 3);
   // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
 
   const selectedImage =

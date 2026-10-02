@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,16 +26,21 @@ export type SurpriseBag = {
   storeSlug?: string;
 };
 
+const DEFAULT_IMAGE_SIZES = "(max-width: 575px) 78vw, (max-width: 991px) 40vw, (max-width: 1199px) 30vw, 228px";
+const priceFormatter = new Intl.NumberFormat("en-US");
+
 function formatPrice(value: number) {
-  return `${value.toLocaleString("en-US")} VND`;
+  return `${priceFormatter.format(value)} VND`;
 }
 
-export default function SurpriseBagCard({
+function SurpriseBagCard({
   bag,
   eager = false,
+  imageSizes = DEFAULT_IMAGE_SIZES,
 }: {
   bag: SurpriseBag;
   eager?: boolean;
+  imageSizes?: string;
 }) {
   const router = useRouter();
   const { addItem } = useCart();
@@ -50,7 +56,7 @@ export default function SurpriseBagCard({
             src={bag.imageSrc}
             width={300}
             height={225}
-            sizes="(max-width: 575px) 78vw, (max-width: 991px) 40vw, (max-width: 1199px) 30vw, 228px"
+            sizes={imageSizes}
             alt={bag.imageAlt}
             loading={eager ? "eager" : "lazy"}
             unoptimized={shouldUseUnoptimizedImage(bag.imageSrc)}
@@ -119,3 +125,5 @@ export default function SurpriseBagCard({
     </article>
   );
 }
+
+export default memo(SurpriseBagCard);

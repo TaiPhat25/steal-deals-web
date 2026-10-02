@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { StoreProfile } from "@/components/stores/store-profile-data";
+import { isBagAvailable } from "@/lib/bag-availability";
 import {
   shouldUseUnoptimizedImage,
   STORE_FALLBACK_IMAGE,
@@ -18,8 +19,8 @@ function formatCoordinate(value: number) {
 }
 
 export default function StoreInfo({ store }: { store: StoreProfile }) {
-  const productCount = store.surpriseBags.filter(
-    (bag) => bag.status === "Active" && bag.quantityRemaining > 0,
+  const productCount = store.surpriseBags.filter((bag) =>
+    isBagAvailable(bag),
   ).length;
   const reviewCount = store.storeReviews.length;
   const storeImage = store.avatarUrl || STORE_FALLBACK_IMAGE;

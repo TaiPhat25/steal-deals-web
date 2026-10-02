@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
+import { filterAvailableBags } from "@/lib/bag-availability";
 import type {
   CategoryResponse,
   CategorySuggestionResponse,
@@ -73,6 +74,23 @@ export type ReviewFilterRequest = {
 
 const STORE_API_BASE_URL = process.env.NEXT_PUBLIC_STORE_API_URL;
 const publicListRequests = new Map<string, Promise<unknown>>();
+const DATE_TIME_OFFSET_PATTERN = /(?:Z|[+-]\d{2}:\d{2})$/i;
+
+export function normalizeStoreUtcDateTime(value: string) {
+  return DATE_TIME_OFFSET_PATTERN.test(value) ? value : `${value}Z`;
+}
+
+export function normalizeSurpriseBagResponse(
+  bag: SurpriseBagResponse,
+): SurpriseBagResponse {
+  return {
+    ...bag,
+    pickupStartTime: normalizeStoreUtcDateTime(bag.pickupStartTime),
+    pickupEndTime: normalizeStoreUtcDateTime(bag.pickupEndTime),
+    expiryDate: normalizeStoreUtcDateTime(bag.expiryDate),
+    createdAt: normalizeStoreUtcDateTime(bag.createdAt),
+  };
+}
 
 function dedupePublicListRequest<T>(key: string, request: () => Promise<T>) {
   if (typeof window === "undefined") {
@@ -159,8 +177,12 @@ export function listBags() {
       "/api/bags",
       { method: "GET" },
       storeApiBaseUrl(),
-    ),
+    ).then((bags) => bags.map(normalizeSurpriseBagResponse)),
   );
+}
+
+export async function listAvailableBags(now = Date.now()) {
+  return filterAvailableBags(await listBags(), now);
 }
 
 export function getBag(id: string) {
@@ -168,7 +190,7 @@ export function getBag(id: string) {
     `/api/bags/${encodeURIComponent(id)}`,
     { method: "GET" },
     storeApiBaseUrl(),
-  );
+  ).then(normalizeSurpriseBagResponse);
 }
 
 export function createCategory(
@@ -246,7 +268,7 @@ export function createBag(
     "/api/bags",
     { method: "POST", headers: bearer(accessToken), body },
     storeApiBaseUrl(),
-  );
+  ).then(normalizeSurpriseBagResponse);
 }
 
 export async function listStoreBags(storeId: string) {
@@ -256,7 +278,16 @@ export async function listStoreBags(storeId: string) {
     storeApiBaseUrl(),
   );
   // ponytail: the store-list response omits categories; remove these detail requests when the backend includes them.
-  return Promise.all(bags.map((bag) => bag.categories.length ? bag : getBag(bag.id)));
+  return Promise.all(bags.map((bag) => bag.categories.length
+    ? normalizeSurpriseBagResponse(bag)
+    : getBag(bag.id)));
+}
+
+export async function listAvailableStoreBags(
+  storeId: string,
+  now = Date.now(),
+) {
+  return filterAvailableBags(await listStoreBags(storeId), now);
 }
 
 function buildReviewQueryParams(filter?: ReviewFilterRequest) {
@@ -388,7 +419,7 @@ export function updateBag(
     `/api/bags/${encodeURIComponent(id)}`,
     { method: "PUT", headers: bearer(accessToken), body },
     storeApiBaseUrl(),
-  );
+  ).then(normalizeSurpriseBagResponse);
 }
 
 export function deleteBag(accessToken: string, id: string) {

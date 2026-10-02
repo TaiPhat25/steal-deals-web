@@ -1,8 +1,26 @@
 import type { SurpriseBag } from "@/components/home/SurpriseBagCard";
 import type { SurpriseBagResponse } from "@/lib/api/dashboard-types";
+export { isBagAvailable } from "@/lib/bag-availability";
 import { BAG_FALLBACK_IMAGE } from "@/lib/image-assets";
 
 export const PRODUCT_LISTING_IMAGE = BAG_FALLBACK_IMAGE;
+
+const pickupDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+const pickupCalendarDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+const pickupTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
 
 export type ListingBag = SurpriseBag & {
   backendId?: string;
@@ -16,6 +34,8 @@ export type ListingBag = SurpriseBag & {
   popularity: number;
   createdOrder: number;
 };
+
+const searchableTextCache = new WeakMap<ListingBag, string>();
 
 export type ListingFilters = {
   query: string;
@@ -386,16 +406,17 @@ function getPickupDay(startTime: string): ListingBag["pickupDay"] {
 export function formatPickupWindow(startTime: string, endTime: string) {
   const start = new Date(startTime);
   const end = new Date(endTime);
-  const dateLabel = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(start);
-  const timeFormatter = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const pickupStartDate = pickupDateFormatter.format(start);
+  const pickupEndDate = pickupDateFormatter.format(end);
+  const pickupStart = pickupTimeFormatter.format(start);
+  const pickupEnd = pickupTimeFormatter.format(end);
+  const sameDay =
+    pickupCalendarDateFormatter.format(start) ===
+    pickupCalendarDateFormatter.format(end);
 
-  return `${dateLabel}, ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`;
+  return sameDay
+    ? `${pickupStartDate}, ${pickupStart} - ${pickupEnd}`
+    : `${pickupStartDate}, ${pickupStart} - ${pickupEndDate}, ${pickupEnd}`;
 }
 
 export function getPickupAvailabilityLabel(startTime: string) {
@@ -404,29 +425,7 @@ export function getPickupAvailabilityLabel(startTime: string) {
   if (pickupDay === "today") return "Pickup today";
   if (pickupDay === "tomorrow") return "Pickup tomorrow";
 
-  return `Pickup ${new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(startTime))}`;
-}
-
-type AvailableBag = Pick<
-  SurpriseBagResponse,
-  "status" | "quantityRemaining" | "expiryDate" | "pickupEndTime"
->;
-
-export function isBagAvailable(bag: AvailableBag, now = Date.now()) {
-  const expiryTime = Date.parse(bag.expiryDate);
-  const pickupEndTime = Date.parse(bag.pickupEndTime);
-
-  return (
-    bag.status.toLowerCase() === "active" &&
-    bag.quantityRemaining > 0 &&
-    Number.isFinite(expiryTime) &&
-    expiryTime > now &&
-    Number.isFinite(pickupEndTime) &&
-    pickupEndTime > now
-  );
+  return `Pickup ${pickupDateFormatter.format(new Date(startTime))}`;
 }
 
 export function toListingBag(bag: SurpriseBagResponse): ListingBag {
@@ -472,14 +471,29 @@ export function normalizeSort(sort?: string) {
 
 export function filterBags(bags: ListingBag[], filters: ListingFilters) {
   const query = filters.query.trim().toLowerCase();
+  const selectedCategories = filters.categories.length
+    ? new Set(filters.categories)
+    : null;
+
   return bags
     .filter((bag) => {
-      const searchableText = `${bag.name} ${bag.storeName} ${bag.category}`.toLowerCase();
+      let matchesQuery = true;
+
+      if (query) {
+        let searchableText = searchableTextCache.get(bag);
+
+        if (!searchableText) {
+          searchableText = `${bag.name} ${bag.storeName} ${bag.category}`.toLowerCase();
+          searchableTextCache.set(bag, searchableText);
+        }
+
+        matchesQuery = searchableText.includes(query);
+      }
 
       return (
         (!filters.storeId || bag.storeId === filters.storeId) &&
-        (!query || searchableText.includes(query)) &&
-        (!filters.categories.length || filters.categories.includes(bag.category)) &&
+        matchesQuery &&
+        (!selectedCategories || selectedCategories.has(bag.category)) &&
         (filters.pickupDay === "all" || bag.pickupDay === filters.pickupDay) &&
         bag.salePrice >= filters.minPrice &&
         bag.salePrice <= filters.maxPrice &&

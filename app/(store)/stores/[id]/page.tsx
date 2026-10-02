@@ -8,7 +8,11 @@ import StoreProducts from "@/components/stores/StoreProducts";
 import StoreReviews from "@/components/stores/StoreReviews";
 import { mapStoreResponse } from "@/components/stores/store-api-mappers";
 import { ApiClientError } from "@/lib/api/client";
-import { getStore, listStoreBags, listStoreReviews } from "@/lib/api/store";
+import {
+  getStore,
+  listAvailableStoreBags,
+  listStoreReviews,
+} from "@/lib/api/store";
 import { withBrandTitle } from "@/lib/brand";
 
 type StoreDetailPageProps = {
@@ -19,7 +23,7 @@ const loadStorePageData = cache(async (id: string) => {
   try {
     const [store, bags, reviews] = await Promise.all([
       getStore(id),
-      listStoreBags(id),
+      listAvailableStoreBags(id),
       listStoreReviews(id),
     ]);
 

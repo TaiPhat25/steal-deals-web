@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ApiClientError } from "@/lib/api/client";
-import { listBags, listStores } from "@/lib/api/store";
+import { listAvailableBags, listStores } from "@/lib/api/store";
 import NewStoreCard from "@/components/home/NewStoreCard";
 import { mapStoreResponse } from "@/components/stores/store-api-mappers";
 import type { StoreProfile } from "@/components/stores/store-profile-data";
@@ -26,7 +26,7 @@ export default function StoreListing() {
   useEffect(() => {
     let active = true;
 
-    void Promise.all([listStores(), listBags()])
+    void Promise.all([listStores(), listAvailableBags()])
       .then(([storesResponse, bagsResponse]) => {
         if (!active) return;
 

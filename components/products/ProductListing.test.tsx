@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SurpriseBagResponse } from "@/lib/api/dashboard-types";
-import { listBags } from "@/lib/api/store";
+import { listAvailableBags } from "@/lib/api/store";
 import ProductListing from "./ProductListing";
 
 vi.mock("next/image", () => ({
@@ -15,10 +15,10 @@ vi.mock("@/components/home/SurpriseBagCard", () => ({
 }));
 
 vi.mock("@/lib/api/store", () => ({
-  listBags: vi.fn(),
+  listAvailableBags: vi.fn(),
 }));
 
-const mockListBags = vi.mocked(listBags);
+const mockListAvailableBags = vi.mocked(listAvailableBags);
 
 function createBag(
   overrides: Partial<SurpriseBagResponse> = {},
@@ -72,8 +72,8 @@ function renderListing(props: ComponentProps<typeof ProductListing> = {}) {
 
 describe("ProductListing", () => {
   beforeEach(() => {
-    mockListBags.mockReset();
-    mockListBags.mockResolvedValue(availableBags);
+    mockListAvailableBags.mockReset();
+    mockListAvailableBags.mockResolvedValue(availableBags);
   });
 
   it("shows removable applied filters and keeps the result count synchronized", async () => {
@@ -130,7 +130,7 @@ describe("ProductListing", () => {
     expect(await screen.findByText("Bakery Bag")).toBeVisible();
 
     unmount();
-    mockListBags.mockResolvedValueOnce([]);
+    mockListAvailableBags.mockResolvedValueOnce([]);
     renderListing();
 
     expect(await screen.findByRole("heading", { name: "No surprise bags available" })).toBeVisible();
@@ -139,7 +139,7 @@ describe("ProductListing", () => {
 
   it("preserves filters when retrying a failed request", async () => {
     const user = userEvent.setup();
-    mockListBags
+    mockListAvailableBags
       .mockRejectedValueOnce(new Error("Store Service unavailable"))
       .mockResolvedValueOnce(availableBags);
 

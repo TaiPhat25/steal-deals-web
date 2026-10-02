@@ -488,6 +488,13 @@ Closed drawer content is removed from keyboard and assistive-technology access
 through its visibility state. The listing uses three product columns on wide desktop, two on
 tablet and small desktop, and one on narrow mobile screens.
 
+The listing performance pass defers search-derived rendering with
+`useDeferredValue`, computes category counts and the price ceiling in one pass,
+filters the already store-scoped collection, caches normalized searchable text,
+reuses `Intl` formatters, and memoizes shared bag cards. Product-listing cards
+also provide grid-specific responsive image sizes; only the first visible card
+is eager and the remaining card images stay lazy.
+
 The `/products`, `/about`, `/contact`, `/faq`, `/profile`, `/stores`, and
 `/stores/[id]` page headers use StealDeals-owned WebP photographs from
 `public/assets/images/page-headers` instead of low-resolution Molla banners or
@@ -882,9 +889,8 @@ Home is in progress, and seven packages still require work or final validation.
 2. [ ] **Home - in progress:** the requested section order, React hero, branding,
    API mapping, shared `HomeDataProvider`, and explicit loading/error/empty/retry
    states are complete. Visible Molla/demo imagery has been replaced with
-   Home-owned assets. Remaining Home work is intentionally deferred:
-   - sort Near-Expiry by `expiryDate`, exclude expired bags, and cap the
-     collection to a practical top set instead of rendering every active bag;
+   Home-owned assets. Near-Expiry now sorts by `expiryDate`, excludes unavailable
+   bags, and is capped to ten items. Remaining Home work is intentionally deferred:
    - replace the current zero/static distance fallback with ranking based on
      buyer and store coordinates for Near You;
    - define a real Trending metric from backend order/view activity instead of
@@ -905,18 +911,34 @@ Home is in progress, and seven packages still require work or final validation.
    Header, mobile menu, and Footer consistency.
 5. [ ] **Catalog:** Store Service listing/detail mapping, search/filter/sort,
    product fields, quantity controls, related cards, and cart actions are
-   implemented. Complete responsive, accessibility, error-state, and
-   performance validation for `/products` and `/product`. Rework the listing
-   filters before final validation. Price bound handling and validation are
-   complete, and Distance/Nearest are hidden until real distance data exists.
+   implemented. Price bound handling and validation are complete, and
+   Distance/Nearest are hidden until real distance data exists.
    Applied-filter labels, synchronized Clear All/result counts, and distinct
-   loading/error/empty states are complete. Remaining filter work:
+   loading/error/empty states are complete.
+   The responsive filter drawer, implementation-level performance pass, and
+   drawer keyboard/dialog accessibility pass are complete.
+   Store Service bag timestamps are normalized at the frontend API boundary
+   because the current API serializes UTC `DateTime` values without a `Z` or
+   offset. Product date/time presentation uses the Vietnam marketplace timezone
+   explicitly, and pickup ranges show both dates when a window spans days.
+   Public product surfaces now share one availability rule: Active status,
+   positive remaining quantity, future pickup end, and future expiry. This rule
+   covers Home, header search, product/store listings, store detail counts, bag
+   detail access, and related bags; seller management and historical commerce
+   records remain intentionally unfiltered.
+   Remaining catalog work:
+   - add real `/products` pagination; the Store Service currently returns an
+     unpaged array, so use client-side pagination first and migrate to backend
+     pagination when `GET /api/bags` supports `page` and `pageSize`;
    - restore Distance and Nearest with tested calculations after buyer/store
      coordinates can produce real distance values;
-   The responsive filter drawer is complete. Remaining work is restoring
-   Distance/Nearest when real distance values are available, followed by final
-   performance validation; the listing drawer's keyboard and dialog
-   accessibility pass is complete.
+   - fix Store Service bag updates so changing `QuantityTotal` adjusts
+     `QuantityRemaining` while preserving already sold/reserved units. The
+     current update mapper changes only the total, which can produce values such
+     as `10 of 500 bags left`; mirror the same correction in seller demo state;
+   - complete responsive and accessibility regression, large-dataset,
+     production-build, end-to-end, and Lighthouse testing during the deferred
+     testing pass.
 6. [ ] **Stores:** Store Service listing, detail, bags, reviews, filtering, and
    pagination are implemented. Complete responsive/accessibility validation and
    use API store imagery when its contract is available.

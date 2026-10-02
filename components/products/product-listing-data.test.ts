@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   filterBags,
+  formatPickupWindow,
   isBagAvailable,
   normalizeSort,
   PRODUCT_LISTING_IMAGE,
@@ -72,6 +73,15 @@ it("maps API bags without inheriting demo presentation metadata", () => {
   expect(bag.distance).toBe("Store pickup");
   expect(bag.distanceKm).toBe(Number.POSITIVE_INFINITY);
   expect(bag.popularity).toBe(0);
+});
+
+it("shows both dates for a pickup window spanning multiple days", () => {
+  expect(
+    formatPickupWindow(
+      "2026-10-01T04:00:00Z",
+      "2026-10-15T06:30:00Z",
+    ),
+  ).toBe("Oct 1, 11:00 AM - Oct 15, 1:30 PM");
 });
 
 it("rejects sold-out, expired, and ended-pickup bags", () => {

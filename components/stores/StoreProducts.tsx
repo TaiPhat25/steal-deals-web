@@ -3,9 +3,9 @@ import SurpriseBagCard, { type SurpriseBag } from "@/components/home/SurpriseBag
 import {
   formatPickupWindow,
   getPickupAvailabilityLabel,
-  isBagAvailable,
   PRODUCT_LISTING_IMAGE,
 } from "@/components/products/product-listing-data";
+import { isBagAvailable } from "@/lib/bag-availability";
 import type { StoreProfile, StoreSurpriseBag } from "@/components/stores/store-profile-data";
 
 function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {

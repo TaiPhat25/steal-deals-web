@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import { useDialogFocusTrap } from "@/components/login/use-dialog-focus-trap";
 import { ApiClientError } from "@/lib/api/client";
-import { listBags } from "@/lib/api/store";
+import { listAvailableBags } from "@/lib/api/store";
 import {
   filterBags,
-  isBagAvailable,
   normalizeSort,
   toListingBag,
   validatePriceRange,
@@ -25,6 +24,7 @@ type ProductListingProps = {
 
 const PRICE_MIN = 0;
 const PRICE_MAX = Number.POSITIVE_INFINITY;
+const PRODUCT_LISTING_CARD_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 30px), (max-width: 1199px) calc(37.5vw - 30px), 255px";
 const priceFormatter = new Intl.NumberFormat("en-US");
 
 function stepPriceDraft(value: string, step: number, blankValue: number) {
@@ -92,6 +92,7 @@ export default function ProductListing({
   const [reloadKey, setReloadKey] = useState(0);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const filterDialogRef = useRef<HTMLDivElement>(null);
+  const deferredQuery = useDeferredValue(query);
 
   useDialogFocusTrap({
     dialogRef: filterDialogRef,
@@ -103,15 +104,11 @@ export default function ProductListing({
   useEffect(() => {
     let active = true;
 
-    void listBags()
+    void listAvailableBags()
       .then((response) => {
         if (!active) return;
 
-        setBags(
-          response
-            .filter((bag) => isBagAvailable(bag))
-            .map(toListingBag),
-        );
+        setBags(response.map(toListingBag));
       })
       .catch((requestError) => {
         if (!active) return;
@@ -157,22 +154,21 @@ export default function ProductListing({
   const storeName = storeId
     ? scopedBags[0]?.storeName
     : undefined;
-  const categoryOptions = useMemo(
-    () =>
-      Array.from(new Set(scopedBags.map((bag) => bag.category)))
-        .sort()
-        .map((category) => [
-          category,
-          scopedBags.filter((bag) => bag.category === category).length,
-        ] as const),
-    [scopedBags],
-  );
-  const priceStepCeiling = useMemo(() => {
-    const highestPrice = scopedBags.reduce(
-      (highest, bag) => Math.max(highest, bag.salePrice),
-      PRICE_MIN,
-    );
-    return Math.ceil(highestPrice / 10000) * 10000;
+  const { categoryOptions, priceStepCeiling } = useMemo(() => {
+    const categoryCounts = new Map<string, number>();
+    let highestPrice = PRICE_MIN;
+
+    for (const bag of scopedBags) {
+      categoryCounts.set(bag.category, (categoryCounts.get(bag.category) ?? 0) + 1);
+      highestPrice = Math.max(highestPrice, bag.salePrice);
+    }
+
+    return {
+      categoryOptions: Array.from(categoryCounts.entries()).sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
+      priceStepCeiling: Math.ceil(highestPrice / 10000) * 10000,
+    };
   }, [scopedBags]);
   const priceValidation = useMemo(
     () => validatePriceRange(priceDraft.min, priceDraft.max),
@@ -183,8 +179,8 @@ export default function ProductListing({
   const activeFilterCount = Number(Boolean(query.trim())) + categories.length + Number(hasPriceFilter);
   const visibleBags = useMemo(
     () =>
-      filterBags(bags, {
-        query,
+      filterBags(scopedBags, {
+        query: deferredQuery,
         categories,
         pickupDay: "all",
         minPrice,
@@ -192,9 +188,8 @@ export default function ProductListing({
         minDistance: 0,
         maxDistance: Number.POSITIVE_INFINITY,
         sort,
-        storeId,
       }),
-    [bags, categories, maxPrice, minPrice, query, sort, storeId],
+    [categories, deferredQuery, maxPrice, minPrice, scopedBags, sort],
   );
 
   function toggleCategory(category: string) {
@@ -309,7 +304,7 @@ export default function ProductListing({
           </div>
 
           <div className="row">
-            <div className="col-lg-9">
+            <div className="col-lg-9" aria-busy={query !== deferredQuery}>
               {isLoading ? (
                 <div className="product-listing-empty" aria-live="polite">
                   <h2>Loading surprise bags</h2>
@@ -407,7 +402,11 @@ export default function ProductListing({
                 <div className="row product-listing-grid">
                   {visibleBags.map((bag, index) => (
                     <div className="col-12 col-sm-6 col-xl-4" key={bag.slug}>
-                      <SurpriseBagCard bag={bag} eager={index === 0} />
+                      <SurpriseBagCard
+                        bag={bag}
+                        eager={index === 0}
+                        imageSizes={PRODUCT_LISTING_CARD_IMAGE_SIZES}
+                      />
                     </div>
                   ))}
                 </div>
