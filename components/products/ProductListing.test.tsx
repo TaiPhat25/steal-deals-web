@@ -118,6 +118,30 @@ describe("ProductListing", () => {
     );
   });
 
+  it("steps empty price bounds from zero", async () => {
+    const user = userEvent.setup();
+    renderListing();
+    await screen.findByText("Bakery Bag");
+
+    const minimum = screen.getByRole("textbox", { name: "Minimum" });
+    const maximum = screen.getByRole("textbox", { name: "Maximum" });
+    const decreaseMinimum = screen.getByRole("button", { name: "Decrease minimum price" });
+    const decreaseMaximum = screen.getByRole("button", { name: "Decrease maximum price" });
+
+    expect(minimum).toHaveAttribute("placeholder", "0");
+    expect(maximum).toHaveAttribute("placeholder", "0");
+    expect(decreaseMinimum).toBeDisabled();
+    expect(decreaseMaximum).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Increase minimum price" }));
+    await user.click(screen.getByRole("button", { name: "Increase maximum price" }));
+
+    expect(minimum).toHaveValue("10000");
+    expect(maximum).toHaveValue("10000");
+    expect(decreaseMinimum).toBeEnabled();
+    expect(decreaseMaximum).toBeEnabled();
+  });
+
   it("distinguishes unavailable products from filter mismatches", async () => {
     const user = userEvent.setup();
     const { unmount } = renderListing();

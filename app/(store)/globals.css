@@ -2167,9 +2167,14 @@ img {
   padding: 0 0.35rem;
 }
 
-.filter-range-stepper:hover,
-.filter-range-stepper:focus {
+.filter-range-stepper:hover:not(:disabled),
+.filter-range-stepper:focus:not(:disabled) {
   color: #61ab00;
+}
+
+.filter-range-stepper:disabled {
+  color: #aaa;
+  cursor: not-allowed;
 }
 
 .filter-range-input input::placeholder {

@@ -27,11 +27,21 @@ const PRICE_MAX = Number.POSITIVE_INFINITY;
 const PRODUCT_LISTING_CARD_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 30px), (max-width: 1199px) calc(37.5vw - 30px), 255px";
 const priceFormatter = new Intl.NumberFormat("en-US");
 
-function stepPriceDraft(value: string, step: number, blankValue: number) {
+function parsePriceDraft(value: string) {
   const normalized = value.trim().replace(/,/g, "");
-  const parsed = /^\d+$/.test(normalized) ? Number(normalized) : blankValue;
-  const current = Number.isSafeInteger(parsed) ? parsed : blankValue;
+  if (!/^\d+$/.test(normalized)) return null;
+
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+function stepPriceDraft(value: string, step: number) {
+  const current = parsePriceDraft(value) ?? PRICE_MIN;
   return String(Math.max(PRICE_MIN, current + step));
+}
+
+function canDecreasePriceDraft(value: string) {
+  return (parsePriceDraft(value) ?? PRICE_MIN) > PRICE_MIN;
 }
 
 function formatPriceFilter(minPrice: number, maxPrice: number) {
@@ -154,21 +164,16 @@ export default function ProductListing({
   const storeName = storeId
     ? scopedBags[0]?.storeName
     : undefined;
-  const { categoryOptions, priceStepCeiling } = useMemo(() => {
+  const categoryOptions = useMemo(() => {
     const categoryCounts = new Map<string, number>();
-    let highestPrice = PRICE_MIN;
 
     for (const bag of scopedBags) {
       categoryCounts.set(bag.category, (categoryCounts.get(bag.category) ?? 0) + 1);
-      highestPrice = Math.max(highestPrice, bag.salePrice);
     }
 
-    return {
-      categoryOptions: Array.from(categoryCounts.entries()).sort(([left], [right]) =>
-        left.localeCompare(right),
-      ),
-      priceStepCeiling: Math.ceil(highestPrice / 10000) * 10000,
-    };
+    return Array.from(categoryCounts.entries()).sort(([left], [right]) =>
+      left.localeCompare(right),
+    );
   }, [scopedBags]);
   const priceValidation = useMemo(
     () => validatePriceRange(priceDraft.min, priceDraft.max),
@@ -496,8 +501,9 @@ export default function ProductListing({
                           <button
                             type="button"
                             className="filter-range-stepper"
-                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, -10000, PRICE_MIN) }))}
+                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, -10000) }))}
                             aria-label="Decrease minimum price"
+                            disabled={!canDecreasePriceDraft(priceDraft.min)}
                           >
                             -
                           </button>
@@ -507,14 +513,14 @@ export default function ProductListing({
                             inputMode="numeric"
                             value={priceDraft.min}
                             onChange={(event) => setPriceDraft((current) => ({ ...current, min: event.target.value }))}
-                            placeholder="MIN"
+                            placeholder="0"
                             aria-invalid={!priceValidation.isValid}
                             aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
                           />
                           <button
                             type="button"
                             className="filter-range-stepper"
-                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, 10000, PRICE_MIN) }))}
+                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, 10000) }))}
                             aria-label="Increase minimum price"
                           >
                             +
@@ -531,8 +537,9 @@ export default function ProductListing({
                           <button
                             type="button"
                             className="filter-range-stepper"
-                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, -10000, priceStepCeiling) }))}
+                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, -10000) }))}
                             aria-label="Decrease maximum price"
+                            disabled={!canDecreasePriceDraft(priceDraft.max)}
                           >
                             -
                           </button>
@@ -542,14 +549,14 @@ export default function ProductListing({
                             inputMode="numeric"
                             value={priceDraft.max}
                             onChange={(event) => setPriceDraft((current) => ({ ...current, max: event.target.value }))}
-                            placeholder="MAX"
+                            placeholder="0"
                             aria-invalid={!priceValidation.isValid}
                             aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
                           />
                           <button
                             type="button"
                             className="filter-range-stepper"
-                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, 10000, priceStepCeiling) }))}
+                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, 10000) }))}
                             aria-label="Increase maximum price"
                           >
                             +
