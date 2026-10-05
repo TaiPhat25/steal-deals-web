@@ -16,6 +16,7 @@ type DialogFocusTrapOptions = {
   initialFocusSelector: string;
   onEscape: () => void;
   canEscape?: boolean;
+  isActive?: boolean;
 };
 
 export function useDialogFocusTrap({
@@ -23,6 +24,7 @@ export function useDialogFocusTrap({
   initialFocusSelector,
   onEscape,
   canEscape = true,
+  isActive = true,
 }: DialogFocusTrapOptions) {
   const onEscapeRef = useRef(onEscape);
   const canEscapeRef = useRef(canEscape);
@@ -33,6 +35,8 @@ export function useDialogFocusTrap({
   }, [canEscape, onEscape]);
 
   useEffect(() => {
+    if (!isActive) return;
+
     const dialog = dialogRef.current;
     if (!dialog) return;
 
@@ -93,5 +97,5 @@ export function useDialogFocusTrap({
       document.body.style.overflow = previousBodyOverflow;
       previouslyFocusedElement?.focus();
     };
-  }, [dialogRef, initialFocusSelector]);
+  }, [dialogRef, initialFocusSelector, isActive]);
 }

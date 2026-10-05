@@ -5,7 +5,10 @@ import { useRef, type ClipboardEvent, type KeyboardEvent } from "react";
 const OTP_LENGTH = 6;
 
 function serializeDigits(digits: string[]) {
-  return digits.map((digit) => digit || " ").join("").slice(0, OTP_LENGTH);
+  return digits
+    .map((digit) => digit || " ")
+    .join("")
+    .slice(0, OTP_LENGTH);
 }
 
 type OtpInputProps = {
@@ -83,9 +86,12 @@ export default function OtpInput({
     }
 
     if (event.key === "Delete") {
+      event.preventDefault();
+
       const nextDigits = [...digits];
       nextDigits[index] = "";
       onChange(serializeDigits(nextDigits));
+      return;
     }
 
     if (event.key === "ArrowLeft" && index > 0) {
@@ -118,7 +124,9 @@ export default function OtpInput({
 
     if (!pastedDigits) return;
 
-    const startIndex = inputRefs.current.findIndex((input) => input === document.activeElement);
+    const startIndex = inputRefs.current.findIndex(
+      (input) => input === document.activeElement,
+    );
     const targetIndex = startIndex < 0 ? 0 : startIndex;
     const nextDigits = [...digits];
 
@@ -129,7 +137,10 @@ export default function OtpInput({
     });
 
     onChange(serializeDigits(nextDigits));
-    focusInput(Math.min(targetIndex + pastedDigits.length, OTP_LENGTH - 1), true);
+    focusInput(
+      Math.min(targetIndex + pastedDigits.length, OTP_LENGTH - 1),
+      true,
+    );
   };
 
   return (
@@ -149,7 +160,7 @@ export default function OtpInput({
           type="text"
           className="form-control otp-input"
           id={`${idPrefix}-${index + 1}`}
-          value={digits[index] === " " ? "" : digits[index] ?? ""}
+          value={digits[index] === " " ? "" : (digits[index] ?? "")}
           onChange={(event) => handleChange(index, event.target.value)}
           onFocus={(event) => event.currentTarget.select()}
           onClick={(event) => event.currentTarget.select()}

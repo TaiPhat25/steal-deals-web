@@ -9,7 +9,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { listBags, listCategories, listStores } from "@/lib/api/store";
+import {
+  listAvailableBags,
+  listCategories,
+  listStores,
+} from "@/lib/api/store";
 import type {
   CategoryResponse,
   StoreProfileResponse,
@@ -73,7 +77,7 @@ export default function HomeDataProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([listBags(), listCategories(), listStores()]).then(
+    Promise.allSettled([listAvailableBags(), listCategories(), listStores()]).then(
       ([bagsResult, categoriesResult, storesResult]) => {
         if (!active) return;
 

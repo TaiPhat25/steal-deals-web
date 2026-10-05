@@ -10,13 +10,13 @@ import SurpriseBagCard from "./SurpriseBagCard";
 export default function NearExpirySection() {
   const { bags: bagResource, retry } = useHomeData();
   const bags = bagResource.data
-    .filter((bag) => (bag.status || "").toLowerCase() === "active")
     .map(toListingBag)
     .sort((a, b) => {
-      const timeA = Date.parse(a.pickupStartTime) || 0;
-      const timeB = Date.parse(b.pickupStartTime) || 0;
+      const timeA = Date.parse(a.expiryDate) || 0;
+      const timeB = Date.parse(b.expiryDate) || 0;
       return timeA - timeB;
-    });
+    })
+    .slice(0, 10);
 
   return (
     <section className="near-expiry-section bg-lighter py-5" aria-labelledby="near-expiry-title">

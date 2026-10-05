@@ -10,7 +10,6 @@ import SurpriseBagCard from "./SurpriseBagCard";
 export default function NearbySection() {
   const { bags: bagResource, retry } = useHomeData();
   const bags = bagResource.data
-    .filter((bag) => (bag.status || "").toLowerCase() === "active")
     .map(toListingBag)
     .sort((a, b) => a.distanceKm - b.distanceKm);
 

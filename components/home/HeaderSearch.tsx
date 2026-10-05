@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { listBags } from "@/lib/api/store";
+import { listAvailableBags } from "@/lib/api/store";
 import {
   PRODUCT_LISTING_IMAGE,
   toListingBag,
@@ -29,15 +29,11 @@ export default function HeaderSearch() {
 
     let active = true;
 
-    void listBags()
+    void listAvailableBags()
       .then((response) => {
         if (!active) return;
 
-        setBags(
-          response
-            .filter((bag) => bag.status.toLowerCase() === "active")
-            .map(toListingBag),
-        );
+        setBags(response.map(toListingBag));
         setLoadState("ready");
       })
       .catch(() => {

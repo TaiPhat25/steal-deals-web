@@ -4,11 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import HeaderSearch from "./HeaderSearch";
 
 const mocks = vi.hoisted(() => ({
-  listBags: vi.fn(),
+  listAvailableBags: vi.fn(),
 }));
 
 vi.mock("@/lib/api/store", () => ({
-  listBags: mocks.listBags,
+  listAvailableBags: mocks.listAvailableBags,
 }));
 
 const bags = [
@@ -53,7 +53,7 @@ const bags = [
 describe("HeaderSearch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.listBags.mockResolvedValue(bags);
+    mocks.listAvailableBags.mockResolvedValue(bags);
   });
 
   it("loads and filters product suggestions by keyword", async () => {
@@ -65,7 +65,7 @@ describe("HeaderSearch", () => {
 
     const result = await screen.findByRole("link", { name: /Bakery Bread Bag/ });
 
-    expect(mocks.listBags).toHaveBeenCalledOnce();
+    expect(mocks.listAvailableBags).toHaveBeenCalledOnce();
     expect(result).toHaveAttribute("href", "/product?bag=bag-bread");
     expect(screen.queryByRole("link", { name: /Fresh Fruit Bag/ })).not.toBeInTheDocument();
   });

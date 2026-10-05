@@ -1554,6 +1554,13 @@ img {
   font-size: 1.4rem;
 }
 
+.product-listing-mobile-actions,
+.product-listing-filter-panel__header,
+.product-listing-filter-panel__footer,
+.product-listing-filter-backdrop {
+  display: none;
+}
+
 .product-listing-grid > [class*="col-"] {
   display: flex;
   margin-bottom: 2rem;
@@ -1562,6 +1569,46 @@ img {
 .product-listing-grid .surprise-bag-card {
   flex: 1 1 auto;
   width: 100%;
+}
+
+.product-listing-active-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: -0.5rem 0 2rem;
+}
+
+.product-listing-active-filters__label {
+  color: #555;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.product-listing-filter-chip {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cfd8ca;
+  color: #444;
+  display: inline-flex;
+  font-size: 1.2rem;
+  gap: 0.6rem;
+  line-height: 1.3;
+  max-width: 100%;
+  min-height: 3rem;
+  padding: 0.45rem 0.8rem;
+}
+
+.product-listing-filter-chip span {
+  color: #61ab00;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.product-listing-filter-chip:hover,
+.product-listing-filter-chip:focus-visible {
+  border-color: #61ab00;
+  color: #3f7800;
 }
 
 .product-listing-empty {
@@ -2063,18 +2110,34 @@ img {
 }
 
 .filter-range-fields {
-  align-items: center;
+  align-items: flex-end;
   display: flex;
   gap: 0.75rem;
+}
+
+.filter-range-field {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.filter-range-field-label {
+  color: #555;
+  display: block;
+  font-size: 1.2rem;
+  margin-bottom: 0.45rem;
 }
 
 .filter-range-input {
   align-items: center;
   border: 1px solid #d9d9d9;
   display: flex;
-  flex: 1 1 0;
   min-width: 0;
   padding: 0 0.6rem;
+  width: 100%;
+}
+
+.filter-range-input--invalid {
+  border-color: #ce0000;
 }
 
 .filter-range-input span {
@@ -2104,9 +2167,14 @@ img {
   padding: 0 0.35rem;
 }
 
-.filter-range-stepper:hover,
-.filter-range-stepper:focus {
+.filter-range-stepper:hover:not(:disabled),
+.filter-range-stepper:focus:not(:disabled) {
   color: #61ab00;
+}
+
+.filter-range-stepper:disabled {
+  color: #aaa;
+  cursor: not-allowed;
 }
 
 .filter-range-input input::placeholder {
@@ -2124,9 +2192,21 @@ img {
   -moz-appearance: textfield;
 }
 
+.filter-range-input:focus-within {
+  border-color: #61ab00;
+  box-shadow: 0 0 0 0.2rem rgba(97, 171, 0, 0.18);
+}
+
 .filter-range-separator {
   color: #999;
   flex: 0 0 auto;
+}
+
+.filter-range-error {
+  color: #ce0000;
+  font-size: 1.2rem;
+  line-height: 1.4;
+  margin: -0.25rem 0 0;
 }
 
 .filter-range-apply {
@@ -2145,6 +2225,175 @@ img {
   background: #4d8b00;
   border-color: #4d8b00;
   color: #fff;
+}
+
+.filter-range-apply:disabled,
+.filter-range-apply:disabled:hover,
+.filter-range-apply:disabled:focus {
+  background: transparent;
+  border-color: #b7b7b7;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.product-listing-filter-trigger:focus-visible,
+.category-widget-toggle:focus-visible,
+.sidebar-filter-clear:focus-visible,
+.filter-range-stepper:focus-visible,
+.filter-range-apply:focus-visible,
+.product-listing-filter-panel__close:focus-visible,
+.product-listing-filter-panel__footer .btn:focus-visible {
+  outline: 0.2rem solid #3f7800;
+  outline-offset: 0.2rem;
+}
+
+@media (max-width: 991px) {
+  .product-listing-mobile-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: -0.75rem 0 1.5rem;
+  }
+
+  .product-listing-filter-trigger {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.75rem;
+    justify-content: center;
+    min-height: 4rem;
+    min-width: 12rem;
+    padding: 0.7rem 1.2rem;
+  }
+
+  .product-listing-filter-trigger__count {
+    align-items: center;
+    background: #61ab00;
+    color: #fff;
+    display: inline-flex;
+    font-size: 1.1rem;
+    font-weight: 600;
+    height: 2rem;
+    justify-content: center;
+    min-width: 2rem;
+    padding: 0 0.45rem;
+  }
+
+  .product-listing-filter-panel {
+    bottom: 0;
+    height: 100dvh;
+    max-width: 38rem;
+    padding: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    transform: translateX(100%);
+    transition: transform 0.25s ease, visibility 0.25s;
+    visibility: hidden;
+    width: calc(100vw - 3rem);
+    z-index: 1052;
+  }
+
+  .product-listing-filter-panel.is-open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .product-listing-filter-panel__surface {
+    background: #fff;
+    box-shadow: -0.4rem 0 1.8rem rgba(0, 0, 0, 0.18);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100%;
+  }
+
+  .product-listing-filter-panel__header {
+    align-items: center;
+    border-bottom: 1px solid #e4e4e4;
+    display: flex;
+    justify-content: space-between;
+    min-height: 6rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .product-listing-filter-panel__header h2 {
+    font-size: 2rem;
+    margin: 0;
+  }
+
+  .product-listing-filter-panel__close {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #444;
+    display: inline-flex;
+    font-size: 2.8rem;
+    height: 4rem;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    width: 4rem;
+  }
+
+  .product-listing-filter-panel__close:hover,
+  .product-listing-filter-panel__close:focus-visible {
+    color: #61ab00;
+  }
+
+  .product-listing-filter-panel__body {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.5rem;
+  }
+
+  .product-listing-filter-panel__body .sidebar {
+    margin: 0;
+  }
+
+  .product-listing-filter-panel__body .widget-clean {
+    display: none;
+  }
+
+  .product-listing-filter-panel__footer {
+    background: #fff;
+    border-top: 1px solid #e4e4e4;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+    padding: 1.2rem 1.5rem;
+  }
+
+  .product-listing-filter-panel__footer .btn {
+    margin: 0;
+    min-height: 4.2rem;
+    padding: 0.7rem 1rem;
+    white-space: normal;
+  }
+
+  .product-listing-filter-panel__footer .btn:disabled {
+    border-color: #b7b7b7;
+    color: #888;
+    cursor: not-allowed;
+  }
+
+  .product-listing-filter-backdrop {
+    background: rgba(20, 26, 18, 0.52);
+    border: 0;
+    display: block;
+    inset: 0;
+    opacity: 0;
+    padding: 0;
+    pointer-events: none;
+    position: fixed;
+    transition: opacity 0.25s ease, visibility 0.25s;
+    visibility: hidden;
+    z-index: 1051;
+  }
+
+  .product-listing-filter-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
 }
 
 @media (max-width: 767px) {

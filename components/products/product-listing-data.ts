@@ -1,12 +1,30 @@
 import type { SurpriseBag } from "@/components/home/SurpriseBagCard";
 import type { SurpriseBagResponse } from "@/lib/api/dashboard-types";
+export { isBagAvailable } from "@/lib/bag-availability";
 import { BAG_FALLBACK_IMAGE } from "@/lib/image-assets";
 
 export const PRODUCT_LISTING_IMAGE = BAG_FALLBACK_IMAGE;
 
+const pickupDateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+const pickupCalendarDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+const pickupTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
+
 export type ListingBag = SurpriseBag & {
   backendId?: string;
-  pickupDay: "today" | "tomorrow";
+  pickupDay: "today" | "tomorrow" | "later";
   pickupStartTime: string;
   pickupEndTime: string;
   expiryDate: string;
@@ -17,6 +35,8 @@ export type ListingBag = SurpriseBag & {
   createdOrder: number;
 };
 
+const searchableTextCache = new WeakMap<ListingBag, string>();
+
 export type ListingFilters = {
   query: string;
   categories: string[];
@@ -26,8 +46,48 @@ export type ListingFilters = {
   minDistance: number;
   maxDistance: number;
   sort: string;
-  storeSlug?: string;
+  storeId?: string;
 };
+
+export type PriceRangeValidation =
+  | { isValid: true; min: number; max: number; error: null }
+  | { isValid: false; min: null; max: null; error: string };
+
+function parsePriceBound(value: string, fallback: number) {
+  const trimmed = value.trim();
+  if (!trimmed) return fallback;
+
+  const normalized = trimmed.replace(/,/g, "");
+  if (!/^\d+$/.test(normalized)) return null;
+
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+export function validatePriceRange(minValue: string, maxValue: string): PriceRangeValidation {
+  const min = parsePriceBound(minValue, 0);
+  const max = parsePriceBound(maxValue, Number.POSITIVE_INFINITY);
+
+  if (min === null || max === null) {
+    return {
+      isValid: false,
+      min: null,
+      max: null,
+      error: "Enter valid non-negative whole-number prices.",
+    };
+  }
+
+  if (min > max) {
+    return {
+      isValid: false,
+      min: null,
+      max: null,
+      error: "Minimum price cannot be greater than maximum price.",
+    };
+  }
+
+  return { isValid: true, min, max, error: null };
+}
 
 export const surpriseBags: ListingBag[] = [
   {
@@ -332,49 +392,44 @@ export const surpriseBags: ListingBag[] = [
   },
 ];
 
-export const storeNames = Object.fromEntries(
-  surpriseBags.map((bag) => [bag.storeSlug, bag.storeName]),
-) as Record<string, string>;
-
-const presentationByName = new Map(
-  surpriseBags.map((bag) => [bag.name.trim().toLowerCase(), bag]),
-);
-
-function toSlug(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 function getPickupDay(startTime: string): ListingBag["pickupDay"] {
   const start = new Date(startTime);
   const now = new Date();
-  const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startDate = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const dayDifference = Math.round((startDate - today) / 86_400_000);
 
-  return startDate.getTime() === today.getTime() ? "today" : "tomorrow";
+  if (dayDifference <= 0) return "today";
+  return dayDifference === 1 ? "tomorrow" : "later";
 }
 
-function formatPickupWindow(startTime: string, endTime: string) {
+export function formatPickupWindow(startTime: string, endTime: string) {
   const start = new Date(startTime);
   const end = new Date(endTime);
-  const dateLabel = new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(start);
-  const timeFormatter = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const pickupStartDate = pickupDateFormatter.format(start);
+  const pickupEndDate = pickupDateFormatter.format(end);
+  const pickupStart = pickupTimeFormatter.format(start);
+  const pickupEnd = pickupTimeFormatter.format(end);
+  const sameDay =
+    pickupCalendarDateFormatter.format(start) ===
+    pickupCalendarDateFormatter.format(end);
 
-  return `${dateLabel}, ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`;
+  return sameDay
+    ? `${pickupStartDate}, ${pickupStart} - ${pickupEnd}`
+    : `${pickupStartDate}, ${pickupStart} - ${pickupEndDate}, ${pickupEnd}`;
+}
+
+export function getPickupAvailabilityLabel(startTime: string) {
+  const pickupDay = getPickupDay(startTime);
+
+  if (pickupDay === "today") return "Pickup today";
+  if (pickupDay === "tomorrow") return "Pickup tomorrow";
+
+  return `Pickup ${pickupDateFormatter.format(new Date(startTime))}`;
 }
 
 export function toListingBag(bag: SurpriseBagResponse): ListingBag {
-  const presentation = presentationByName.get(bag.name.trim().toLowerCase());
-  const category = bag.categories[0]?.name ?? presentation?.category ?? "Surprise Bags";
+  const category = bag.categories[0]?.name ?? "Surprise Bags";
   const pickupDay = getPickupDay(bag.pickupStartTime);
   const discountPercent = bag.originalPrice > 0
     ? Math.round((1 - bag.salePrice / bag.originalPrice) * 100)
@@ -383,12 +438,11 @@ export function toListingBag(bag: SurpriseBagResponse): ListingBag {
   return {
     backendId: bag.id,
     storeId: bag.storeId,
-    slug: presentation?.slug ?? `${toSlug(bag.name)}-${bag.id.slice(0, 8)}`,
+    slug: bag.id,
     imageSrc: bag.imageUrl || PRODUCT_LISTING_IMAGE,
-    imageAlt: presentation?.imageAlt ?? bag.name,
+    imageAlt: bag.name,
     name: bag.name,
     storeName: bag.storeName,
-    storeSlug: presentation?.storeSlug ?? toSlug(bag.storeName),
     category,
     originalPrice: bag.originalPrice,
     salePrice: bag.salePrice,
@@ -399,18 +453,17 @@ export function toListingBag(bag: SurpriseBagResponse): ListingBag {
     expiryDate: bag.expiryDate,
     status: bag.status,
     pickupDay,
-    distance: presentation?.distance ?? "Store pickup",
-    distanceKm: presentation?.distanceKm ?? 0,
+    distance: "Store pickup",
+    distanceKm: Number.POSITIVE_INFINITY,
     remainingQuantity: bag.quantityRemaining,
     quantityTotal: bag.quantityTotal,
-    availabilityLabel: pickupDay === "today" ? "Pickup today" : "Pickup tomorrow",
-    popularity: presentation?.popularity ?? 0,
+    availabilityLabel: getPickupAvailabilityLabel(bag.pickupStartTime),
+    popularity: 0,
     createdOrder: Date.parse(bag.createdAt) || 0,
   };
 }
 
 export function normalizeSort(sort?: string) {
-  if (sort === "distance") return "distance";
   if (sort === "near-expiry" || sort === "pickup") return "pickup";
   if (sort === "price" || sort === "discount" || sort === "newest") return sort;
   return "popularity";
@@ -418,15 +471,29 @@ export function normalizeSort(sort?: string) {
 
 export function filterBags(bags: ListingBag[], filters: ListingFilters) {
   const query = filters.query.trim().toLowerCase();
+  const selectedCategories = filters.categories.length
+    ? new Set(filters.categories)
+    : null;
 
   return bags
     .filter((bag) => {
-      const searchableText = `${bag.name} ${bag.storeName} ${bag.category}`.toLowerCase();
+      let matchesQuery = true;
+
+      if (query) {
+        let searchableText = searchableTextCache.get(bag);
+
+        if (!searchableText) {
+          searchableText = `${bag.name} ${bag.storeName} ${bag.category}`.toLowerCase();
+          searchableTextCache.set(bag, searchableText);
+        }
+
+        matchesQuery = searchableText.includes(query);
+      }
 
       return (
-        (!filters.storeSlug || bag.storeSlug === filters.storeSlug) &&
-        (!query || searchableText.includes(query)) &&
-        (!filters.categories.length || filters.categories.includes(bag.category)) &&
+        (!filters.storeId || bag.storeId === filters.storeId) &&
+        matchesQuery &&
+        (!selectedCategories || selectedCategories.has(bag.category)) &&
         (filters.pickupDay === "all" || bag.pickupDay === filters.pickupDay) &&
         bag.salePrice >= filters.minPrice &&
         bag.salePrice <= filters.maxPrice &&
@@ -439,7 +506,7 @@ export function filterBags(bags: ListingBag[], filters: ListingFilters) {
         case "distance":
           return a.distanceKm - b.distanceKm;
         case "pickup":
-          return a.pickupDay.localeCompare(b.pickupDay) || a.distanceKm - b.distanceKm;
+          return Date.parse(a.pickupStartTime) - Date.parse(b.pickupStartTime);
         case "price":
           return a.salePrice - b.salePrice;
         case "discount":

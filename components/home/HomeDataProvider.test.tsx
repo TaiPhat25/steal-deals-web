@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import HomeDataProvider, { useHomeData } from "./HomeDataProvider";
 
 const mocks = vi.hoisted(() => ({
-  listBags: vi.fn(),
+  listAvailableBags: vi.fn(),
   listCategories: vi.fn(),
   listStores: vi.fn(),
 }));
 
 vi.mock("@/lib/api/store", () => ({
-  listBags: mocks.listBags,
+  listAvailableBags: mocks.listAvailableBags,
   listCategories: mocks.listCategories,
   listStores: mocks.listStores,
 }));
@@ -34,7 +34,7 @@ function DataSummary({ label }: { label: string }) {
 describe("HomeDataProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.listBags.mockResolvedValue([{}]);
+    mocks.listAvailableBags.mockResolvedValue([{}]);
     mocks.listCategories.mockResolvedValue([{}, {}]);
     mocks.listStores.mockResolvedValue([{}, {}, {}]);
   });
@@ -56,7 +56,7 @@ describe("HomeDataProvider", () => {
       );
     });
 
-    expect(mocks.listBags).toHaveBeenCalledOnce();
+    expect(mocks.listAvailableBags).toHaveBeenCalledOnce();
     expect(mocks.listCategories).toHaveBeenCalledOnce();
     expect(mocks.listStores).toHaveBeenCalledOnce();
   });
@@ -83,7 +83,7 @@ describe("HomeDataProvider", () => {
     const retryResult = new Promise<object[]>((resolve) => {
       resolveRetry = resolve;
     });
-    mocks.listBags
+    mocks.listAvailableBags
       .mockRejectedValueOnce(new Error("Bag service unavailable"))
       .mockReturnValueOnce(retryResult);
 
@@ -113,7 +113,7 @@ describe("HomeDataProvider", () => {
       );
     });
 
-    expect(mocks.listBags).toHaveBeenCalledTimes(2);
+    expect(mocks.listAvailableBags).toHaveBeenCalledTimes(2);
     expect(mocks.listCategories).toHaveBeenCalledTimes(2);
     expect(mocks.listStores).toHaveBeenCalledTimes(2);
   });

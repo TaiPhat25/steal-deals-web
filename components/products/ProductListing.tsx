@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
+import { useDialogFocusTrap } from "@/components/login/use-dialog-focus-trap";
 import { ApiClientError } from "@/lib/api/client";
-import { listBags } from "@/lib/api/store";
+import { listAvailableBags } from "@/lib/api/store";
 import {
   filterBags,
   normalizeSort,
-  storeNames,
   toListingBag,
+  validatePriceRange,
   type ListingBag,
 } from "./product-listing-data";
 
@@ -17,25 +19,38 @@ type ProductListingProps = {
   initialCategory?: string;
   initialQuery?: string;
   initialSort?: string;
-  storeSlug?: string;
+  storeId?: string;
 };
 
 const PRICE_MIN = 0;
 const PRICE_MAX = Number.POSITIVE_INFINITY;
-const DISTANCE_MIN = 0;
-const DISTANCE_MAX = Number.POSITIVE_INFINITY;
+const PRODUCT_LISTING_CARD_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 30px), (max-width: 1199px) calc(37.5vw - 30px), 255px";
+const priceFormatter = new Intl.NumberFormat("en-US");
 
-function clampBound(value: string, fallback: number, min: number, max: number) {
-  const parsed = Number(value.replace(/,/g, ""));
-  return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
+function parsePriceDraft(value: string) {
+  const normalized = value.trim().replace(/,/g, "");
+  if (!/^\d+$/.test(normalized)) return null;
+
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
-function stepDraftValue(value: string, step: number, fallback: number, min: number, max: number) {
-  const current = value.trim() === "" && !Number.isFinite(fallback)
-    ? step < 0 ? Math.max(min, Math.abs(step)) : Number.POSITIVE_INFINITY
-    : clampBound(value, fallback, min, max);
-  const next = Math.max(min, Math.min(max, current + step));
-  return Number.isFinite(next) ? Number.isInteger(next) ? String(next) : next.toFixed(1) : "";
+function stepPriceDraft(value: string, step: number) {
+  const current = parsePriceDraft(value) ?? PRICE_MIN;
+  return String(Math.max(PRICE_MIN, current + step));
+}
+
+function canDecreasePriceDraft(value: string) {
+  return (parsePriceDraft(value) ?? PRICE_MIN) > PRICE_MIN;
+}
+
+function formatPriceFilter(minPrice: number, maxPrice: number) {
+  if (minPrice > PRICE_MIN && Number.isFinite(maxPrice)) {
+    return `${priceFormatter.format(minPrice)} - ${priceFormatter.format(maxPrice)} VND`;
+  }
+
+  if (minPrice > PRICE_MIN) return `From ${priceFormatter.format(minPrice)} VND`;
+  return `Up to ${priceFormatter.format(maxPrice)} VND`;
 }
 
 function FilterWidget({
@@ -47,21 +62,22 @@ function FilterWidget({
   title: string;
   children: React.ReactNode;
 }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <div className="widget widget-collapsible">
       <h3 className="widget-title">
         <button
           type="button"
           className="category-widget-toggle"
-          data-toggle="collapse"
-          data-target={`#${id}`}
-          aria-expanded="true"
+          aria-expanded={isExpanded}
           aria-controls={id}
+          onClick={() => setIsExpanded((current) => !current)}
         >
           {title}
         </button>
       </h3>
-      <div className="collapse show" id={id}>
+      <div id={id} hidden={!isExpanded}>
         <div className="widget-body">{children}</div>
       </div>
     </div>
@@ -72,34 +88,37 @@ export default function ProductListing({
   initialCategory,
   initialQuery = "",
   initialSort,
-  storeSlug,
+  storeId,
 }: ProductListingProps) {
   const [query, setQuery] = useState(initialQuery);
   const [categories, setCategories] = useState(initialCategory ? [initialCategory] : []);
   const [minPrice, setMinPrice] = useState(PRICE_MIN);
   const [maxPrice, setMaxPrice] = useState(PRICE_MAX);
-  const [minDistance, setMinDistance] = useState(DISTANCE_MIN);
-  const [maxDistance, setMaxDistance] = useState(DISTANCE_MAX);
   const [priceDraft, setPriceDraft] = useState({ min: "", max: "" });
-  const [distanceDraft, setDistanceDraft] = useState({ min: "", max: "" });
   const [sort, setSort] = useState(normalizeSort(initialSort));
   const [bags, setBags] = useState<ListingBag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const filterDialogRef = useRef<HTMLDivElement>(null);
+  const deferredQuery = useDeferredValue(query);
+
+  useDialogFocusTrap({
+    dialogRef: filterDialogRef,
+    initialFocusSelector: "[data-filter-drawer-close]",
+    onEscape: () => setIsFilterDrawerOpen(false),
+    isActive: isFilterDrawerOpen,
+  });
 
   useEffect(() => {
     let active = true;
 
-    void listBags()
+    void listAvailableBags()
       .then((response) => {
         if (!active) return;
 
-        setBags(
-          response
-            .filter((bag) => bag.status.toLowerCase() === "active")
-            .map(toListingBag),
-        );
+        setBags(response.map(toListingBag));
       })
       .catch((requestError) => {
         if (!active) return;
@@ -119,6 +138,19 @@ export default function ProductListing({
     };
   }, [reloadKey]);
 
+  useEffect(() => {
+    const desktopQuery = window.matchMedia?.("(min-width: 992px)");
+    const closeAtDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setIsFilterDrawerOpen(false);
+    };
+
+    desktopQuery?.addEventListener("change", closeAtDesktop);
+
+    return () => {
+      desktopQuery?.removeEventListener("change", closeAtDesktop);
+    };
+  }, []);
+
   function retryLoad() {
     setError(null);
     setIsLoading(true);
@@ -126,36 +158,43 @@ export default function ProductListing({
   }
 
   const scopedBags = useMemo(
-    () => bags.filter((bag) => !storeSlug || bag.storeSlug === storeSlug),
-    [bags, storeSlug],
+    () => bags.filter((bag) => !storeId || bag.storeId === storeId),
+    [bags, storeId],
   );
-  const storeName = storeSlug
-    ? scopedBags[0]?.storeName ?? storeNames[storeSlug]
+  const storeName = storeId
+    ? scopedBags[0]?.storeName
     : undefined;
-  const categoryOptions = useMemo(
-    () =>
-      Array.from(new Set(scopedBags.map((bag) => bag.category)))
-        .sort()
-        .map((category) => [
-          category,
-          scopedBags.filter((bag) => bag.category === category).length,
-        ] as const),
-    [scopedBags],
+  const categoryOptions = useMemo(() => {
+    const categoryCounts = new Map<string, number>();
+
+    for (const bag of scopedBags) {
+      categoryCounts.set(bag.category, (categoryCounts.get(bag.category) ?? 0) + 1);
+    }
+
+    return Array.from(categoryCounts.entries()).sort(([left], [right]) =>
+      left.localeCompare(right),
+    );
+  }, [scopedBags]);
+  const priceValidation = useMemo(
+    () => validatePriceRange(priceDraft.min, priceDraft.max),
+    [priceDraft],
   );
+  const hasPriceFilter = minPrice > PRICE_MIN || Number.isFinite(maxPrice);
+  const hasActiveFilters = Boolean(query.trim()) || categories.length > 0 || hasPriceFilter;
+  const activeFilterCount = Number(Boolean(query.trim())) + categories.length + Number(hasPriceFilter);
   const visibleBags = useMemo(
     () =>
-      filterBags(bags, {
-        query,
+      filterBags(scopedBags, {
+        query: deferredQuery,
         categories,
         pickupDay: "all",
         minPrice,
         maxPrice,
-        minDistance,
-        maxDistance: storeSlug ? Number.POSITIVE_INFINITY : maxDistance,
+        minDistance: 0,
+        maxDistance: Number.POSITIVE_INFINITY,
         sort,
-        storeSlug,
       }),
-    [bags, categories, maxDistance, maxPrice, minDistance, minPrice, query, sort, storeSlug],
+    [categories, deferredQuery, maxPrice, minPrice, scopedBags, sort],
   );
 
   function toggleCategory(category: string) {
@@ -171,55 +210,52 @@ export default function ProductListing({
     setCategories([]);
     setMinPrice(PRICE_MIN);
     setMaxPrice(PRICE_MAX);
-    setMinDistance(DISTANCE_MIN);
-    setMaxDistance(DISTANCE_MAX);
     setPriceDraft({ min: "", max: "" });
-    setDistanceDraft({ min: "", max: "" });
     setSort("popularity");
   }
 
   function applyPriceFilter() {
-    const normalizedMin = clampBound(priceDraft.min, PRICE_MIN, PRICE_MIN, PRICE_MAX);
-    const normalizedMax = clampBound(priceDraft.max, PRICE_MAX, PRICE_MIN, PRICE_MAX);
-    const lower = Math.min(normalizedMin, normalizedMax);
-    const upper = Math.max(normalizedMin, normalizedMax);
+    if (!priceValidation.isValid) return;
 
-    setMinPrice(lower);
-    setMaxPrice(upper);
+    setMinPrice(priceValidation.min);
+    setMaxPrice(priceValidation.max);
     setPriceDraft({
-      min: lower === PRICE_MIN ? "" : String(lower),
-      max: upper === PRICE_MAX ? "" : String(upper),
+      min: priceValidation.min === PRICE_MIN ? "" : String(priceValidation.min),
+      max: priceValidation.max === PRICE_MAX ? "" : String(priceValidation.max),
     });
   }
 
-  function applyDistanceFilter() {
-    const normalizedMin = clampBound(distanceDraft.min, DISTANCE_MIN, DISTANCE_MIN, DISTANCE_MAX);
-    const normalizedMax = clampBound(distanceDraft.max, DISTANCE_MAX, DISTANCE_MIN, DISTANCE_MAX);
-    const lower = Math.min(normalizedMin, normalizedMax);
-    const upper = Math.max(normalizedMin, normalizedMax);
-
-    setMinDistance(lower);
-    setMaxDistance(upper);
-    setDistanceDraft({
-      min: lower === DISTANCE_MIN ? "" : String(lower),
-      max: upper === DISTANCE_MAX ? "" : String(upper),
-    });
+  function clearPriceFilter() {
+    setMinPrice(PRICE_MIN);
+    setMaxPrice(PRICE_MAX);
+    setPriceDraft({ min: "", max: "" });
   }
 
   const pageTitle = storeName ? `${storeName} Surprise Bags` : "Surprise Bags";
 
   return (
     <main className="main product-listing-page">
-      <div
-        className="page-header text-center"
-        style={{ backgroundImage: "url('/assets/images/page-header-bg.jpg')" }}
-      >
-        <div className="container">
-          <h1 className="page-title">
-            {pageTitle}<span>{storeName ? "Store" : "Food rescue marketplace"}</span>
-          </h1>
+      <section className="info-page__hero info-page__hero--image">
+        <Image
+          src="/assets/images/page-headers/products-marketplace-v2.webp"
+          alt="Surprise bags filled with rescued food at a local market"
+          fill
+          preload
+          sizes="100vw"
+        />
+        <div className="info-page__hero-overlay" aria-hidden="true" />
+        <div className="container info-page__hero-content">
+          <p className="info-page__eyebrow">
+            {storeName ? "Explore this local partner" : "Rescue good food nearby"}
+          </p>
+          <h1>{pageTitle}</h1>
+          <p>
+            {storeName
+              ? `Browse active surprise bags from ${storeName} and choose a pickup window that works for you.`
+              : "Discover discounted surplus food from local stores and collect it during the listed pickup window."}
+          </p>
         </div>
-      </div>
+      </section>
 
       <nav aria-label="breadcrumb" className="breadcrumb-nav mb-2">
         <div className="container">
@@ -252,8 +288,28 @@ export default function ProductListing({
             />
           </div>
 
+          <div className="product-listing-mobile-actions">
+            <button
+              type="button"
+              className="btn btn-outline-primary-2 product-listing-filter-trigger"
+              aria-controls="product-listing-filters"
+              aria-expanded={isFilterDrawerOpen}
+              aria-label={activeFilterCount
+                ? `Filters, ${activeFilterCount} active`
+                : "Filters"}
+              onClick={() => setIsFilterDrawerOpen(true)}
+            >
+              <span>Filters</span>
+              {activeFilterCount ? (
+                <span className="product-listing-filter-trigger__count" aria-hidden="true">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
+
           <div className="row">
-            <div className="col-lg-9">
+            <div className="col-lg-9" aria-busy={query !== deferredQuery}>
               {isLoading ? (
                 <div className="product-listing-empty" aria-live="polite">
                   <h2>Loading surprise bags</h2>
@@ -271,11 +327,20 @@ export default function ProductListing({
                     Try again
                   </button>
                 </div>
+              ) : scopedBags.length === 0 ? (
+                <div className="product-listing-empty" role="status">
+                  <h2>No surprise bags available</h2>
+                  <p>
+                    {storeId
+                      ? "This store does not have any active surprise bags available for pickup."
+                      : "There are no active surprise bags available for pickup right now."}
+                  </p>
+                </div>
               ) : (
                 <>
               <div className="toolbox">
                 <div className="toolbox-left">
-                  <div className="toolbox-info">
+                  <div className="toolbox-info" role="status" aria-live="polite" aria-atomic="true">
                     Showing <span>{visibleBags.length} of {scopedBags.length}</span> surprise bags
                   </div>
                 </div>
@@ -291,7 +356,6 @@ export default function ProductListing({
                         onChange={(event) => setSort(event.target.value)}
                       >
                         <option value="popularity">Most Popular</option>
-                        {!storeSlug ? <option value="distance">Nearest</option> : null}
                         <option value="pickup">Pickup Soonest</option>
                         <option value="price">Lowest Price</option>
                         <option value="discount">Highest Discount</option>
@@ -302,34 +366,105 @@ export default function ProductListing({
                 </div>
               </div>
 
+              {hasActiveFilters ? (
+                <div className="product-listing-active-filters" role="group" aria-label="Applied filters">
+                  <span className="product-listing-active-filters__label">Applied:</span>
+                  {query.trim() ? (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      onClick={() => setQuery("")}
+                      aria-label={`Remove search filter: ${query.trim()}`}
+                    >
+                      Search: {query.trim()} <span aria-hidden="true">&times;</span>
+                    </button>
+                  ) : null}
+                  {categories.map((category) => (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      key={category}
+                      onClick={() => toggleCategory(category)}
+                      aria-label={`Remove category filter: ${category}`}
+                    >
+                      {category} <span aria-hidden="true">&times;</span>
+                    </button>
+                  ))}
+                  {hasPriceFilter ? (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      onClick={clearPriceFilter}
+                      aria-label={`Remove price filter: ${formatPriceFilter(minPrice, maxPrice)}`}
+                    >
+                      {formatPriceFilter(minPrice, maxPrice)} <span aria-hidden="true">&times;</span>
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
               {visibleBags.length ? (
                 <div className="row product-listing-grid">
                   {visibleBags.map((bag, index) => (
                     <div className="col-12 col-sm-6 col-xl-4" key={bag.slug}>
-                      <SurpriseBagCard bag={bag} eager={index === 0} />
+                      <SurpriseBagCard
+                        bag={bag}
+                        eager={index === 0}
+                        imageSizes={PRODUCT_LISTING_CARD_IMAGE_SIZES}
+                      />
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="product-listing-empty">
-                  <h2>No surprise bags found</h2>
-                  <p>Try clearing a filter or searching for something else.</p>
-                  <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
-                    Clear filters
-                  </button>
+                  <h2>No surprise bags match your filters</h2>
+                  <p>Remove one or more filters, or clear them all to see available bags.</p>
+                  {hasActiveFilters ? (
+                    <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
+                      Clear filters
+                    </button>
+                  ) : null}
                 </div>
               )}
                 </>
               )}
             </div>
 
-            <aside className="col-lg-3 order-lg-first">
-              <div className="sidebar sidebar-shop">
+            <aside
+              className={`col-lg-3 order-lg-first product-listing-filter-panel${isFilterDrawerOpen ? " is-open" : ""}`}
+              id="product-listing-filters"
+              aria-label="Product filters"
+            >
+              <div
+                className="product-listing-filter-panel__surface"
+                ref={filterDialogRef}
+                role={isFilterDrawerOpen ? "dialog" : undefined}
+                aria-modal={isFilterDrawerOpen ? "true" : undefined}
+                aria-labelledby={isFilterDrawerOpen ? "product-filter-drawer-title" : undefined}
+                tabIndex={-1}
+              >
+                <div className="product-listing-filter-panel__header">
+                  <h2 id="product-filter-drawer-title">Filters</h2>
+                  <button
+                    type="button"
+                    className="product-listing-filter-panel__close"
+                    aria-label="Close filters"
+                    onClick={() => setIsFilterDrawerOpen(false)}
+                    data-filter-drawer-close
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+
+                <div className="product-listing-filter-panel__body">
+                  <div className="sidebar sidebar-shop">
                 <div className="widget widget-clean">
                   <label>Filters:</label>
-                  <button type="button" className="sidebar-filter-clear" onClick={clearFilters}>
-                    Clear All
-                  </button>
+                  {hasActiveFilters ? (
+                    <button type="button" className="sidebar-filter-clear" onClick={clearFilters}>
+                      Clear All
+                    </button>
+                  ) : null}
                 </div>
 
                 <FilterWidget id="category-filter" title="Food Category">
@@ -357,140 +492,125 @@ export default function ProductListing({
                 <FilterWidget id="price-filter" title="Price">
                   <div className="filter-range">
                     <div className="filter-range-fields">
-                      <div className="filter-range-input">
-                        <span aria-hidden="true">VND</span>
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepDraftValue(current.min, -10000, PRICE_MIN, PRICE_MIN, PRICE_MAX) }))}
-                          aria-label="Decrease minimum price"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="text"
-                          id="price-min"
-                          inputMode="numeric"
-                          value={priceDraft.min}
-                          onChange={(event) => setPriceDraft((current) => ({ ...current, min: event.target.value }))}
-                          placeholder="MIN"
-                          aria-label="Minimum price"
-                        />
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, min: stepDraftValue(current.min, 10000, PRICE_MIN, PRICE_MIN, PRICE_MAX) }))}
-                          aria-label="Increase minimum price"
-                        >
-                          +
-                        </button>
+                      <div className="filter-range-field">
+                        <label className="filter-range-field-label" htmlFor="price-min">
+                          Minimum
+                        </label>
+                        <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
+                          <span aria-hidden="true">VND</span>
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, -10000) }))}
+                            aria-label="Decrease minimum price"
+                            disabled={!canDecreasePriceDraft(priceDraft.min)}
+                          >
+                            -
+                          </button>
+                          <input
+                            type="text"
+                            id="price-min"
+                            inputMode="numeric"
+                            value={priceDraft.min}
+                            onChange={(event) => setPriceDraft((current) => ({ ...current, min: event.target.value }))}
+                            placeholder="0"
+                            aria-invalid={!priceValidation.isValid}
+                            aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
+                          />
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, min: stepPriceDraft(current.min, 10000) }))}
+                            aria-label="Increase minimum price"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                       <span className="filter-range-separator" aria-hidden="true">-</span>
-                      <div className="filter-range-input">
-                        <span aria-hidden="true">VND</span>
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepDraftValue(current.max, -10000, PRICE_MAX, PRICE_MIN, PRICE_MAX) }))}
-                          aria-label="Decrease maximum price"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="text"
-                          id="price-max"
-                          inputMode="numeric"
-                          value={priceDraft.max}
-                          onChange={(event) => setPriceDraft((current) => ({ ...current, max: event.target.value }))}
-                          placeholder="MAX"
-                          aria-label="Maximum price"
-                        />
-                        <button
-                          type="button"
-                          className="filter-range-stepper"
-                          onClick={() => setPriceDraft((current) => ({ ...current, max: stepDraftValue(current.max, 10000, PRICE_MAX, PRICE_MIN, PRICE_MAX) }))}
-                          aria-label="Increase maximum price"
-                        >
-                          +
-                        </button>
+                      <div className="filter-range-field">
+                        <label className="filter-range-field-label" htmlFor="price-max">
+                          Maximum
+                        </label>
+                        <div className={`filter-range-input${priceValidation.isValid ? "" : " filter-range-input--invalid"}`}>
+                          <span aria-hidden="true">VND</span>
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, -10000) }))}
+                            aria-label="Decrease maximum price"
+                            disabled={!canDecreasePriceDraft(priceDraft.max)}
+                          >
+                            -
+                          </button>
+                          <input
+                            type="text"
+                            id="price-max"
+                            inputMode="numeric"
+                            value={priceDraft.max}
+                            onChange={(event) => setPriceDraft((current) => ({ ...current, max: event.target.value }))}
+                            placeholder="0"
+                            aria-invalid={!priceValidation.isValid}
+                            aria-describedby={!priceValidation.isValid ? "price-range-error" : undefined}
+                          />
+                          <button
+                            type="button"
+                            className="filter-range-stepper"
+                            onClick={() => setPriceDraft((current) => ({ ...current, max: stepPriceDraft(current.max, 10000) }))}
+                            aria-label="Increase maximum price"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <button type="button" className="btn btn-outline-primary-2 filter-range-apply" onClick={applyPriceFilter}>
+                    {!priceValidation.isValid ? (
+                      <p className="filter-range-error" id="price-range-error" role="alert">
+                        {priceValidation.error}
+                      </p>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary-2 filter-range-apply"
+                      onClick={applyPriceFilter}
+                      disabled={!priceValidation.isValid}
+                    >
                       Apply
                     </button>
                   </div>
                 </FilterWidget>
+                  </div>
+                </div>
 
-                {!storeSlug ? (
-                  <FilterWidget id="distance-filter" title="Distance">
-                    <div className="filter-range">
-                      <div className="filter-range-fields">
-                        <div className="filter-range-input">
-                          <span aria-hidden="true">KM</span>
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, min: stepDraftValue(current.min, -0.1, DISTANCE_MIN, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Decrease minimum distance"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="text"
-                            id="distance-min"
-                            inputMode="decimal"
-                            value={distanceDraft.min}
-                            onChange={(event) => setDistanceDraft((current) => ({ ...current, min: event.target.value }))}
-                            placeholder="MIN"
-                            aria-label="Minimum distance"
-                          />
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, min: stepDraftValue(current.min, 0.1, DISTANCE_MIN, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Increase minimum distance"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <span className="filter-range-separator" aria-hidden="true">-</span>
-                        <div className="filter-range-input">
-                          <span aria-hidden="true">KM</span>
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, max: stepDraftValue(current.max, -0.1, DISTANCE_MAX, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Decrease maximum distance"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="text"
-                            id="distance-max"
-                            inputMode="decimal"
-                            value={distanceDraft.max}
-                            onChange={(event) => setDistanceDraft((current) => ({ ...current, max: event.target.value }))}
-                            placeholder="MAX"
-                            aria-label="Maximum distance"
-                          />
-                          <button
-                            type="button"
-                            className="filter-range-stepper"
-                            onClick={() => setDistanceDraft((current) => ({ ...current, max: stepDraftValue(current.max, 0.1, DISTANCE_MAX, DISTANCE_MIN, DISTANCE_MAX) }))}
-                            aria-label="Increase maximum distance"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                      <button type="button" className="btn btn-outline-primary-2 filter-range-apply" onClick={applyDistanceFilter}>
-                        Apply
-                      </button>
-                    </div>
-                  </FilterWidget>
-                ) : null}
+                <div className="product-listing-filter-panel__footer">
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary-2"
+                    aria-label="Clear all filters in drawer"
+                    onClick={clearFilters}
+                    disabled={!hasActiveFilters}
+                  >
+                    Clear All
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary-2"
+                    onClick={() => setIsFilterDrawerOpen(false)}
+                  >
+                    View {visibleBags.length} {visibleBags.length === 1 ? "Result" : "Results"}
+                  </button>
+                </div>
               </div>
             </aside>
+
+            {isFilterDrawerOpen ? (
+              <button
+                type="button"
+                className="product-listing-filter-backdrop is-open"
+                aria-label="Dismiss filter drawer"
+                onClick={() => setIsFilterDrawerOpen(false)}
+              />
+            ) : null}
           </div>
         </div>
       </div>
