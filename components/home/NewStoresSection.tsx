@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { mapStoreResponse } from "@/components/stores/store-api-mappers";
-import type { StoreProfile } from "@/components/stores/store-profile-data";
+import type { StoreProfile } from "@/components/stores/store-types";
 import DragScrollRow from "./DragScrollRow";
 import HomeCollectionState from "./HomeCollectionState";
 import { useHomeData } from "./HomeDataProvider";

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { StoreProfile } from "@/components/stores/store-profile-data";
+import type { StoreProfile } from "@/components/stores/store-types";
 import { getAvailableBagQuantity } from "@/components/stores/store-listing-data";
 import {
   shouldUseUnoptimizedImage,

@@ -1,7 +1,7 @@
 import type {
   StoreProfile,
   StoreSurpriseBag,
-} from "@/components/stores/store-profile-data";
+} from "@/components/stores/store-types";
 
 export const NEW_STORE_WINDOW_DAYS = 30;
 

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { StoreProfile } from "@/components/stores/store-profile-data";
+import type { StoreProfile } from "@/components/stores/store-types";
 import { isBagAvailable } from "@/lib/bag-availability";
 import {
   shouldUseUnoptimizedImage,

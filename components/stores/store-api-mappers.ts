@@ -5,7 +5,7 @@ import type {
   StoreReviewResponse,
   SurpriseBagResponse,
 } from "@/lib/api/dashboard-types";
-import type { StoreProfile, StoreReview, StoreSurpriseBag } from "@/components/stores/store-profile-data";
+import type { StoreProfile, StoreReview, StoreSurpriseBag } from "@/components/stores/store-types";
 
 function mapBagResponse(bag: SurpriseBagResponse): StoreSurpriseBag {
   return {

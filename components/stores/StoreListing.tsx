@@ -12,7 +12,7 @@ import {
   isNewStore,
   isPublicStore,
 } from "@/components/stores/store-listing-data";
-import type { StoreProfile } from "@/components/stores/store-profile-data";
+import type { StoreProfile } from "@/components/stores/store-types";
 
 type StoreFilter = "all" | "established" | "new";
 type StoreSort = "rating" | "bags" | "name";
