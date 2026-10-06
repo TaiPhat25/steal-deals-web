@@ -1071,18 +1071,6 @@ img {
   font-weight: 600;
 }
 
-.new-store-card__badge {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.35rem 0.55rem;
-  color: #fff;
-  background: #61ab00;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
 .new-store-card__body {
   display: flex;
   flex: 1;
@@ -5187,11 +5175,6 @@ img {
 
 .store-listing-grid .new-store-card__media {
   aspect-ratio: 4 / 2.5;
-}
-
-.store-listing-grid .new-store-card__badge {
-  padding: 0.45rem 0.7rem;
-  font-size: 1.05rem;
 }
 
 .store-listing-grid .new-store-card__body {

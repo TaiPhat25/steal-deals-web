@@ -7,11 +7,17 @@ import { ApiClientError } from "@/lib/api/client";
 import { listAvailableBags, listStores } from "@/lib/api/store";
 import NewStoreCard from "@/components/home/NewStoreCard";
 import { mapStoreResponse } from "@/components/stores/store-api-mappers";
+import {
+  getAvailableBagQuantity,
+  isNewStore,
+  isPublicStore,
+} from "@/components/stores/store-listing-data";
 import type { StoreProfile } from "@/components/stores/store-profile-data";
 
-type StoreFilter = "all" | "old" | "new";
+type StoreFilter = "all" | "established" | "new";
 type StoreSort = "rating" | "bags" | "name";
 const STORES_PER_PAGE = 20;
+const STORE_LISTING_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 38px), (max-width: 1199px) 225px, 270px";
 
 export default function StoreListing() {
   const [query, setQuery] = useState("");
@@ -19,6 +25,7 @@ export default function StoreListing() {
   const [sort, setSort] = useState<StoreSort>("rating");
   const [page, setPage] = useState(1);
   const [storeProfiles, setStoreProfiles] = useState<StoreProfile[]>([]);
+  const [listingReferenceTime, setListingReferenceTime] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [reloadVersion, setReloadVersion] = useState(0);
@@ -33,6 +40,7 @@ export default function StoreListing() {
         setStoreProfiles(
           storesResponse.map((store) => mapStoreResponse(store, bagsResponse)),
         );
+        setListingReferenceTime(Date.now());
         setPage(1);
       })
       .catch((requestError) => {
@@ -57,10 +65,12 @@ export default function StoreListing() {
     const normalizedQuery = query.trim().toLowerCase();
 
     return storeProfiles
-      .filter((store) => store.isActive)
+      .filter(isPublicStore)
       .filter((store) => {
-        if (filter === "old") return store.isVerify;
-        if (filter === "new") return !store.isVerify;
+        const storeIsNew = listingReferenceTime !== null
+          && isNewStore(store, listingReferenceTime);
+        if (filter === "established") return !storeIsNew;
+        if (filter === "new") return storeIsNew;
         return true;
       })
       .filter((store) => {
@@ -71,11 +81,14 @@ export default function StoreListing() {
           .some((value) => value!.toLowerCase().includes(normalizedQuery));
       })
       .sort((left, right) => {
-        if (sort === "bags") return right.surpriseBags.length - left.surpriseBags.length;
+        if (sort === "bags") {
+          return getAvailableBagQuantity(right.surpriseBags)
+            - getAvailableBagQuantity(left.surpriseBags);
+        }
         if (sort === "name") return left.name.localeCompare(right.name);
         return right.ratingScore - left.ratingScore;
       });
-  }, [filter, query, sort, storeProfiles]);
+  }, [filter, listingReferenceTime, query, sort, storeProfiles]);
 
   const totalPages = Math.max(1, Math.ceil(stores.length / STORES_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -124,8 +137,8 @@ export default function StoreListing() {
         <div className="store-listing-hero__overlay" aria-hidden="true" />
         <div className="container store-listing-hero__content">
           <p>Discover local food rescue partners</p>
-          <h1>Stores near you</h1>
-          <span>Find local businesses offering good food at a better price.</span>
+          <h1>Local rescue stores</h1>
+          <span>Find verified local businesses offering surplus food at a better price.</span>
         </div>
       </section>
 
@@ -167,7 +180,7 @@ export default function StoreListing() {
             <div className="store-listing-toolbar">
               <div className="store-listing-filters" role="group" aria-label="Filter stores">
                 <button type="button" className={filter === "all" ? "is-active" : ""} onClick={() => changeFilter("all")}>All stores</button>
-                <button type="button" className={filter === "old" ? "is-active" : ""} onClick={() => changeFilter("old")}>Old stores</button>
+                <button type="button" className={filter === "established" ? "is-active" : ""} onClick={() => changeFilter("established")}>Established stores</button>
                 <button type="button" className={filter === "new" ? "is-active" : ""} onClick={() => changeFilter("new")}>New stores</button>
               </div>
               <label className="store-listing-sort">
@@ -184,7 +197,7 @@ export default function StoreListing() {
           {isLoading ? (
             <section className="store-listing-empty" aria-live="polite">
               <h2>Loading stores</h2>
-              <p>Finding active food rescue partners near you.</p>
+              <p>Finding active food rescue partners.</p>
             </section>
           ) : loadError ? (
             <section className="store-listing-empty" aria-live="assertive">
@@ -201,7 +214,11 @@ export default function StoreListing() {
           ) : stores.length ? (
             <section className="store-listing-grid" aria-label="Available stores">
               {visibleStores.map((store) => (
-                <NewStoreCard key={store.id} store={store} />
+                <NewStoreCard
+                  key={store.id}
+                  store={store}
+                  imageSizes={STORE_LISTING_IMAGE_SIZES}
+                />
               ))}
             </section>
           ) : (

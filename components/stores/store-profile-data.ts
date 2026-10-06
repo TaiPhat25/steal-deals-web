@@ -51,6 +51,7 @@ export type StoreProfile = {
   phone: string | null;
   bankAccount: string | null;
   ratingScore: number;
+  reviewCount?: number;
   licenseUrl: string | null;
   isVerify: boolean;
   isActive: boolean;
