@@ -53,7 +53,7 @@ export type PriceRangeValidation =
   | { isValid: true; min: number; max: number; error: null }
   | { isValid: false; min: null; max: null; error: string };
 
-function parsePriceBound(value: string, fallback: number) {
+function parsePriceBound(value: string, fallback: number, zeroMeansFallback = false) {
   const trimmed = value.trim();
   if (!trimmed) return fallback;
 
@@ -61,12 +61,14 @@ function parsePriceBound(value: string, fallback: number) {
   if (!/^\d+$/.test(normalized)) return null;
 
   const parsed = Number(normalized);
-  return Number.isSafeInteger(parsed) ? parsed : null;
+  if (!Number.isSafeInteger(parsed)) return null;
+
+  return zeroMeansFallback && parsed === 0 ? fallback : parsed;
 }
 
 export function validatePriceRange(minValue: string, maxValue: string): PriceRangeValidation {
   const min = parsePriceBound(minValue, 0);
-  const max = parsePriceBound(maxValue, Number.POSITIVE_INFINITY);
+  const max = parsePriceBound(maxValue, Number.POSITIVE_INFINITY, true);
 
   if (min === null || max === null) {
     return {
