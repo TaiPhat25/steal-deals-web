@@ -161,8 +161,12 @@ export default function StoreListing({
 
   function focusResults() {
     window.requestAnimationFrame(() => {
+      const prefersReducedMotion = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      ).matches ?? false;
+
       resultsRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: prefersReducedMotion ? "auto" : "smooth",
         block: "start",
       });
       resultsRef.current?.focus({ preventScroll: true });
@@ -244,7 +248,7 @@ export default function StoreListing({
       <section className="store-listing-hero">
         <Image
           src="/assets/images/page-headers/stores-local-market.webp"
-          alt="Independent local food businesses preparing rescue bags for pickup"
+          alt=""
           fill
           preload
           sizes="100vw"
@@ -292,6 +296,7 @@ export default function StoreListing({
                 ref={searchInputRef}
                 id="store-search"
                 type="search"
+                aria-controls="store-listing-results"
                 value={query}
                 onChange={(event) => changeQuery(event.target.value)}
                 placeholder="Search stores, areas, or food rescue partners"
@@ -311,13 +316,41 @@ export default function StoreListing({
 
             <div className="store-listing-toolbar">
               <div className="store-listing-filters" role="group" aria-label="Filter stores">
-                <button type="button" className={filter === "all" ? "is-active" : ""} onClick={() => changeFilter("all")}>All stores</button>
-                <button type="button" className={filter === "established" ? "is-active" : ""} onClick={() => changeFilter("established")}>Established stores</button>
-                <button type="button" className={filter === "new" ? "is-active" : ""} onClick={() => changeFilter("new")}>New stores</button>
+                <button
+                  type="button"
+                  className={filter === "all" ? "is-active" : ""}
+                  aria-pressed={filter === "all"}
+                  aria-controls="store-listing-results"
+                  onClick={() => changeFilter("all")}
+                >
+                  All stores
+                </button>
+                <button
+                  type="button"
+                  className={filter === "established" ? "is-active" : ""}
+                  aria-pressed={filter === "established"}
+                  aria-controls="store-listing-results"
+                  onClick={() => changeFilter("established")}
+                >
+                  Established stores
+                </button>
+                <button
+                  type="button"
+                  className={filter === "new" ? "is-active" : ""}
+                  aria-pressed={filter === "new"}
+                  aria-controls="store-listing-results"
+                  onClick={() => changeFilter("new")}
+                >
+                  New stores
+                </button>
               </div>
               <label className="store-listing-sort">
                 <span>Sort by</span>
-                <select value={sort} onChange={(event) => changeSort(event.target.value as StoreSort)}>
+                <select
+                  aria-controls="store-listing-results"
+                  value={sort}
+                  onChange={(event) => changeSort(event.target.value as StoreSort)}
+                >
                   <option value="rating">Highest rated</option>
                   <option value="bags" disabled={bagAvailabilityError !== null}>
                     Most available bags
@@ -344,26 +377,37 @@ export default function StoreListing({
             </section>
           ) : null}
 
-          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-            {isLoading
-              ? "Loading stores."
-              : loadError
-                ? "Stores could not be loaded."
+          {loadError ? (
+            <p className="sr-only" role="alert">
+              Stores could not be loaded. {loadError}
+            </p>
+          ) : (
+            <p className="sr-only" role="status" aria-atomic="true">
+              {isLoading
+                ? "Loading stores."
                 : `${stores.length} ${stores.length === 1 ? "store" : "stores"} found. Page ${currentPage} of ${totalPages}.`}
-          </p>
+            </p>
+          )}
 
           <div
             ref={resultsRef}
+            id="store-listing-results"
             className="store-listing-results"
+            role="region"
+            aria-labelledby="store-listing-results-heading"
+            aria-busy={isLoading}
             tabIndex={-1}
           >
+            <h2 id="store-listing-results-heading" className="sr-only">
+              Store results
+            </h2>
             {isLoading ? (
-              <section className="store-listing-empty" aria-live="polite">
+              <section className="store-listing-empty">
                 <h2>Loading stores</h2>
                 <p>Finding active food rescue partners.</p>
               </section>
             ) : loadError ? (
-              <section className="store-listing-empty" aria-live="assertive">
+              <section className="store-listing-empty">
                 <h2>Unable to load stores</h2>
                 <p>{loadError}</p>
                 <button
@@ -375,7 +419,7 @@ export default function StoreListing({
                 </button>
               </section>
             ) : stores.length ? (
-              <section className="store-listing-grid" aria-label="Available stores">
+              <div className="store-listing-grid">
                 {visibleStores.map((store, index) => (
                   <NewStoreCard
                     key={store.id}
@@ -385,13 +429,18 @@ export default function StoreListing({
                     loadImageEagerly={index < ABOVE_THE_FOLD_STORE_COUNT}
                   />
                 ))}
-              </section>
+              </div>
             ) : (
-              <section className="store-listing-empty" aria-live="polite">
+              <section className="store-listing-empty">
                 <i className="icon-search" aria-hidden="true" />
                 <h2>No stores found</h2>
                 <p>Try a different search term or clear the current filter.</p>
-                <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary-2"
+                  aria-controls="store-listing-results"
+                  onClick={clearFilters}
+                >
                   Clear filters
                 </button>
               </section>
@@ -403,6 +452,7 @@ export default function StoreListing({
               <button
                 type="button"
                 aria-label="Previous store page"
+                aria-controls="store-listing-results"
                 onClick={() => changePage(currentPage - 1)}
                 disabled={currentPage === 1}
               >
@@ -416,6 +466,7 @@ export default function StoreListing({
                     className={pageNumber === currentPage ? "is-active" : ""}
                     aria-label={`Go to store page ${pageNumber}`}
                     aria-current={pageNumber === currentPage ? "page" : undefined}
+                    aria-controls="store-listing-results"
                     onClick={() => changePage(pageNumber)}
                   >
                     {pageNumber}
@@ -426,6 +477,7 @@ export default function StoreListing({
               <button
                 type="button"
                 aria-label="Next store page"
+                aria-controls="store-listing-results"
                 onClick={() => changePage(currentPage + 1)}
                 disabled={currentPage === totalPages}
               >
