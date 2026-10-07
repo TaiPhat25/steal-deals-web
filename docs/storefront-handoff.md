@@ -508,9 +508,13 @@ right; Store Detail has a dedicated local-shop image.
 desktop search field, old/new store filters, and rating, bag-count, or name
 sorting. Store cards use a four-column desktop grid, use the shared
 `/assets/images/demos/demo-28/banners/store.jpg` listing image, and link to
-`/stores/[id]`. Client-side pagination is implemented at 20 stores per page.
-The listing loads store profiles and available bags from `GET /api/stores` and
-`GET /api/bags`.
+`/stores/[id]`. Search, store age, sorting, and the current page synchronize to
+the `q`, `age`, `sort`, and `page` URL parameters so refresh, shared links, and
+browser history restore the same result view. Search includes a clear control;
+filter, sort, and page changes return focus to the results. Client-side
+pagination is implemented at 20 stores per page with numbered page controls and
+polite result/page announcements. The listing loads store profiles and
+available bags from `GET /api/stores` and `GET /api/bags`.
 
 `/stores/[id]` renders the Store Service-backed profile, active surprise bags,
 and reviews. It loads `GET /api/stores/{id}`, `GET /api/bags/store/{id}`, and

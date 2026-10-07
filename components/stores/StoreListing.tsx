@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiClientError } from "@/lib/api/client";
 import { listAvailableBags, listStores } from "@/lib/api/store";
 import NewStoreCard from "@/components/home/NewStoreCard";
@@ -12,25 +12,57 @@ import {
   isNewStore,
   isPublicStore,
 } from "@/components/stores/store-listing-data";
+import {
+  buildStoreListingSearchParams,
+  DEFAULT_STORE_LISTING_STATE,
+  parseStoreListingSearchParams,
+} from "@/components/stores/store-listing-query";
+import type {
+  StoreFilter,
+  StoreListingUrlState,
+  StoreSort,
+} from "@/components/stores/store-listing-query";
 import type { StoreProfile } from "@/components/stores/store-types";
 
-type StoreFilter = "all" | "established" | "new";
-type StoreSort = "rating" | "bags" | "name";
 const STORES_PER_PAGE = 20;
 const ABOVE_THE_FOLD_STORE_COUNT = 4;
 const STORE_LISTING_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 38px), (max-width: 1199px) 225px, 270px";
 
-export default function StoreListing() {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<StoreFilter>("all");
-  const [sort, setSort] = useState<StoreSort>("rating");
-  const [page, setPage] = useState(1);
+type StoreListingProps = {
+  initialState?: StoreListingUrlState;
+};
+
+export default function StoreListing({
+  initialState = DEFAULT_STORE_LISTING_STATE,
+}: StoreListingProps) {
+  const [query, setQuery] = useState(initialState.query);
+  const [filter, setFilter] = useState<StoreFilter>(initialState.filter);
+  const [sort, setSort] = useState<StoreSort>(initialState.sort);
+  const [page, setPage] = useState(initialState.page);
   const [storeProfiles, setStoreProfiles] = useState<StoreProfile[]>([]);
   const [listingReferenceTime, setListingReferenceTime] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [bagAvailabilityError, setBagAvailabilityError] = useState<string | null>(null);
   const [reloadVersion, setReloadVersion] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function restoreStateFromUrl() {
+      const restoredState = parseStoreListingSearchParams(
+        new URLSearchParams(window.location.search),
+      );
+
+      setQuery(restoredState.query);
+      setFilter(restoredState.filter);
+      setSort(restoredState.sort);
+      setPage(restoredState.page);
+    }
+
+    window.addEventListener("popstate", restoreStateFromUrl);
+    return () => window.removeEventListener("popstate", restoreStateFromUrl);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -62,8 +94,17 @@ export default function StoreListing() {
         setListingReferenceTime(Date.now());
         if (!hasBagAvailability) {
           setSort((current) => current === "bags" ? "rating" : current);
+
+          const currentUrlState = parseStoreListingSearchParams(
+            new URLSearchParams(window.location.search),
+          );
+          if (currentUrlState.sort === "bags") {
+            updateStoreListingUrl(
+              { ...currentUrlState, sort: "rating" },
+              "replaceState",
+            );
+          }
         }
-        setPage(1);
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -109,26 +150,86 @@ export default function StoreListing() {
     (currentPage - 1) * STORES_PER_PAGE,
     currentPage * STORES_PER_PAGE,
   );
+  const firstVisibleStore = stores.length
+    ? (currentPage - 1) * STORES_PER_PAGE + 1
+    : 0;
+  const lastVisibleStore = Math.min(
+    currentPage * STORES_PER_PAGE,
+    stores.length,
+  );
+  const visiblePageNumbers = getVisiblePageNumbers(currentPage, totalPages);
+
+  function focusResults() {
+    window.requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      resultsRef.current?.focus({ preventScroll: true });
+    });
+  }
 
   function changeFilter(nextFilter: StoreFilter) {
     setFilter(nextFilter);
     setPage(1);
+    updateStoreListingUrl(
+      { query, filter: nextFilter, sort, page: 1 },
+      "pushState",
+    );
+    focusResults();
   }
 
   function changeQuery(nextQuery: string) {
     setQuery(nextQuery);
     setPage(1);
+    updateStoreListingUrl(
+      { query: nextQuery, filter, sort, page: 1 },
+      "replaceState",
+    );
   }
 
   function changeSort(nextSort: StoreSort) {
     setSort(nextSort);
     setPage(1);
+    updateStoreListingUrl(
+      { query, filter, sort: nextSort, page: 1 },
+      "pushState",
+    );
+    focusResults();
+  }
+
+  function clearSearch() {
+    setQuery("");
+    setPage(1);
+    updateStoreListingUrl(
+      { query: "", filter, sort, page: 1 },
+      "replaceState",
+    );
+    searchInputRef.current?.focus();
   }
 
   function clearFilters() {
     setQuery("");
     setFilter("all");
     setPage(1);
+    updateStoreListingUrl(
+      { query: "", filter: "all", sort, page: 1 },
+      "pushState",
+    );
+    focusResults();
+  }
+
+  function changePage(nextPage: number) {
+    const normalizedPage = Math.min(totalPages, Math.max(1, nextPage));
+
+    if (normalizedPage === currentPage) return;
+
+    setPage(normalizedPage);
+    updateStoreListingUrl(
+      { query, filter, sort, page: normalizedPage },
+      "pushState",
+    );
+    focusResults();
   }
 
   function retryLoadingStores() {
@@ -176,20 +277,37 @@ export default function StoreListing() {
               <span>
                 {isLoading
                   ? "Loading stores..."
-                  : `${stores.length} ${stores.length === 1 ? "store" : "stores"} available`}
+                  : stores.length
+                    ? `Showing ${firstVisibleStore}-${lastVisibleStore} of ${stores.length} stores`
+                    : "0 stores available"}
               </span>
             </div>
 
-            <label className="store-listing-search">
-              <span className="sr-only">Search stores</span>
+            <div className="store-listing-search">
+              <label className="sr-only" htmlFor="store-search">
+                Search stores
+              </label>
               <i className="icon-search" aria-hidden="true" />
               <input
+                ref={searchInputRef}
+                id="store-search"
                 type="search"
                 value={query}
                 onChange={(event) => changeQuery(event.target.value)}
                 placeholder="Search stores, areas, or food rescue partners"
               />
-            </label>
+              {query ? (
+                <button
+                  type="button"
+                  className="store-listing-search__clear"
+                  aria-label="Clear store search"
+                  title="Clear search"
+                  onClick={clearSearch}
+                >
+                  <i className="icon-close" aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
 
             <div className="store-listing-toolbar">
               <div className="store-listing-filters" role="group" aria-label="Filter stores">
@@ -226,61 +344,89 @@ export default function StoreListing() {
             </section>
           ) : null}
 
-          {isLoading ? (
-            <section className="store-listing-empty" aria-live="polite">
-              <h2>Loading stores</h2>
-              <p>Finding active food rescue partners.</p>
-            </section>
-          ) : loadError ? (
-            <section className="store-listing-empty" aria-live="assertive">
-              <h2>Unable to load stores</h2>
-              <p>{loadError}</p>
-              <button
-                type="button"
-                className="btn btn-outline-primary-2"
-                onClick={retryLoadingStores}
-              >
-                Try again
-              </button>
-            </section>
-          ) : stores.length ? (
-            <section className="store-listing-grid" aria-label="Available stores">
-              {visibleStores.map((store, index) => (
-                <NewStoreCard
-                  key={store.id}
-                  store={store}
-                  imageSizes={STORE_LISTING_IMAGE_SIZES}
-                  isAvailabilityKnown={bagAvailabilityError === null}
-                  loadImageEagerly={index < ABOVE_THE_FOLD_STORE_COUNT}
-                />
-              ))}
-            </section>
-          ) : (
-            <section className="store-listing-empty" aria-live="polite">
-              <i className="icon-search" aria-hidden="true" />
-              <h2>No stores found</h2>
-              <p>Try a different search term or clear the current filter.</p>
-              <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
-                Clear filters
-              </button>
-            </section>
-          )}
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {isLoading
+              ? "Loading stores."
+              : loadError
+                ? "Stores could not be loaded."
+                : `${stores.length} ${stores.length === 1 ? "store" : "stores"} found. Page ${currentPage} of ${totalPages}.`}
+          </p>
+
+          <div
+            ref={resultsRef}
+            className="store-listing-results"
+            tabIndex={-1}
+          >
+            {isLoading ? (
+              <section className="store-listing-empty" aria-live="polite">
+                <h2>Loading stores</h2>
+                <p>Finding active food rescue partners.</p>
+              </section>
+            ) : loadError ? (
+              <section className="store-listing-empty" aria-live="assertive">
+                <h2>Unable to load stores</h2>
+                <p>{loadError}</p>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary-2"
+                  onClick={retryLoadingStores}
+                >
+                  Try again
+                </button>
+              </section>
+            ) : stores.length ? (
+              <section className="store-listing-grid" aria-label="Available stores">
+                {visibleStores.map((store, index) => (
+                  <NewStoreCard
+                    key={store.id}
+                    store={store}
+                    imageSizes={STORE_LISTING_IMAGE_SIZES}
+                    isAvailabilityKnown={bagAvailabilityError === null}
+                    loadImageEagerly={index < ABOVE_THE_FOLD_STORE_COUNT}
+                  />
+                ))}
+              </section>
+            ) : (
+              <section className="store-listing-empty" aria-live="polite">
+                <i className="icon-search" aria-hidden="true" />
+                <h2>No stores found</h2>
+                <p>Try a different search term or clear the current filter.</p>
+                <button type="button" className="btn btn-outline-primary-2" onClick={clearFilters}>
+                  Clear filters
+                </button>
+              </section>
+            )}
+          </div>
 
           {totalPages > 1 ? (
             <nav className="store-listing-pagination" aria-label="Store pages">
               <button
                 type="button"
                 aria-label="Previous store page"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                onClick={() => changePage(currentPage - 1)}
                 disabled={currentPage === 1}
               >
                 Previous
               </button>
-              <span>Page {currentPage} of {totalPages}</span>
+              <div className="store-listing-pagination__pages">
+                {visiblePageNumbers.map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    className={pageNumber === currentPage ? "is-active" : ""}
+                    aria-label={`Go to store page ${pageNumber}`}
+                    aria-current={pageNumber === currentPage ? "page" : undefined}
+                    onClick={() => changePage(pageNumber)}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+              </div>
+              <span className="sr-only">Page {currentPage} of {totalPages}</span>
               <button
                 type="button"
                 aria-label="Next store page"
-                onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                onClick={() => changePage(currentPage + 1)}
                 disabled={currentPage === totalPages}
               >
                 Next
@@ -291,4 +437,33 @@ export default function StoreListing() {
       </div>
     </main>
   );
+}
+
+function getVisiblePageNumbers(currentPage: number, totalPages: number) {
+  const maximumVisiblePages = 5;
+  const visiblePageCount = Math.min(maximumVisiblePages, totalPages);
+  const maximumStartPage = totalPages - visiblePageCount + 1;
+  const startPage = Math.min(
+    Math.max(1, currentPage - Math.floor(visiblePageCount / 2)),
+    maximumStartPage,
+  );
+
+  return Array.from(
+    { length: visiblePageCount },
+    (_, index) => startPage + index,
+  );
+}
+
+function updateStoreListingUrl(
+  nextState: StoreListingUrlState,
+  method: "pushState" | "replaceState",
+) {
+  const searchParams = buildStoreListingSearchParams(
+    new URLSearchParams(window.location.search),
+    nextState,
+  );
+  const queryString = searchParams.toString();
+  const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}${window.location.hash}`;
+
+  window.history[method](null, "", nextUrl);
 }
