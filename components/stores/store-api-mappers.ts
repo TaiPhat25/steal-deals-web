@@ -46,20 +46,54 @@ function mapReviewResponse(
   };
 }
 
-export function mapStoreResponse(
+type StoreReviews = PublicStoreReviewResponse[] | PagedResult<StoreReviewResponse>;
+
+function mapStoreWithRelatedData(
   store: StoreProfileResponse,
-  bags: SurpriseBagResponse[] = [],
-  reviews: PublicStoreReviewResponse[] | PagedResult<StoreReviewResponse> = [],
+  bags: SurpriseBagResponse[],
+  reviews: StoreReviews = [],
 ): StoreProfile {
   const reviewList = Array.isArray(reviews) ? reviews : (reviews?.items ?? []);
+
   return {
     ...store,
     bankAccount: null,
     licenseUrl: null,
     updatedAt: null,
-    surpriseBags: bags
-      .filter((bag) => bag.storeId === store.id)
-      .map(mapBagResponse),
+    surpriseBags: bags.map(mapBagResponse),
     storeReviews: reviewList.map((review) => mapReviewResponse(review, store.id)),
   };
+}
+
+export function mapStoreResponse(
+  store: StoreProfileResponse,
+  bags: SurpriseBagResponse[] = [],
+  reviews: StoreReviews = [],
+): StoreProfile {
+  return mapStoreWithRelatedData(
+    store,
+    bags.filter((bag) => bag.storeId === store.id),
+    reviews,
+  );
+}
+
+export function mapStoreResponses(
+  stores: StoreProfileResponse[],
+  bags: SurpriseBagResponse[] = [],
+) {
+  const bagsByStore = new Map<string, SurpriseBagResponse[]>();
+
+  for (const bag of bags) {
+    const storeBags = bagsByStore.get(bag.storeId);
+    if (storeBags) {
+      storeBags.push(bag);
+    } else {
+      bagsByStore.set(bag.storeId, [bag]);
+    }
+  }
+
+  return stores.map((store) => mapStoreWithRelatedData(
+    store,
+    bagsByStore.get(store.id) ?? [],
+  ));
 }

@@ -5207,6 +5207,39 @@ img {
   font-weight: 500;
 }
 
+.store-listing-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin: 0 0 2rem;
+  padding: 1.25rem 1.5rem;
+  border-left: 0.3rem solid #61ab00;
+  background: #f5f8f1;
+}
+
+.store-listing-notice div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.store-listing-notice strong {
+  color: #333;
+  font-size: 1.4rem;
+}
+
+.store-listing-notice span {
+  color: #666;
+  font-size: 1.3rem;
+}
+
+.store-listing-notice__retry {
+  flex: 0 0 auto;
+  min-width: 11rem;
+  margin: 0;
+}
+
 .store-listing-empty {
   margin: 1rem 0 6rem;
   padding: 5rem 2rem;
@@ -5292,6 +5325,12 @@ img {
   .store-listing-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .store-listing-notice {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
   }
 
   .store-listing-sort {

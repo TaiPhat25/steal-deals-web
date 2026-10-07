@@ -14,15 +14,24 @@ const DEFAULT_STORE_IMAGE_SIZES = "(max-width: 575px) 78vw, (max-width: 991px) 4
 export default function NewStoreCard({
   store,
   imageSizes = DEFAULT_STORE_IMAGE_SIZES,
+  isAvailabilityKnown = true,
+  loadImageEagerly = false,
 }: {
   store: NewStore;
   imageSizes?: string;
+  isAvailabilityKnown?: boolean;
+  loadImageEagerly?: boolean;
 }) {
   const storeHref = `/stores/${encodeURIComponent(store.id)}`;
   const availableBagQuantity = getAvailableBagQuantity(store.surpriseBags);
   const reviewCount = store.reviewCount ?? store.storeReviews.length;
   const storeImage = store.avatarUrl || STORE_FALLBACK_IMAGE;
-  const availabilityLabel = !store.isActive
+  const imageLoading = loadImageEagerly || storeImage === STORE_FALLBACK_IMAGE
+    ? "eager"
+    : "lazy";
+  const availabilityLabel = !isAvailabilityKnown
+    ? "Availability unavailable"
+    : !store.isActive
     ? "Currently unavailable"
     : availableBagQuantity > 0
       ? "Bags available"
@@ -33,10 +42,10 @@ export default function NewStoreCard({
       <Link href={storeHref} className="new-store-card__media" aria-label={`View ${store.name}`}>
         <Image
           src={storeImage}
-          width={300}
-          height={200}
+          fill
           sizes={imageSizes}
           alt={`${store.name} storefront`}
+          loading={imageLoading}
           unoptimized={shouldUseUnoptimizedImage(storeImage)}
         />
       </Link>
@@ -58,7 +67,9 @@ export default function NewStoreCard({
           <div>
             <dt>Available</dt>
             <dd>
-              {availableBagQuantity} {availableBagQuantity === 1 ? "bag" : "bags"}
+              {isAvailabilityKnown
+                ? `${availableBagQuantity} ${availableBagQuantity === 1 ? "bag" : "bags"}`
+                : "Unavailable"}
             </dd>
           </div>
         </dl>

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ApiClientError } from "@/lib/api/client";
 import { listAvailableBags, listStores } from "@/lib/api/store";
 import NewStoreCard from "@/components/home/NewStoreCard";
-import { mapStoreResponse } from "@/components/stores/store-api-mappers";
+import { mapStoreResponses } from "@/components/stores/store-api-mappers";
 import {
   getAvailableBagQuantity,
   isNewStore,
@@ -17,6 +17,7 @@ import type { StoreProfile } from "@/components/stores/store-types";
 type StoreFilter = "all" | "established" | "new";
 type StoreSort = "rating" | "bags" | "name";
 const STORES_PER_PAGE = 20;
+const ABOVE_THE_FOLD_STORE_COUNT = 4;
 const STORE_LISTING_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 38px), (max-width: 1199px) 225px, 270px";
 
 export default function StoreListing() {
@@ -28,29 +29,41 @@ export default function StoreListing() {
   const [listingReferenceTime, setListingReferenceTime] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [bagAvailabilityError, setBagAvailabilityError] = useState<string | null>(null);
   const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
 
-    void Promise.all([listStores(), listAvailableBags()])
-      .then(([storesResponse, bagsResponse]) => {
+    void Promise.allSettled([listStores(), listAvailableBags()])
+      .then(([storesResult, bagsResult]) => {
         if (!active) return;
 
-        setStoreProfiles(
-          storesResponse.map((store) => mapStoreResponse(store, bagsResponse)),
+        if (storesResult.status === "rejected") {
+          setLoadError(
+            storesResult.reason instanceof ApiClientError
+              ? storesResult.reason.message
+              : "Unable to load stores. Please try again.",
+          );
+          setBagAvailabilityError(null);
+          return;
+        }
+
+        const hasBagAvailability = bagsResult.status === "fulfilled";
+        const bags = hasBagAvailability ? bagsResult.value : [];
+
+        setLoadError(null);
+        setBagAvailabilityError(
+          hasBagAvailability
+            ? null
+            : "Bag availability is temporarily unavailable.",
         );
+        setStoreProfiles(mapStoreResponses(storesResult.value, bags));
         setListingReferenceTime(Date.now());
+        if (!hasBagAvailability) {
+          setSort((current) => current === "bags" ? "rating" : current);
+        }
         setPage(1);
-      })
-      .catch((requestError) => {
-        if (!active) return;
-
-        setLoadError(
-          requestError instanceof ApiClientError
-            ? requestError.message
-            : "Unable to load stores. Please try again.",
-        );
       })
       .finally(() => {
         if (active) setIsLoading(false);
@@ -121,6 +134,7 @@ export default function StoreListing() {
   function retryLoadingStores() {
     setIsLoading(true);
     setLoadError(null);
+    setBagAvailabilityError(null);
     setReloadVersion((current) => current + 1);
   }
 
@@ -187,12 +201,30 @@ export default function StoreListing() {
                 <span>Sort by</span>
                 <select value={sort} onChange={(event) => changeSort(event.target.value as StoreSort)}>
                   <option value="rating">Highest rated</option>
-                  <option value="bags">Most available bags</option>
+                  <option value="bags" disabled={bagAvailabilityError !== null}>
+                    Most available bags
+                  </option>
                   <option value="name">Store name</option>
                 </select>
               </label>
             </div>
           </section>
+
+          {!isLoading && !loadError && bagAvailabilityError ? (
+            <section className="store-listing-notice" aria-live="polite">
+              <div>
+                <strong>Bag availability unavailable</strong>
+                <span>Store profiles are still available. Retry to restore live bag totals.</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-outline-primary-2 store-listing-notice__retry"
+                onClick={retryLoadingStores}
+              >
+                Try again
+              </button>
+            </section>
+          ) : null}
 
           {isLoading ? (
             <section className="store-listing-empty" aria-live="polite">
@@ -213,11 +245,13 @@ export default function StoreListing() {
             </section>
           ) : stores.length ? (
             <section className="store-listing-grid" aria-label="Available stores">
-              {visibleStores.map((store) => (
+              {visibleStores.map((store, index) => (
                 <NewStoreCard
                   key={store.id}
                   store={store}
                   imageSizes={STORE_LISTING_IMAGE_SIZES}
+                  isAvailabilityKnown={bagAvailabilityError === null}
+                  loadImageEagerly={index < ABOVE_THE_FOLD_STORE_COUNT}
                 />
               ))}
             </section>
