@@ -59,6 +59,7 @@ function SurpriseBagCard({
             sizes={imageSizes}
             alt={bag.imageAlt}
             loading={eager ? "eager" : "lazy"}
+            preload={eager}
             unoptimized={shouldUseUnoptimizedImage(bag.imageSrc)}
           />
         </Link>

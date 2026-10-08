@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { StoreProfile } from "@/components/stores/store-profile-data";
+import type { StoreProfile } from "@/components/stores/store-types";
+import { getAvailableBagQuantity } from "@/components/stores/store-listing-data";
 import {
   shouldUseUnoptimizedImage,
   STORE_FALLBACK_IMAGE,
@@ -8,26 +9,48 @@ import {
 
 export type NewStore = StoreProfile;
 
-export default function NewStoreCard({ store }: { store: NewStore }) {
+const DEFAULT_STORE_IMAGE_SIZES = "(max-width: 575px) 78vw, (max-width: 991px) 40vw, (max-width: 1199px) 30vw, 228px";
+
+export default function NewStoreCard({
+  store,
+  imageSizes = DEFAULT_STORE_IMAGE_SIZES,
+  isAvailabilityKnown = true,
+  loadImageEagerly = false,
+}: {
+  store: NewStore;
+  imageSizes?: string;
+  isAvailabilityKnown?: boolean;
+  loadImageEagerly?: boolean;
+}) {
   const storeHref = `/stores/${encodeURIComponent(store.id)}`;
-  const productCount = store.surpriseBags.length;
+  const availableBagQuantity = getAvailableBagQuantity(store.surpriseBags);
+  const reviewCount = store.reviewCount ?? store.storeReviews.length;
   const storeImage = store.avatarUrl || STORE_FALLBACK_IMAGE;
+  const imageLoading = loadImageEagerly || storeImage === STORE_FALLBACK_IMAGE
+    ? "eager"
+    : "lazy";
+  const availabilityLabel = !isAvailabilityKnown
+    ? "Availability unavailable"
+    : !store.isActive
+    ? "Currently unavailable"
+    : availableBagQuantity > 0
+      ? "Bags available"
+      : "No bags available";
 
   return (
     <article className="new-store-card">
       <Link href={storeHref} className="new-store-card__media" aria-label={`View ${store.name}`}>
         <Image
           src={storeImage}
-          width={300}
-          height={200}
-          sizes="(max-width: 575px) 78vw, (max-width: 991px) 40vw, (max-width: 1199px) 30vw, 228px"
+          fill
+          sizes={imageSizes}
           alt={`${store.name} storefront`}
+          loading={imageLoading}
           unoptimized={shouldUseUnoptimizedImage(storeImage)}
         />
-        <span className="new-store-card__badge">{store.isVerify ? "Verified" : "New store"}</span>
       </Link>
       <div className="new-store-card__body">
-        <p className="new-store-card__category">{store.isActive ? "Open for pickup" : "Inactive"}</p>
+        <p className="new-store-card__category">{availabilityLabel}</p>
         <h3 className="new-store-card__title">
           <Link href={storeHref}>{store.name}</Link>
         </h3>
@@ -35,12 +58,18 @@ export default function NewStoreCard({ store }: { store: NewStore }) {
         <dl className="new-store-card__details">
           <div>
             <dt>Rating</dt>
-            <dd>{store.ratingScore.toFixed(1)}</dd>
+            <dd>
+              {reviewCount > 0
+                ? `${store.ratingScore.toFixed(1)} (${reviewCount})`
+                : "No reviews"}
+            </dd>
           </div>
           <div>
             <dt>Available</dt>
             <dd>
-              {productCount} {productCount === 1 ? "bag" : "bags"}
+              {isAvailabilityKnown
+                ? `${availableBagQuantity} ${availableBagQuantity === 1 ? "bag" : "bags"}`
+                : "Unavailable"}
             </dd>
           </div>
         </dl>

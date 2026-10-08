@@ -508,9 +508,18 @@ right; Store Detail has a dedicated local-shop image.
 desktop search field, old/new store filters, and rating, bag-count, or name
 sorting. Store cards use a four-column desktop grid, use the shared
 `/assets/images/demos/demo-28/banners/store.jpg` listing image, and link to
-`/stores/[id]`. Client-side pagination is implemented at 20 stores per page.
-The listing loads store profiles and available bags from `GET /api/stores` and
-`GET /api/bags`.
+`/stores/[id]`. Search, store age, sorting, and the current page synchronize to
+the `q`, `age`, `sort`, and `page` URL parameters so refresh, shared links, and
+browser history restore the same result view. Search includes a clear control;
+filter, sort, and page changes return focus to the results. Client-side
+pagination is implemented at 20 stores per page with numbered page controls and
+polite result/page announcements. Filters expose their pressed state, all
+controls reference the named results region, keyboard focus is visible, smooth
+scrolling respects reduced-motion preferences, and long store content wraps
+without widening its card. Tablet controls stack before they become cramped;
+mobile filters use equal-width columns and pagination keeps its page numbers
+together. The listing loads store profiles and available bags from
+`GET /api/stores` and `GET /api/bags`.
 
 `/stores/[id]` renders the Store Service-backed profile, active surprise bags,
 and reviews. It loads `GET /api/stores/{id}`, `GET /api/bags/store/{id}`, and
@@ -971,6 +980,10 @@ Home is in progress, and seven packages still require work or final validation.
 9. Add browser tests for registration/OTP, password reset, login/session restoration,
    refresh-and-retry, logout, protected-route redirects, profile verification,
    and responsive product/store listings.
+10. **Task 11 (deferred testing):** expand the automated unit/component coverage,
+    add browser-level end-to-end coverage, and run the complete responsive,
+    accessibility, large-dataset, production-build, and Lighthouse validation
+    pass before deployment.
 
 ## Working-tree note
 

@@ -1,4 +1,4 @@
-import type { StoreReview } from "@/components/stores/store-profile-data";
+import type { StoreReview } from "@/components/stores/store-types";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
