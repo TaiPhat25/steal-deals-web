@@ -3,11 +3,9 @@ import { apiRequest } from "@/lib/api/client";
 const PAYMENT_API_BASE_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL;
 
 function paymentApiBaseUrl() {
-  if (!PAYMENT_API_BASE_URL) {
-    throw new Error("NEXT_PUBLIC_PAYMENT_API_URL is not configured.");
-  }
 
-  return PAYMENT_API_BASE_URL;
+
+  return PAYMENT_API_BASE_URL ?? "";
 }
 
 function bearer(accessToken: string) {

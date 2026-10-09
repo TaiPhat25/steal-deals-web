@@ -116,8 +116,7 @@ function dedupePublicListRequest<T>(key: string, request: () => Promise<T>) {
 }
 
 function storeApiBaseUrl() {
-  if (!STORE_API_BASE_URL) throw new Error("NEXT_PUBLIC_STORE_API_URL is not configured.");
-  return STORE_API_BASE_URL;
+  return STORE_API_BASE_URL ?? "";
 }
 
 function bearer(accessToken: string) {

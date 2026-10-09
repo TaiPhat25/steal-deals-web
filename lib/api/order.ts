@@ -4,8 +4,8 @@ import type { CreateOrderRequest, OrderResponse } from "@/lib/api/dashboard-type
 const ORDER_API_BASE_URL = process.env.NEXT_PUBLIC_ORDER_API_URL;
 
 function orderApiBaseUrl() {
-  if (!ORDER_API_BASE_URL) throw new Error("NEXT_PUBLIC_ORDER_API_URL is not configured.");
-  return ORDER_API_BASE_URL;
+
+  return ORDER_API_BASE_URL ?? "";
 }
 
 function bearer(accessToken: string) {
