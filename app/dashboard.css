@@ -5,6 +5,7 @@
 @source "../components/admin";
 @source "../components/seller";
 @source "../components/dashboard";
+@source "../components/location";
 
 @theme {
   --color-accent-1: #a0e2e0;

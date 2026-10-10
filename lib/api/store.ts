@@ -41,6 +41,8 @@ export type UpdateStoreRequest = {
   name: string;
   description?: string | null;
   address?: string | null;
+  province?: string | null;
+  commune?: string | null;
   latitude: number;
   longitude: number;
   phone?: string | null;
@@ -52,12 +54,23 @@ export type CreateStoreRequest = {
   name: string;
   description?: string | null;
   address?: string | null;
+  province?: string | null;
+  commune?: string | null;
   latitude: number;
   longitude: number;
   phone?: string | null;
   bankAccount?: string | null;
   licenseUrl?: string | null;
 };
+
+export {
+  autocompleteLocations,
+  getLocationPlaceDetail,
+  type AutocompleteSuggestionResponse,
+  type LocationAutocompleteQueryRequest,
+  type LocationPlaceDetailQueryRequest,
+  type PlaceDetailResponse,
+} from "@/lib/api/location";
 
 export type UpdateBagRequest = Omit<CreateBagRequest, "status"> & {
   status?: string;
