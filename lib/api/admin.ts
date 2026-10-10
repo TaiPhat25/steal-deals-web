@@ -15,13 +15,13 @@ function bearer(accessToken: string) {
 
 export function listAdminUsers(accessToken: string, searchParams: URLSearchParams) {
   return apiRequest<PagedResult<UserSummary>>(
-    `/api/user?${searchParams.toString()}`,
+    `/api/identity/user?${searchParams.toString()}`,
     { method: "GET", headers: bearer(accessToken) },
   );
 }
 
 export function getAdminUser(accessToken: string, id: string) {
-  return apiRequest<UserDetail>(`/api/user/${encodeURIComponent(id)}`, {
+  return apiRequest<UserDetail>(`/api/identity/user/${encodeURIComponent(id)}`, {
     method: "GET",
     headers: bearer(accessToken),
   });
@@ -31,7 +31,7 @@ export function createAdminUser(
   accessToken: string,
   request: AdminCreateUserRequest,
 ) {
-  return apiRequest<UserDetail>("/api/user", {
+  return apiRequest<UserDetail>("/api/identity/user", {
     method: "POST",
     headers: bearer(accessToken),
     body: request,
@@ -43,7 +43,7 @@ export function updateAdminUser(
   id: string,
   request: AdminUpdateUserRequest,
 ) {
-  const path = `/api/user/${encodeURIComponent(id)}`;
+  const path = `/api/identity/user/${encodeURIComponent(id)}`;
 
   if (process.env.NODE_ENV === "development") {
     console.info(
@@ -59,7 +59,7 @@ export function updateAdminUser(
 }
 
 export function deleteAdminUser(accessToken: string, id: string) {
-  return apiRequest<null>(`/api/user/${encodeURIComponent(id)}`, {
+  return apiRequest<null>(`/api/identity/user/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: bearer(accessToken),
   });
@@ -67,20 +67,20 @@ export function deleteAdminUser(accessToken: string, id: string) {
 
 export function listAdmins(accessToken: string, searchParams: URLSearchParams) {
   return apiRequest<PagedResult<UserSummary>>(
-    `/api/admin?${searchParams.toString()}`,
+    `/api/identity/admin?${searchParams.toString()}`,
     { method: "GET", headers: bearer(accessToken) },
   );
 }
 
 export function getAdmin(accessToken: string, id: string) {
-  return apiRequest<UserDetail>(`/api/admin/${encodeURIComponent(id)}`, {
+  return apiRequest<UserDetail>(`/api/identity/admin/${encodeURIComponent(id)}`, {
     method: "GET",
     headers: bearer(accessToken),
   });
 }
 
 export function createAdmin(accessToken: string, request: CreateAdminRequest) {
-  return apiRequest<UserDetail>("/api/admin", {
+  return apiRequest<UserDetail>("/api/identity/admin", {
     method: "POST",
     headers: bearer(accessToken),
     body: request,
@@ -92,7 +92,7 @@ export function updateAdmin(
   id: string,
   request: UpdateAdminRequest,
 ) {
-  return apiRequest<null>(`/api/admin/${encodeURIComponent(id)}`, {
+  return apiRequest<null>(`/api/identity/admin/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: bearer(accessToken),
     body: request,
@@ -100,7 +100,7 @@ export function updateAdmin(
 }
 
 export function deleteAdmin(accessToken: string, id: string) {
-  return apiRequest<null>(`/api/admin/${encodeURIComponent(id)}`, {
+  return apiRequest<null>(`/api/identity/admin/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: bearer(accessToken),
   });

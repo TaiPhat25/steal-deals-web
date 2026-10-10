@@ -38,8 +38,7 @@ export type UpdateCartItemRequest = {
 };
 
 function cartApiBaseUrl() {
-  if (!CART_API_BASE_URL) throw new Error("NEXT_PUBLIC_CART_API_URL is not configured.");
-  return CART_API_BASE_URL;
+  return CART_API_BASE_URL ?? "";
 }
 
 function bearer(accessToken: string) {
