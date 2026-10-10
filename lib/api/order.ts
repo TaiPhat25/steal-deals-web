@@ -14,7 +14,7 @@ function bearer(accessToken: string) {
 
 export function createOrder(accessToken: string, request: CreateOrderRequest) {
   return apiRequest<OrderResponse>(
-    "/api/orders",
+    "/api/order/orders",
     { method: "POST", headers: bearer(accessToken), body: request },
     orderApiBaseUrl(),
   );
@@ -30,7 +30,7 @@ export type CheckoutFromCartRequest = {
 
 export function checkoutFromCart(accessToken: string, request: CheckoutFromCartRequest) {
   return apiRequest<OrderResponse>(
-    "/api/orders/checkout-from-cart",
+    "/api/order/orders/checkout-from-cart",
     { method: "POST", headers: bearer(accessToken), body: request },
     orderApiBaseUrl(),
   );
@@ -38,7 +38,7 @@ export function checkoutFromCart(accessToken: string, request: CheckoutFromCartR
 
 export function getOrder(accessToken: string, id: string) {
   return apiRequest<OrderResponse>(
-    `/api/orders/${encodeURIComponent(id)}`,
+    `/api/order/orders/${encodeURIComponent(id)}`,
     { method: "GET", headers: bearer(accessToken) },
     orderApiBaseUrl(),
   );
@@ -46,7 +46,7 @@ export function getOrder(accessToken: string, id: string) {
 
 export function listMyOrders(accessToken: string) {
   return apiRequest<OrderResponse[]>(
-    "/api/orders/my-orders",
+    "/api/order/orders/my-orders",
     { method: "GET", headers: bearer(accessToken) },
     orderApiBaseUrl(),
   );
@@ -54,7 +54,7 @@ export function listMyOrders(accessToken: string) {
 
 export function listStoreOrders(accessToken: string, storeId: string) {
   return apiRequest<OrderResponse[]>(
-    `/api/orders/store/${encodeURIComponent(storeId)}`,
+    `/api/order/orders/store/${encodeURIComponent(storeId)}`,
     { method: "GET", headers: bearer(accessToken) },
     orderApiBaseUrl(),
   );
@@ -62,7 +62,7 @@ export function listStoreOrders(accessToken: string, storeId: string) {
 
 export function updateOrderStatus(accessToken: string, id: string, status: string) {
   return apiRequest<OrderResponse>(
-    `/api/orders/${encodeURIComponent(id)}/status`,
+    `/api/order/orders/${encodeURIComponent(id)}/status`,
     { method: "PATCH", headers: bearer(accessToken), body: { status } },
     orderApiBaseUrl(),
   );

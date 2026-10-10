@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api/client";
+﻿import { apiRequest } from "@/lib/api/client";
 import { filterAvailableBags } from "@/lib/bag-availability";
 import type {
   CategoryResponse,
@@ -126,7 +126,7 @@ function bearer(accessToken: string) {
 export function listCategories() {
   return dedupePublicListRequest("categories", () =>
     apiRequest<CategoryResponse[]>(
-      "/api/categories",
+      "/api/store/categories",
       { method: "GET" },
       storeApiBaseUrl(),
     ),
@@ -136,7 +136,7 @@ export function listCategories() {
 export function listStores() {
   return dedupePublicListRequest("stores", () =>
     apiRequest<StoreProfileResponse[]>(
-      "/api/stores",
+      "/api/store/stores",
       { method: "GET" },
       storeApiBaseUrl(),
     ),
@@ -145,7 +145,7 @@ export function listStores() {
 
 export function getStore(id: string) {
   return apiRequest<StoreProfileResponse>(
-    `/api/stores/${encodeURIComponent(id)}`,
+    `/api/store/stores/${encodeURIComponent(id)}`,
     { method: "GET" },
     storeApiBaseUrl(),
   );
@@ -156,7 +156,7 @@ export function createStore(
   request: CreateStoreRequest,
 ) {
   return apiRequest<StoreProfileResponse>(
-    "/api/stores",
+    "/api/store/stores",
     { method: "POST", headers: bearer(accessToken), body: request },
     storeApiBaseUrl(),
   );
@@ -164,7 +164,7 @@ export function createStore(
 
 export function listPendingStores(accessToken: string) {
   return apiRequest<PendingStoreResponse[]>(
-    "/api/stores/pending",
+    "/api/store/stores/pending",
     { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -173,7 +173,7 @@ export function listPendingStores(accessToken: string) {
 export function listBags() {
   return dedupePublicListRequest("bags", () =>
     apiRequest<SurpriseBagResponse[]>(
-      "/api/bags",
+      "/api/store/bags",
       { method: "GET" },
       storeApiBaseUrl(),
     ).then((bags) => bags.map(normalizeSurpriseBagResponse)),
@@ -186,7 +186,7 @@ export async function listAvailableBags(now = Date.now()) {
 
 export function getBag(id: string) {
   return apiRequest<SurpriseBagResponse>(
-    `/api/bags/${encodeURIComponent(id)}`,
+    `/api/store/bags/${encodeURIComponent(id)}`,
     { method: "GET" },
     storeApiBaseUrl(),
   ).then(normalizeSurpriseBagResponse);
@@ -197,7 +197,7 @@ export function createCategory(
   request: CreateCategoryRequest,
 ) {
   return apiRequest<CategoryResponse>(
-    "/api/categories",
+    "/api/store/categories",
     { method: "POST", headers: bearer(accessToken), body: request },
     storeApiBaseUrl(),
   );
@@ -209,7 +209,7 @@ export function updateCategory(
   request: UpdateCategoryRequest,
 ) {
   return apiRequest<CategoryResponse>(
-    `/api/categories/${encodeURIComponent(id)}`,
+    `/api/store/categories/${encodeURIComponent(id)}`,
     { method: "PUT", headers: bearer(accessToken), body: request },
     storeApiBaseUrl(),
   );
@@ -217,7 +217,7 @@ export function updateCategory(
 
 export function deleteCategory(accessToken: string, id: string) {
   return apiRequest<null>(
-    `/api/categories/${encodeURIComponent(id)}`,
+    `/api/store/categories/${encodeURIComponent(id)}`,
     { method: "DELETE", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -264,7 +264,7 @@ export function createBag(
   const body = request instanceof FormData ? request : buildBagFormData(request);
 
   return apiRequest<SurpriseBagResponse>(
-    "/api/bags",
+    "/api/store/bags",
     { method: "POST", headers: bearer(accessToken), body },
     storeApiBaseUrl(),
   ).then(normalizeSurpriseBagResponse);
@@ -272,7 +272,7 @@ export function createBag(
 
 export async function listStoreBags(storeId: string) {
   const bags = await apiRequest<SurpriseBagResponse[]>(
-    `/api/bags/store/${encodeURIComponent(storeId)}`,
+    `/api/store/bags/store/${encodeURIComponent(storeId)}`,
     { method: "GET" },
     storeApiBaseUrl(),
   );
@@ -311,7 +311,7 @@ export function listStoreReviews(
       : buildReviewQueryParams({ page: filterOrPage, pageSize });
 
   return apiRequest<PagedResult<StoreReviewResponse>>(
-    `/api/reviews/store/${encodeURIComponent(storeId)}${query ? `?${query}` : ""}`,
+    `/api/store/reviews/store/${encodeURIComponent(storeId)}${query ? `?${query}` : ""}`,
     { method: "GET" },
     storeApiBaseUrl(),
   );
@@ -324,7 +324,7 @@ export function listMyStoreReviews(
   const query = buildReviewQueryParams(filter);
 
   return apiRequest<PagedResult<StoreReviewResponse>>(
-    `/api/reviews/store/me${query ? `?${query}` : ""}`,
+    `/api/store/reviews/store/me${query ? `?${query}` : ""}`,
     { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -336,7 +336,7 @@ export function replyToStoreReview(
   storeReply: string,
 ) {
   return apiRequest<void>(
-    `/api/reviews/${encodeURIComponent(reviewId)}/reply`,
+    `/api/store/reviews/${encodeURIComponent(reviewId)}/reply`,
     {
       method: "PATCH",
       headers: bearer(accessToken),
@@ -348,7 +348,7 @@ export function replyToStoreReview(
 
 export function deleteReviewReply(accessToken: string, reviewId: string) {
   return apiRequest<void>(
-    `/api/reviews/${encodeURIComponent(reviewId)}/reply`,
+    `/api/store/reviews/${encodeURIComponent(reviewId)}/reply`,
     {
       method: "DELETE",
       headers: bearer(accessToken),
@@ -359,7 +359,7 @@ export function deleteReviewReply(accessToken: string, reviewId: string) {
 
 export function reportReview(accessToken: string, reviewId: string) {
   return apiRequest<void>(
-    `/api/reviews/${encodeURIComponent(reviewId)}/report`,
+    `/api/store/reviews/${encodeURIComponent(reviewId)}/report`,
     {
       method: "PATCH",
       headers: bearer(accessToken),
@@ -370,7 +370,7 @@ export function reportReview(accessToken: string, reviewId: string) {
 
 export function unreportReview(accessToken: string, reviewId: string) {
   return apiRequest<void>(
-    `/api/reviews/${encodeURIComponent(reviewId)}/report`,
+    `/api/store/reviews/${encodeURIComponent(reviewId)}/report`,
     {
       method: "DELETE",
       headers: bearer(accessToken),
@@ -390,7 +390,7 @@ export function listReportedReviews(
   });
 
   return apiRequest<PagedResult<StoreReviewResponse>>(
-    `/api/reviews/reported?${params.toString()}`,
+    `/api/store/reviews/reported?${params.toString()}`,
     { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -398,7 +398,7 @@ export function listReportedReviews(
 
 export function deleteReview(accessToken: string, reviewId: string) {
   return apiRequest<void>(
-    `/api/reviews/${encodeURIComponent(reviewId)}`,
+    `/api/store/reviews/${encodeURIComponent(reviewId)}`,
     {
       method: "DELETE",
       headers: bearer(accessToken),
@@ -415,7 +415,7 @@ export function updateBag(
   const body = request instanceof FormData ? request : buildBagFormData(request);
 
   return apiRequest<SurpriseBagResponse>(
-    `/api/bags/${encodeURIComponent(id)}`,
+    `/api/store/bags/${encodeURIComponent(id)}`,
     { method: "PUT", headers: bearer(accessToken), body },
     storeApiBaseUrl(),
   ).then(normalizeSurpriseBagResponse);
@@ -423,7 +423,7 @@ export function updateBag(
 
 export function deleteBag(accessToken: string, id: string) {
   return apiRequest<null>(
-    `/api/bags/${encodeURIComponent(id)}`,
+    `/api/store/bags/${encodeURIComponent(id)}`,
     { method: "DELETE", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -431,7 +431,7 @@ export function deleteBag(accessToken: string, id: string) {
 
 export function updateBagStatus(accessToken: string, id: string, status: string) {
   return apiRequest<null>(
-    `/api/bags/${encodeURIComponent(id)}/status`,
+    `/api/store/bags/${encodeURIComponent(id)}/status`,
     { method: "PATCH", headers: bearer(accessToken), body: { status } },
     storeApiBaseUrl(),
   );
@@ -439,7 +439,7 @@ export function updateBagStatus(accessToken: string, id: string, status: string)
 
 export function getMyStore(accessToken: string) {
   return apiRequest<StoreProfileResponse>(
-    "/api/stores/me",
+    "/api/store/stores/me",
     { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -451,7 +451,7 @@ export function updateStore(
   request: UpdateStoreRequest,
 ) {
   return apiRequest<StoreProfileResponse>(
-    `/api/stores/${encodeURIComponent(id)}`,
+    `/api/store/stores/${encodeURIComponent(id)}`,
     { method: "PUT", headers: bearer(accessToken), body: request },
     storeApiBaseUrl(),
   );
@@ -459,7 +459,7 @@ export function updateStore(
 
 export function verifyStore(accessToken: string, id: string) {
   return apiRequest<null>(
-    `/api/stores/${encodeURIComponent(id)}/verify`,
+    `/api/store/stores/${encodeURIComponent(id)}/verify`,
     { method: "PATCH", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -467,7 +467,7 @@ export function verifyStore(accessToken: string, id: string) {
 
 export function rejectPendingStore(accessToken: string, id: string) {
   return apiRequest<null>(
-    `/api/stores/${encodeURIComponent(id)}/reject`,
+    `/api/store/stores/${encodeURIComponent(id)}/reject`,
     { method: "DELETE", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -475,7 +475,7 @@ export function rejectPendingStore(accessToken: string, id: string) {
 
 export function toggleStoreActive(accessToken: string, id: string) {
   return apiRequest<null>(
-    `/api/stores/${encodeURIComponent(id)}/toggle-active`,
+    `/api/store/stores/${encodeURIComponent(id)}/toggle-active`,
     { method: "PATCH", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -483,7 +483,7 @@ export function toggleStoreActive(accessToken: string, id: string) {
 
 export function listMyCategorySuggestions(accessToken: string) {
   return apiRequest<CategorySuggestionResponse[]>(
-    "/api/category-suggestions/me",
+    "/api/store/category-suggestions/me",
     { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -494,7 +494,7 @@ export function createCategorySuggestion(
   request: CreateCategorySuggestionRequest,
 ) {
   return apiRequest<CategorySuggestionResponse>(
-    "/api/category-suggestions",
+    "/api/store/category-suggestions",
     { method: "POST", headers: bearer(accessToken), body: request },
     storeApiBaseUrl(),
   );
@@ -502,7 +502,7 @@ export function createCategorySuggestion(
 
 export function listPendingCategorySuggestions(accessToken: string) {
   return apiRequest<CategorySuggestionResponse[]>(
-    "/api/category-suggestions/pending",
+    "/api/store/category-suggestions/pending",
     { method: "GET", headers: bearer(accessToken) },
     storeApiBaseUrl(),
   );
@@ -514,7 +514,7 @@ export function reviewCategorySuggestion(
   request: ReviewCategorySuggestionRequest,
 ) {
   return apiRequest<CategorySuggestionResponse>(
-    `/api/category-suggestions/${encodeURIComponent(id)}/review`,
+    `/api/store/category-suggestions/${encodeURIComponent(id)}/review`,
     { method: "POST", headers: bearer(accessToken), body: request },
     storeApiBaseUrl(),
   );

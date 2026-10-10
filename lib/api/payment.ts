@@ -71,7 +71,7 @@ export type VnPayReturnVerification = {
 
 export function getTransactionByOrderId(accessToken: string, orderId: string) {
   return apiRequest<TransactionResponse>(
-    `/api/transactions/order/${encodeURIComponent(orderId)}`,
+    `/api/payment/transactions/order/${encodeURIComponent(orderId)}`,
     { method: "GET", headers: bearer(accessToken) },
     paymentApiBaseUrl(),
   );
@@ -79,7 +79,7 @@ export function getTransactionByOrderId(accessToken: string, orderId: string) {
 
 export function getMyTransactions(accessToken: string) {
   return apiRequest<TransactionResponse[]>(
-    "/api/transactions/my-transactions",
+    "/api/payment/transactions/my-transactions",
     { method: "GET", headers: bearer(accessToken) },
     paymentApiBaseUrl(),
   );
@@ -89,7 +89,7 @@ export function verifyVnPayReturn(queryString: string) {
   const normalizedQuery = queryString.startsWith("?") ? queryString.slice(1) : queryString;
 
   return apiRequest<VnPayReturnVerification>(
-    `/api/vnpay/return${normalizedQuery ? `?${normalizedQuery}` : ""}`,
+    `/api/payment/vnpay/return${normalizedQuery ? `?${normalizedQuery}` : ""}`,
     { method: "GET" },
     paymentApiBaseUrl(),
   );

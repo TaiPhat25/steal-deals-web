@@ -81,7 +81,7 @@ export async function apiRequest<T>(
   const shouldRefresh =
     response.status === 401 &&
     requestHeaders.has("Authorization") &&
-    path !== "/api/auth/refresh";
+    !path.endsWith("/refresh");
 
   if (shouldRefresh) {
     const newAccessToken = await refreshAccessTokenOnce();
