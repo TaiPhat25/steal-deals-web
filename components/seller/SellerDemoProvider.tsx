@@ -83,6 +83,8 @@ const INITIAL_SETTINGS: StoreSettings = {
   name: DEMO_STORE_NAME,
   description: "Fresh surplus food rescued daily and ready for collection.",
   address: "18 Nguyen Hue, District 1, Ho Chi Minh City",
+  province: "Thành phố Hồ Chí Minh",
+  commune: "Phường Bến Nghé",
   latitude: 10.7731,
   longitude: 106.703,
   avatarUrl: null,
