@@ -2,8 +2,9 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { mapStoreResponse } from "@/components/stores/store-api-mappers";
-import type { StoreProfile } from "@/components/stores/store-profile-data";
+import { mapStoreResponses } from "@/components/stores/store-api-mappers";
+import { isPublicStore } from "@/components/stores/store-listing-data";
+import type { StoreProfile } from "@/components/stores/store-types";
 import DragScrollRow from "./DragScrollRow";
 import HomeCollectionState from "./HomeCollectionState";
 import { useHomeData } from "./HomeDataProvider";
@@ -12,9 +13,10 @@ import NewStoreCard from "./NewStoreCard";
 export default function NewStoresSection() {
   const { bags, retry, stores: storeResource } = useHomeData();
   const stores = useMemo<StoreProfile[]>(() => {
-    return storeResource.data
-      .filter((store) => store.isActive)
-      .map((store) => mapStoreResponse(store, bags.data))
+    return mapStoreResponses(
+      storeResource.data.filter(isPublicStore),
+      bags.data,
+    )
       .sort(
         (a, b) =>
           (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0),

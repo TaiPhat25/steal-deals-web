@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { StoreProfile } from "@/components/stores/store-profile-data";
+import type { StoreProfile } from "@/components/stores/store-types";
 import { isBagAvailable } from "@/lib/bag-availability";
 import {
   shouldUseUnoptimizedImage,
@@ -36,6 +36,7 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
               height={380}
               sizes="(max-width: 767px) 100vw, 50vw"
               alt={`${store.name} storefront`}
+              loading="eager"
               unoptimized={shouldUseUnoptimizedImage(storeImage)}
             />
           </div>

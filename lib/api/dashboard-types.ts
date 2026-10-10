@@ -12,6 +12,8 @@ export type StoreProfileResponse = {
   name: string;
   description: string | null;
   address: string | null;
+  province?: string | null;
+  commune?: string | null;
   latitude: number;
   longitude: number;
   avatarUrl: string | null;

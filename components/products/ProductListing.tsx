@@ -24,6 +24,7 @@ type ProductListingProps = {
 
 const PRICE_MIN = 0;
 const PRICE_MAX = Number.POSITIVE_INFINITY;
+const ABOVE_THE_FOLD_PRODUCT_COUNT = 3;
 const PRODUCT_LISTING_CARD_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 30px), (max-width: 1199px) calc(37.5vw - 30px), 255px";
 const priceFormatter = new Intl.NumberFormat("en-US");
 
@@ -409,7 +410,7 @@ export default function ProductListing({
                     <div className="col-12 col-sm-6 col-xl-4" key={bag.slug}>
                       <SurpriseBagCard
                         bag={bag}
-                        eager={index === 0}
+                        eager={index < ABOVE_THE_FOLD_PRODUCT_COUNT}
                         imageSizes={PRODUCT_LISTING_CARD_IMAGE_SIZES}
                       />
                     </div>
