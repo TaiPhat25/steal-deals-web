@@ -1,9 +1,8 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/CartProvider";
 import { shouldUseUnoptimizedImage } from "@/lib/image-assets";
 
@@ -14,6 +13,7 @@ export type SurpriseBag = {
   imageSrc: string;
   imageAlt: string;
   name: string;
+  description?: string | null;
   storeName: string;
   category: string;
   originalPrice: number;
@@ -42,11 +42,29 @@ function SurpriseBagCard({
   eager?: boolean;
   imageSizes?: string;
 }) {
-  const router = useRouter();
   const { addItem } = useCart();
+  const [isAdded, setIsAdded] = useState(false);
+  const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const productKey = bag.backendId ?? bag.slug;
   const productHref = `/product?bag=${encodeURIComponent(productKey)}`;
   const categoryHref = `/products?category=${encodeURIComponent(bag.category)}`;
+
+  useEffect(() => {
+    return () => {
+      if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
+    };
+  }, []);
+
+  function handleAddToCart() {
+    addItem(bag, 1);
+    setIsAdded(true);
+
+    if (confirmationTimer.current) clearTimeout(confirmationTimer.current);
+    confirmationTimer.current = setTimeout(() => {
+      setIsAdded(false);
+      confirmationTimer.current = null;
+    }, 4_000);
+  }
 
   return (
     <article className="surprise-bag-card">
@@ -110,10 +128,17 @@ function SurpriseBagCard({
           <Link href={productHref} className="btn btn-outline-primary-2">
             View Details
           </Link>
-          <button type="button" onClick={() => { addItem(bag, 1); router.push("/newcart"); }} className="btn btn-primary">
+          <button type="button" onClick={handleAddToCart} className="btn btn-primary">
             Add to Cart
           </button>
         </div>
+        <p className="surprise-bag-card__cart-feedback" aria-live="polite">
+          {isAdded ? (
+            <>
+              Added to cart. <Link href="/newcart">View cart</Link>
+            </>
+          ) : null}
+        </p>
 
         {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
         {/*

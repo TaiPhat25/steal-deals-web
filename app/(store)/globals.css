@@ -1292,6 +1292,19 @@ img {
   font-size: 1.5rem;
 }
 
+.surprise-bag-card__cart-feedback {
+  min-height: 1.5rem;
+  margin: 0.75rem 0 0;
+  color: #555;
+  font-size: 1.05rem;
+  text-align: center;
+}
+
+.surprise-bag-card__cart-feedback a {
+  color: #61ab00;
+  font-weight: 600;
+}
+
 /* Wishlist styles retained for possible future saved-store functionality.
 .surprise-bag-card__wishlist {
   align-self: center;
@@ -1891,13 +1904,22 @@ img {
 
 .product-detail-page__main-image {
   position: relative;
+  flex: 0 0 100%;
+  max-width: 100%;
   background: #f4f4f4;
+}
+
+/* The thumbnail gallery is currently disabled, so remove the legacy 80/20 split. */
+.product-gallery-single .product-detail-page__main-image {
+  flex: 0 0 100%;
+  max-width: 100%;
+  width: 100%;
 }
 
 .product-detail-page__main-image img {
   width: 100%;
   aspect-ratio: 4 / 3;
-  object-fit: fill;
+  object-fit: cover;
 }
 
 .product-detail-page__thumbnail-list {
@@ -1965,8 +1987,8 @@ img {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.product-detail-page__summary div,
-.product-detail-page__tab-details div {
+.product-detail-page__summary > div,
+.product-detail-page__tab-details > div {
   padding-top: 0.75rem;
   border-top: 1px solid #e5e5e5;
 }
@@ -1997,10 +2019,14 @@ img {
 }
 
 .product-detail-page__categories a {
-  padding: 0.35rem 0.55rem;
-  border: 1px solid #e5e5e5;
-  background: #fff;
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-size: inherit;
+}
+
+.product-detail-page__summary .product-details-quantity {
+  margin: 0;
 }
 
 .product-details-action .product-detail-page__cart:hover,
@@ -5191,8 +5217,8 @@ img {
 
 .store-listing-filters button:hover,
 .store-listing-filters button.is-active {
-  border-color: #3f7d00;
-  background: #3f7d00;
+  border-color: #61ab00;
+  background: #61ab00;
   color: #fff;
 }
 
