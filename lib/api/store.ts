@@ -330,6 +330,23 @@ export function listStoreReviews(
   );
 }
 
+export function listBagReviews(
+  bagId: string,
+  filterOrPage: ReviewFilterRequest | number = 1,
+  pageSize = 50,
+) {
+  const query =
+    typeof filterOrPage === "object"
+      ? buildReviewQueryParams(filterOrPage)
+      : buildReviewQueryParams({ page: filterOrPage, pageSize });
+
+  return apiRequest<PagedResult<StoreReviewResponse>>(
+    `/api/store/reviews/bag/${encodeURIComponent(bagId)}${query ? `?${query}` : ""}`,
+    { method: "GET" },
+    storeApiBaseUrl(),
+  );
+}
+
 export function listMyStoreReviews(
   accessToken: string,
   filter?: ReviewFilterRequest,

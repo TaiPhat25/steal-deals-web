@@ -2,10 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/CartProvider";
+import AddToCartDialog from "@/components/cart/AddToCartDialog";
 import { BRAND_NAME } from "@/lib/brand";
+import { listBagReviews } from "@/lib/api/store";
+import type { StoreReviewResponse } from "@/lib/api/dashboard-types";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import type { ListingBag } from "@/components/products/product-listing-data";
 
@@ -43,48 +45,6 @@ const galleryImagesBySlug: Record<string, string[]> = {
   ],
 };
 */
-
-type StaticReview = {
-  author: string;
-  rating: number;
-  comment: string;
-  date: string;
-};
-
-const staticReviewsBySlug: Record<string, StaticReview[]> = {
-  "bakery-breakfast-box": [
-    {
-      author: "Minh N.",
-      rating: 5,
-      comment: "The bakery bag had a generous mix and pickup was quick.",
-      date: "July 30, 2026",
-    },
-  ],
-  "bakery-mix-bag": [
-    {
-      author: "Lan T.",
-      rating: 5,
-      comment: "Good variety and a convenient pickup window.",
-      date: "July 31, 2026",
-    },
-  ],
-  "fresh-produce-box": [
-    {
-      author: "Duy P.",
-      rating: 5,
-      comment: "Fresh vegetables with clear pickup instructions.",
-      date: "July 28, 2026",
-    },
-  ],
-  "seafood-family-box": [
-    {
-      author: "Huy T.",
-      rating: 4,
-      comment: "Great value for seafood. The pickup window was accurate.",
-      date: "July 29, 2026",
-    },
-  ],
-};
 
 const productDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
@@ -146,20 +106,40 @@ export default function ProductMain({
   bag: ListingBag;
   relatedBags: ListingBag[];
 }) {
-  const router = useRouter();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState<"description" | "pickup" | "reviews">("description");
+  const [reviews, setReviews] = useState<StoreReviewResponse[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(() => Boolean(bag.backendId));
+  const [reviewsError, setReviewsError] = useState("");
+  const [isAdded, setIsAdded] = useState(false);
   const isAvailable = bag.remainingQuantity > 0;
-  const reviews = staticReviewsBySlug[bag.slug] ?? [
-    {
-      author: "Local shopper",
-      rating: 5,
-      comment: `Good value from ${bag.storeName} with a straightforward pickup experience.`,
-      date: "July 31, 2026",
-    },
-  ];
   // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
   const description = bag.description?.trim();
+
+  useEffect(() => {
+    if (!bag.backendId) return;
+
+    let cancelled = false;
+
+    void listBagReviews(bag.backendId, { page: 1, pageSize: 50 })
+      .then((result) => {
+        if (!cancelled) {
+          setReviews(result.items);
+          setReviewsError("");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setReviewsError("Reviews are temporarily unavailable.");
+      })
+      .finally(() => {
+        if (!cancelled) setReviewsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bag.backendId]);
 
   function updateQuantity(value: number) {
     setQuantity(clampQuantity(value, bag.remainingQuantity));
@@ -167,7 +147,7 @@ export default function ProductMain({
 
   function addToCart() {
     addItem(bag, quantity);
-    router.push("/newcart");
+    setIsAdded(true);
   }
 
   return (
@@ -344,52 +324,53 @@ export default function ProductMain({
           <div className="product-details-tab">
             <ul className="nav nav-pills justify-content-center" role="tablist">
               <li className="nav-item">
-                <a
-                  className="nav-link active"
+                <button
+                  type="button"
+                  className={`nav-link${activeTab === "description" ? " active" : ""}`}
                   id="product-desc-link"
-                  data-toggle="tab"
-                  href="#product-desc-tab"
                   role="tab"
                   aria-controls="product-desc-tab"
-                  aria-selected="true"
+                  aria-selected={activeTab === "description"}
+                  onClick={() => setActiveTab("description")}
                 >
                   Bag information
-                </a>
+                </button>
               </li>
               <li className="nav-item">
-                <a
-                  className="nav-link"
+                <button
+                  type="button"
+                  className={`nav-link${activeTab === "pickup" ? " active" : ""}`}
                   id="product-info-link"
-                  data-toggle="tab"
-                  href="#product-info-tab"
                   role="tab"
                   aria-controls="product-info-tab"
-                  aria-selected="false"
+                  aria-selected={activeTab === "pickup"}
+                  onClick={() => setActiveTab("pickup")}
                 >
                   Pickup information
-                </a>
+                </button>
               </li>
               <li className="nav-item">
-                <a
-                  className="nav-link"
+                <button
+                  type="button"
+                  className={`nav-link${activeTab === "reviews" ? " active" : ""}`}
                   id="product-review-link"
-                  data-toggle="tab"
-                  href="#product-review-tab"
                   role="tab"
                   aria-controls="product-review-tab"
-                  aria-selected="false"
+                  aria-selected={activeTab === "reviews"}
+                  onClick={() => setActiveTab("reviews")}
                 >
                   Reviews
-                </a>
+                </button>
               </li>
             </ul>
 
             <div className="tab-content">
               <div
-                className="tab-pane fade show active"
+                className={`tab-pane${activeTab === "description" ? " active show" : ""}`}
                 id="product-desc-tab"
                 role="tabpanel"
                 aria-labelledby="product-desc-link"
+                hidden={activeTab !== "description"}
               >
                 <div className="product-desc-content">
                   <h3>About this surprise bag</h3>
@@ -408,10 +389,11 @@ export default function ProductMain({
                 </div>
               </div>
               <div
-                className="tab-pane fade"
+                className={`tab-pane${activeTab === "pickup" ? " active show" : ""}`}
                 id="product-info-tab"
                 role="tabpanel"
                 aria-labelledby="product-info-link"
+                hidden={activeTab !== "pickup"}
               >
                 <div className="product-desc-content">
                   <h3>Pickup details</h3>
@@ -439,28 +421,35 @@ export default function ProductMain({
                 </div>
               </div>
               <div
-                className="tab-pane fade"
+                className={`tab-pane${activeTab === "reviews" ? " active show" : ""}`}
                 id="product-review-tab"
                 role="tabpanel"
                 aria-labelledby="product-review-link"
+                hidden={activeTab !== "reviews"}
               >
                 <div className="reviews">
                   <h3>Reviews</h3>
-                  <div className="store-reviews__list">
-                    {reviews.map((review) => (
-                      <article
-                        className="store-review"
-                        key={`${review.author}-${review.date}`}
-                      >
-                        <div className="store-review__header">
-                          <h3>{review.author}</h3>
-                          <strong>{review.rating}/5</strong>
-                        </div>
-                        <p>{review.comment}</p>
-                        <time dateTime={review.date}>{review.date}</time>
-                      </article>
-                    ))}
-                  </div>
+                  {reviewsLoading && <p>Loading reviews...</p>}
+                  {!reviewsLoading && reviewsError && <p>{reviewsError}</p>}
+                  {!reviewsLoading && !reviewsError && reviews.length === 0 && (
+                    <p>No reviews yet.</p>
+                  )}
+                  {!reviewsLoading && !reviewsError && reviews.length > 0 && (
+                    <div className="store-reviews__list">
+                      {reviews.map((review) => (
+                        <article className="store-review" key={review.id}>
+                          <div className="store-review__header">
+                            <h3>{review.buyerName}</h3>
+                            <strong>{review.ratingScore}/5</strong>
+                          </div>
+                          <p>{review.comment ?? "This buyer did not leave a comment."}</p>
+                          <time dateTime={review.createdAt}>
+                            {formatDate(review.createdAt)}
+                          </time>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -494,6 +483,13 @@ export default function ProductMain({
           )}
         </div>
       </div>
+      {isAdded && (
+        <AddToCartDialog
+          bag={bag}
+          quantity={quantity}
+          onClose={() => setIsAdded(false)}
+        />
+      )}
     </main>
   );
 }
