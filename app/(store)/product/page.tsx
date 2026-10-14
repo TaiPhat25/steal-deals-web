@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import ProductMain from "@/components/product/ProductMain";
 import { ApiClientError } from "@/lib/api/client";
 import { isBagAvailable } from "@/lib/bag-availability";
-import { getBag, listAvailableBags } from "@/lib/api/store";
+import { getBag, getStore, listAvailableBags } from "@/lib/api/store";
 import { toListingBag, type ListingBag } from "@/components/products/product-listing-data";
 import type { SurpriseBagResponse } from "@/lib/api/dashboard-types";
 
@@ -54,10 +54,11 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
   if (!bagResponse) notFound();
 
   const bag = toListingBag(bagResponse);
+  const storeProfile = await getStore(bagResponse.storeId).catch(() => null);
   const relatedBags = selectRelatedBags(
     bag,
     availableResponses.map(toListingBag),
   );
 
-  return <ProductMain bag={bag} relatedBags={relatedBags} />;
+  return <ProductMain bag={bag} relatedBags={relatedBags} storeProfile={storeProfile} />;
 }

@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import AddToCartDialog from "@/components/cart/AddToCartDialog";
 import { BRAND_NAME } from "@/lib/brand";
 import { listBagReviews } from "@/lib/api/store";
-import type { StoreReviewResponse } from "@/lib/api/dashboard-types";
+import type { StoreProfileResponse, StoreReviewResponse } from "@/lib/api/dashboard-types";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import type { ListingBag } from "@/components/products/product-listing-data";
 
@@ -102,18 +102,29 @@ function formatAvailability(bag: ListingBag) {
 export default function ProductMain({
   bag,
   relatedBags,
+  storeProfile,
 }: {
   bag: ListingBag;
   relatedBags: ListingBag[];
+  storeProfile: StoreProfileResponse | null;
 }) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState<"description" | "pickup" | "reviews">("description");
+  const [activeTab, setActiveTab] = useState<"pickup" | "reviews">("pickup");
   const [reviews, setReviews] = useState<StoreReviewResponse[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(() => Boolean(bag.backendId));
   const [reviewsError, setReviewsError] = useState("");
   const [isAdded, setIsAdded] = useState(false);
+  const tabRefs = useRef<Record<"pickup" | "reviews", HTMLButtonElement | null>>({
+    pickup: null,
+    reviews: null,
+  });
   const isAvailable = bag.remainingQuantity > 0;
+  const storeAddress = [
+    storeProfile?.address,
+    storeProfile?.commune,
+    storeProfile?.province,
+  ].filter(Boolean).join(", ");
   // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
   const description = bag.description?.trim();
 
@@ -148,6 +159,23 @@ export default function ProductMain({
   function addToCart() {
     addItem(bag, quantity);
     setIsAdded(true);
+  }
+
+  function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    const tabOrder: Array<"pickup" | "reviews"> = ["pickup", "reviews"];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    let nextIndex = currentIndex;
+
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabOrder.length;
+    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabOrder.length) % tabOrder.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = tabOrder.length - 1;
+    if (nextIndex === currentIndex) return;
+
+    event.preventDefault();
+    const nextTab = tabOrder[nextIndex];
+    setActiveTab(nextTab);
+    tabRefs.current[nextTab]?.focus();
   }
 
   return (
@@ -206,11 +234,9 @@ export default function ProductMain({
                     <del>{formatPrice(bag.originalPrice)}</del>
                   </div>
 
-                  {description && (
-                    <div className="product-content">
-                      <p>{description}</p>
-                    </div>
-                  )}
+                  <div className="product-content product-detail-page__description">
+                    <p>{description || "No description."}</p>
+                  </div>
 
                   <dl className="product-detail-page__summary">
                     <div>
@@ -261,16 +287,17 @@ export default function ProductMain({
                             -
                           </button>
                           <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
+                            type="number"
+                            min={1}
+                            max={bag.remainingQuantity}
+                            step={1}
                             id="product-quantity"
                             aria-label={`Quantity of ${bag.name}`}
                             value={quantity}
                             disabled={!isAvailable}
                             onChange={(event) => {
-                              const digits = event.target.value.replace(/\D/g, "");
-                              updateQuantity(Number(digits || 1));
+                              const nextQuantity = Number(event.target.value);
+                              updateQuantity(nextQuantity);
                             }}
                           />
                           <button
@@ -316,35 +343,30 @@ export default function ProductMain({
                     </div>
                     */}
                   </div>
+                  <p className="sr-only" role="status" aria-live="polite">
+                    {isAdded ? `${bag.name} was added to your cart.` : ""}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="product-details-tab">
-            <ul className="nav nav-pills justify-content-center" role="tablist">
+            <ul className="nav nav-pills justify-content-center" role="tablist" aria-label="Bag details">
               <li className="nav-item">
                 <button
                   type="button"
-                  className={`nav-link${activeTab === "description" ? " active" : ""}`}
-                  id="product-desc-link"
-                  role="tab"
-                  aria-controls="product-desc-tab"
-                  aria-selected={activeTab === "description"}
-                  onClick={() => setActiveTab("description")}
-                >
-                  Bag information
-                </button>
-              </li>
-              <li className="nav-item">
-                <button
-                  type="button"
+                  ref={(element) => {
+                    tabRefs.current.pickup = element;
+                  }}
                   className={`nav-link${activeTab === "pickup" ? " active" : ""}`}
                   id="product-info-link"
                   role="tab"
                   aria-controls="product-info-tab"
                   aria-selected={activeTab === "pickup"}
+                  tabIndex={activeTab === "pickup" ? 0 : -1}
                   onClick={() => setActiveTab("pickup")}
+                  onKeyDown={handleTabKeyDown}
                 >
                   Pickup information
                 </button>
@@ -352,12 +374,17 @@ export default function ProductMain({
               <li className="nav-item">
                 <button
                   type="button"
+                  ref={(element) => {
+                    tabRefs.current.reviews = element;
+                  }}
                   className={`nav-link${activeTab === "reviews" ? " active" : ""}`}
                   id="product-review-link"
                   role="tab"
                   aria-controls="product-review-tab"
                   aria-selected={activeTab === "reviews"}
+                  tabIndex={activeTab === "reviews" ? 0 : -1}
                   onClick={() => setActiveTab("reviews")}
+                  onKeyDown={handleTabKeyDown}
                 >
                   Reviews
                 </button>
@@ -365,29 +392,6 @@ export default function ProductMain({
             </ul>
 
             <div className="tab-content">
-              <div
-                className={`tab-pane${activeTab === "description" ? " active show" : ""}`}
-                id="product-desc-tab"
-                role="tabpanel"
-                aria-labelledby="product-desc-link"
-                hidden={activeTab !== "description"}
-              >
-                <div className="product-desc-content">
-                  <h3>About this surprise bag</h3>
-                  <p>
-                    This discounted bag helps {bag.storeName} sell good food
-                    before it goes to waste. The exact contents are selected by
-                    the store and may vary depending on the day&apos;s surplus.
-                  </p>
-                  <ul>
-                    <li>Category: {bag.category}.</li>
-                    <li>
-                      Discount: {bag.discountPercent}% off the original value.
-                    </li>
-                    <li>{formatAvailability(bag)}.</li>
-                  </ul>
-                </div>
-              </div>
               <div
                 className={`tab-pane${activeTab === "pickup" ? " active show" : ""}`}
                 id="product-info-tab"
@@ -402,6 +406,18 @@ export default function ProductMain({
                     pickup window.
                   </p>
                   <dl className="product-detail-page__tab-details">
+                    {storeAddress ? (
+                      <div>
+                        <dt>Store address</dt>
+                        <dd>{storeAddress}</dd>
+                      </div>
+                    ) : null}
+                    {storeProfile?.phone ? (
+                      <div>
+                        <dt>Store phone</dt>
+                        <dd><a href={`tel:${storeProfile.phone}`}>{storeProfile.phone}</a></dd>
+                      </div>
+                    ) : null}
                     <div>
                       <dt>Pickup window</dt>
                       <dd>{formatPickupRange(bag)}</dd>
@@ -468,7 +484,7 @@ export default function ProductMain({
                 <Link
                   href={`/products?category=${encodeURIComponent(bag.category)}`}
                 >
-                  View more {bag.category.toLowerCase()} bags
+                  View more {bag.category} bags
                 </Link>
               </div>
 
