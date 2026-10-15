@@ -1,0 +1,76 @@
+name: Frontend CD
+
+on:
+  # Run this deployment only after the CI workflow finishes.
+  # CI builds and pushes the image; CD only deploys that image.
+  workflow_run:
+    workflows:
+      - Frontend CI
+    types:
+      - completed
+    branches:
+      - duy-dev
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_EC2_INSTANCE_ID: ${{ secrets.AWS_EC2_INSTANCE_ID }}
+  ECR_REPOSITORY: stealdeal-frontend
+  DEPLOY_PATH: /opt/stealdeal/steal-deals-web
+
+jobs:
+  deploy:
+    name: Pull image and deploy frontend
+    # Do not deploy when CI fails.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # This gives the GitHub runner permission to call AWS Systems Manager.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          allowed-account-ids: ${{ env.AWS_ACCOUNT_ID }}
+
+      - name: Deploy image to EC2 through SSM
+        env:
+          IMAGE_URI: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          # Every command below runs on EC2, not on the GitHub runner.
+          # The image tag comes from the CI workflow that just succeeded.
+          command_id=$(aws ssm send-command \
+            --instance-ids "$AWS_EC2_INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "Deploy frontend ${{ github.event.workflow_run.head_sha }}" \
+            --parameters \
+              commands="cd $DEPLOY_PATH","export FRONTEND_IMAGE=$IMAGE_URI","echo Deploying image: \$FRONTEND_IMAGE","docker compose config --images","aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${IMAGE_URI%/*}","docker compose pull frontend","docker compose up -d --force-recreate frontend nginx","docker compose images frontend","curl --fail --silent --show-error --retry 12 --retry-delay 5 http://localhost:80/" \
+            --query Command.CommandId \
+            --output text)
+
+          # Wait until all remote commands finish.
+          aws ssm wait command-executed \
+            --command-id "$command_id" \
+            --instance-id "$AWS_EC2_INSTANCE_ID"
+
+          # Print remote output so deployment errors are visible in Actions logs.
+          aws ssm get-command-invocation \
+            --command-id "$command_id" \
+            --instance-id "$AWS_EC2_INSTANCE_ID" \
+            --query '{status:Status,stdout:StandardOutputContent,stderr:StandardErrorContent}' \
+            --output json
+
+          # Fail this workflow when the EC2 deployment or health check failed.
+          status=$(aws ssm get-command-invocation \
+            --command-id "$command_id" \
+            --instance-id "$AWS_EC2_INSTANCE_ID" \
+            --query Status \
+            --output text)
+          test "$status" = Success
