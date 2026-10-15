@@ -46,7 +46,7 @@ export default function FoodCategorySection() {
       <hr className="m-0" />
       <div className="home-category-heading">
         <div>
-          <p className="home-category-heading__eyebrow">Find your next rescue meal</p>
+          <p className="home-category-heading__eyebrow">Find your next rescue meallll</p>
           <h2 id="category-title" className="title mb-1">Browse by Category</h2>
           <p className="home-category-heading__description mb-0">
             Explore surprise bags from the food categories you enjoy most.
