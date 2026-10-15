@@ -72,10 +72,11 @@ jobs:
             --query Command.CommandId \
             --output text)
 
-          # Wait until all remote commands finish.
+          # Wait until all remote commands finish, but keep going so we can print errors.
+          wait_status=0
           aws ssm wait command-executed \
             --command-id "$command_id" \
-            --instance-id "$AWS_EC2_INSTANCE_ID"
+            --instance-id "$AWS_EC2_INSTANCE_ID" || wait_status=$?
 
           # Print remote output so deployment errors are visible in Actions logs.
           aws ssm get-command-invocation \
@@ -90,4 +91,6 @@ jobs:
             --instance-id "$AWS_EC2_INSTANCE_ID" \
             --query Status \
             --output text)
+          echo "SSM waiter exit code: $wait_status"
+          echo "SSM command status: $status"
           test "$status" = Success
