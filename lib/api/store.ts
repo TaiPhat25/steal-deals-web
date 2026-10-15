@@ -85,6 +85,13 @@ export type ReviewFilterRequest = {
   isReported?: boolean;
 };
 
+export type CreateReviewRequest = {
+  orderId: string;
+  bagId: string;
+  ratingScore: number;
+  comment?: string | null;
+};
+
 const STORE_API_BASE_URL = process.env.NEXT_PUBLIC_STORE_API_URL;
 const publicListRequests = new Map<string, Promise<unknown>>();
 const DATE_TIME_OFFSET_PATTERN = /(?:Z|[+-]\d{2}:\d{2})$/i;
@@ -311,6 +318,17 @@ function buildReviewQueryParams(filter?: ReviewFilterRequest) {
   if (filter?.search) params.set("search", filter.search);
   if (filter?.isReported !== undefined) params.set("isReported", String(filter.isReported));
   return params.toString();
+}
+
+export function createReview(
+  accessToken: string,
+  request: CreateReviewRequest,
+) {
+  return apiRequest<StoreReviewResponse>(
+    "/api/store/reviews",
+    { method: "POST", headers: bearer(accessToken), body: request },
+    storeApiBaseUrl(),
+  );
 }
 
 export function listStoreReviews(

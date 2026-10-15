@@ -114,6 +114,7 @@ export default function ProductMain({
   const [reviews, setReviews] = useState<StoreReviewResponse[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(() => Boolean(bag.backendId));
   const [reviewsError, setReviewsError] = useState("");
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
   const tabRefs = useRef<Record<"pickup" | "reviews", HTMLButtonElement | null>>({
     pickup: null,
@@ -136,7 +137,14 @@ export default function ProductMain({
     void listBagReviews(bag.backendId, { page: 1, pageSize: 50 })
       .then((result) => {
         if (!cancelled) {
-          setReviews(result.items);
+          setShowAllReviews(false);
+          setReviews(
+            [...result.items].sort(
+              (first, second) =>
+                new Date(second.createdAt).getTime() -
+                new Date(first.createdAt).getTime(),
+            ),
+          );
           setReviewsError("");
         }
       })
@@ -287,7 +295,9 @@ export default function ProductMain({
                             -
                           </button>
                           <input
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             min={1}
                             max={bag.remainingQuantity}
                             step={1}
@@ -296,8 +306,9 @@ export default function ProductMain({
                             value={quantity}
                             disabled={!isAvailable}
                             onChange={(event) => {
-                              const nextQuantity = Number(event.target.value);
-                              updateQuantity(nextQuantity);
+                              const rawValue = event.target.value;
+                              if (!/^\d*$/.test(rawValue) || rawValue === "") return;
+                              updateQuantity(Number(rawValue));
                             }}
                           />
                           <button
@@ -400,7 +411,7 @@ export default function ProductMain({
                 hidden={activeTab !== "pickup"}
               >
                 <div className="product-desc-content">
-                  <h3>Pickup details</h3>
+                  <h3 className="product-detail-page__tab-heading">Pickup details</h3>
                   <p>
                     Collect this bag from {bag.storeName} during the listed
                     pickup window.
@@ -444,27 +455,45 @@ export default function ProductMain({
                 hidden={activeTab !== "reviews"}
               >
                 <div className="reviews">
-                  <h3>Reviews</h3>
+                  <h3 className="product-detail-page__tab-heading">Reviews</h3>
                   {reviewsLoading && <p>Loading reviews...</p>}
                   {!reviewsLoading && reviewsError && <p>{reviewsError}</p>}
                   {!reviewsLoading && !reviewsError && reviews.length === 0 && (
                     <p>No reviews yet.</p>
                   )}
                   {!reviewsLoading && !reviewsError && reviews.length > 0 && (
-                    <div className="store-reviews__list">
-                      {reviews.map((review) => (
+                    <>
+                      <div className="store-reviews__list">
+                        {reviews.slice(0, showAllReviews ? reviews.length : 5).map((review) => (
                         <article className="store-review" key={review.id}>
                           <div className="store-review__header">
                             <h3>{review.buyerName}</h3>
                             <strong>{review.ratingScore}/5</strong>
                           </div>
                           <p>{review.comment ?? "This buyer did not leave a comment."}</p>
+                          {review.storeReply ? (
+                            <div className="store-review__reply">
+                              <strong>Store reply</strong>
+                              <p>{review.storeReply}</p>
+                            </div>
+                          ) : null}
                           <time dateTime={review.createdAt}>
                             {formatDate(review.createdAt)}
                           </time>
                         </article>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                      {reviews.length > 5 ? (
+                        <button
+                          type="button"
+                          className="store-reviews__toggle"
+                          aria-expanded={showAllReviews}
+                          onClick={() => setShowAllReviews((current) => !current)}
+                        >
+                          {showAllReviews ? "Show less" : `Show more (${reviews.length - 5})`}
+                        </button>
+                      ) : null}
+                    </>
                   )}
                 </div>
               </div>

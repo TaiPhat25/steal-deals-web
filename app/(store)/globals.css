@@ -1847,14 +1847,21 @@ img {
 
 .store-reviews__list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0;
 }
 
 .store-review {
   background: #fff;
-  border: 1px solid #e5e5e5;
-  padding: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
+  padding: 1.25rem 0;
+}
+
+.store-review:first-child {
+  padding-top: 0;
+}
+
+.store-review:last-child {
+  border-bottom: 0;
 }
 
 .store-review__header {
@@ -1865,7 +1872,7 @@ img {
   margin-bottom: 0.75rem;
 }
 
-.store-review__header h3 {
+.product-detail-page .store-review__header h3 {
   margin: 0;
   color: #222;
   font-size: 1.45rem;
@@ -1878,14 +1885,44 @@ img {
 }
 
 .store-review p {
-  margin-bottom: 1rem;
+  margin: 0 0 0.65rem;
   color: #555;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .store-review time {
   color: #777;
-  font-size: 0.95rem;
+  font-size: 1rem;
+}
+
+.store-review__reply {
+  margin: 0 0 0.75rem 1.25rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid #61ab00;
+}
+
+.store-review__reply strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #477900;
+  font-size: 1.1rem;
+}
+
+.store-review__reply p {
+  margin: 0;
+  color: #666;
+  font-size: 1.15rem;
+}
+
+.store-reviews__toggle {
+  display: block;
+  margin: 1.25rem auto 0;
+  padding: 0.5rem 1rem;
+  border: 1px solid #61ab00;
+  background: #fff;
+  color: #61ab00;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 .product-detail-page__eyebrow {
@@ -1974,6 +2011,15 @@ img {
   display: grid;
   gap: 0.75rem 1.5rem;
   margin: 0 0 1.5rem;
+}
+
+.product-detail-page .product-detail-page__tab-heading {
+  margin: 0 0 1.5rem;
+  color: #222;
+  font-size: 2rem;
+  font-family: inherit;
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .product-detail-page__summary {
@@ -5758,11 +5804,25 @@ img {
 
 .order-history-card__items > div {
   display: grid;
-  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  grid-template-columns: 3rem minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.75rem;
   color: #777;
   font-size: 1.2rem;
+}
+
+.order-history-card__item .order-history-review-button {
+  padding: 0.45rem 0.85rem;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.order-history-review-status {
+  color: #61ab00;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .order-history-card__items strong {
@@ -5822,6 +5882,121 @@ img {
   justify-content: center;
   gap: 1.2rem;
   padding: 0 0 6rem;
+}
+
+.review-dialog-modal .modal-dialog {
+  width: min(100% - 2rem, 52rem);
+  max-width: none;
+}
+
+.review-dialog {
+  position: relative;
+  padding: 3rem;
+  border: 0;
+  border-radius: 0.3rem;
+}
+
+.review-dialog__close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 50%;
+  background: #333;
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.review-dialog h2 {
+  margin: 0 3rem 2rem 0;
+  color: #222;
+  font-size: 2rem;
+}
+
+.review-dialog__rating {
+  margin: 0 0 2rem;
+  padding: 0;
+  border: 0;
+}
+
+.review-dialog__rating legend {
+  margin-bottom: 0.5rem;
+  color: #777;
+  font-size: 1.3rem;
+}
+
+.review-dialog__rating [role="group"] {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.review-dialog__rating button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #c9c9c9;
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.review-dialog__rating button.is-selected,
+.review-dialog__rating button:focus-visible {
+  color: #61ab00;
+}
+
+.review-dialog__comment {
+  display: grid;
+  gap: 0.6rem;
+  color: #777;
+  font-size: 1.3rem;
+}
+
+.review-dialog__comment span {
+  display: inline;
+  color: #999;
+  font-size: 1.1rem;
+}
+
+.review-dialog__comment textarea {
+  width: 100%;
+  min-height: 10rem;
+  padding: 1rem;
+  border: 1px solid #d9d9d9;
+  resize: vertical;
+}
+
+.review-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 575px) {
+  .order-history-card__items > div {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  }
+
+  .order-history-card__item .order-history-review-button,
+  .order-history-review-status {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
+
+  .review-dialog {
+    padding: 2rem;
+  }
+
+  .review-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .review-dialog__actions .btn {
+    width: 100%;
+  }
 }
 
 .order-history-pagination button {

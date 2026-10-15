@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import ReviewDialog from "@/components/orders/ReviewDialog";
 import {
   canPayTransaction,
   formatPaymentPrice,
@@ -14,7 +15,7 @@ import {
 } from "@/components/payment/payment-view-utils";
 import { listMyOrders } from "@/lib/api/order";
 import { getMyTransactions, type TransactionResponse } from "@/lib/api/payment";
-import type { OrderResponse } from "@/lib/api/dashboard-types";
+import type { OrderItemResponse, OrderResponse } from "@/lib/api/dashboard-types";
 
 type OrderFilter = "all" | string;
 
@@ -63,6 +64,14 @@ function getFulfillmentDetail(order: OrderResponse) {
   return order.deliveryAddress || "Delivery address saved";
 }
 
+function canReviewOrder(order: OrderResponse) {
+  return order.status === "Pending" || order.status === "Completed";
+}
+
+function getReviewKey(orderId: string, bagId: string) {
+  return `${orderId}:${bagId}`;
+}
+
 export default function OrderHistoryMain() {
   const searchParams = useSearchParams();
   const { accessToken } = useAuth();
@@ -74,6 +83,13 @@ export default function OrderHistoryMain() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => Date.now());
+  const [reviewTarget, setReviewTarget] = useState<{
+    orderId: string;
+    item: OrderItemResponse;
+  } | null>(null);
+  const [reviewedItems, setReviewedItems] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const paymentNotice = searchParams.get("payment") === "multiple";
 
@@ -252,10 +268,25 @@ export default function OrderHistoryMain() {
                     <div className="order-history-card__body">
                       <div className="order-history-card__items">
                         {order.items.map((item) => (
-                          <div key={item.id}>
+                          <div key={item.id} className="order-history-card__item">
                             <span>{item.quantity} x</span>
                             <strong>{item.bagNameSnapshot}</strong>
                             <span>{formatPaymentPrice(item.subtotal)}</span>
+                            {canReviewOrder(order) ? (
+                              reviewedItems.has(getReviewKey(order.id, item.bagId)) ? (
+                                <span className="order-history-review-status" role="status">
+                                  Reviewed
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline-primary-2 order-history-review-button"
+                                  onClick={() => setReviewTarget({ orderId: order.id, item })}
+                                >
+                                  Review
+                                </button>
+                              )
+                            ) : null}
                           </div>
                         ))}
                       </div>
@@ -324,6 +355,23 @@ export default function OrderHistoryMain() {
           )}
         </div>
       </div>
+
+      {reviewTarget && accessToken ? (
+        <ReviewDialog
+          accessToken={accessToken}
+          orderId={reviewTarget.orderId}
+          item={reviewTarget.item}
+          onClose={() => setReviewTarget(null)}
+          onSubmitted={() => {
+            setReviewedItems((current) => {
+              const next = new Set(current);
+              next.add(getReviewKey(reviewTarget.orderId, reviewTarget.item.bagId));
+              return next;
+            });
+            setReviewTarget(null);
+          }}
+        />
+      ) : null}
     </main>
   );
 }
