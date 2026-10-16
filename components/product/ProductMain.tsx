@@ -2,13 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useCart } from "@/components/cart/CartProvider";
+import AddToCartDialog from "@/components/cart/AddToCartDialog";
 import { BRAND_NAME } from "@/lib/brand";
+import { listBagReviews } from "@/lib/api/store";
+import type { StoreProfileResponse, StoreReviewResponse } from "@/lib/api/dashboard-types";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import type { ListingBag } from "@/components/products/product-listing-data";
 
+/*
 const galleryImagesBySlug: Record<string, string[]> = {
   "bakery-breakfast-box": [
     "/assets/images/demos/demo-28/flash/1.jpg",
@@ -41,48 +44,7 @@ const galleryImagesBySlug: Record<string, string[]> = {
     "/assets/images/demos/demo-28/banners/5.jpg",
   ],
 };
-
-type StaticReview = {
-  author: string;
-  rating: number;
-  comment: string;
-  date: string;
-};
-
-const staticReviewsBySlug: Record<string, StaticReview[]> = {
-  "bakery-breakfast-box": [
-    {
-      author: "Minh N.",
-      rating: 5,
-      comment: "The bakery bag had a generous mix and pickup was quick.",
-      date: "July 30, 2026",
-    },
-  ],
-  "bakery-mix-bag": [
-    {
-      author: "Lan T.",
-      rating: 5,
-      comment: "Good variety and a convenient pickup window.",
-      date: "July 31, 2026",
-    },
-  ],
-  "fresh-produce-box": [
-    {
-      author: "Duy P.",
-      rating: 5,
-      comment: "Fresh vegetables with clear pickup instructions.",
-      date: "July 28, 2026",
-    },
-  ],
-  "seafood-family-box": [
-    {
-      author: "Huy T.",
-      rating: 4,
-      comment: "Great value for seafood. The pickup window was accurate.",
-      date: "July 29, 2026",
-    },
-  ],
-};
+*/
 
 const productDateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
@@ -134,43 +96,69 @@ function formatPickupRange(bag: ListingBag) {
 }
 
 function formatAvailability(bag: ListingBag) {
-  return `${bag.remainingQuantity} of ${bag.quantityTotal} bags left`;
+  return `${bag.remainingQuantity} ${bag.remainingQuantity === 1 ? "bag" : "bags"} left`;
 }
 
 export default function ProductMain({
   bag,
   relatedBags,
+  storeProfile,
 }: {
   bag: ListingBag;
   relatedBags: ListingBag[];
+  storeProfile: StoreProfileResponse | null;
 }) {
-  const router = useRouter();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedImageState, setSelectedImageState] = useState({
-    bagSlug: bag.slug,
-    imageSrc: bag.imageSrc,
+  const [activeTab, setActiveTab] = useState<"pickup" | "reviews">("pickup");
+  const [reviews, setReviews] = useState<StoreReviewResponse[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(() => Boolean(bag.backendId));
+  const [reviewsError, setReviewsError] = useState("");
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
+  const tabRefs = useRef<Record<"pickup" | "reviews", HTMLButtonElement | null>>({
+    pickup: null,
+    reviews: null,
   });
   const isAvailable = bag.remainingQuantity > 0;
-  const reviews = staticReviewsBySlug[bag.slug] ?? [
-    {
-      author: "Local shopper",
-      rating: 5,
-      comment: `Good value from ${bag.storeName} with a straightforward pickup experience.`,
-      date: "July 31, 2026",
-    },
-  ];
-  const galleryImages = galleryImagesBySlug[bag.slug] ??
-    Array.from(new Set([
-      bag.imageSrc,
-      ...relatedBags.map((item) => item.imageSrc),
-    ])).slice(0, 3);
+  const storeAddress = [
+    storeProfile?.address,
+    storeProfile?.commune,
+    storeProfile?.province,
+  ].filter(Boolean).join(", ");
   // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
+  const description = bag.description?.trim();
 
-  const selectedImage =
-    selectedImageState.bagSlug === bag.slug
-      ? selectedImageState.imageSrc
-      : bag.imageSrc;
+  useEffect(() => {
+    if (!bag.backendId) return;
+
+    let cancelled = false;
+
+    void listBagReviews(bag.backendId, { page: 1, pageSize: 50 })
+      .then((result) => {
+        if (!cancelled) {
+          setShowAllReviews(false);
+          setReviews(
+            [...result.items].sort(
+              (first, second) =>
+                new Date(second.createdAt).getTime() -
+                new Date(first.createdAt).getTime(),
+            ),
+          );
+          setReviewsError("");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setReviewsError("Reviews are temporarily unavailable.");
+      })
+      .finally(() => {
+        if (!cancelled) setReviewsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bag.backendId]);
 
   function updateQuantity(value: number) {
     setQuantity(clampQuantity(value, bag.remainingQuantity));
@@ -178,7 +166,24 @@ export default function ProductMain({
 
   function addToCart() {
     addItem(bag, quantity);
-    router.push("/newcart");
+    setIsAdded(true);
+  }
+
+  function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    const tabOrder: Array<"pickup" | "reviews"> = ["pickup", "reviews"];
+    const currentIndex = tabOrder.indexOf(activeTab);
+    let nextIndex = currentIndex;
+
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % tabOrder.length;
+    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabOrder.length) % tabOrder.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = tabOrder.length - 1;
+    if (nextIndex === currentIndex) return;
+
+    event.preventDefault();
+    const nextTab = tabOrder[nextIndex];
+    setActiveTab(nextTab);
+    tabRefs.current[nextTab]?.focus();
   }
 
   return (
@@ -204,49 +209,24 @@ export default function ProductMain({
           <div className="product-details-top">
             <div className="row">
               <div className="col-md-6">
-                <div className="product-gallery product-gallery-vertical">
-                  <div className="row">
-                    <figure className="product-main-image product-detail-page__main-image">
-                      <Image
-                        src={selectedImage}
-                        alt={bag.imageAlt}
-                        width={900}
-                        height={675}
-                        sizes="(max-width: 767px) 100vw, 50vw"
-                        loading="eager"
-                      />
-                      <span className="product-detail-page__discount-badge">
-                        Save {bag.discountPercent}%
-                      </span>
-                    </figure>
-                    <div
-                      className="product-detail-page__thumbnail-list"
-                      aria-label="Product images"
-                    >
-                      {galleryImages.map((image, index) => (
-                        <button
-                          key={`${image}-${index}`}
-                          type="button"
-                          className={`product-detail-page__thumbnail${selectedImage === image ? " active" : ""}`}
-                          aria-label={`View product image ${index + 1}`}
-                          aria-pressed={selectedImage === image}
-                          onClick={() =>
-                            setSelectedImageState({
-                              bagSlug: bag.slug,
-                              imageSrc: image,
-                            })
-                          }
-                        >
-                          <Image
-                            src={image}
-                            alt={`${bag.name} preview ${index + 1}`}
-                            width={120}
-                            height={90}
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                <div className="product-gallery product-gallery-single">
+                  <figure className="product-main-image product-detail-page__main-image">
+                    <Image
+                      src={bag.imageSrc}
+                      alt={bag.imageAlt}
+                      width={900}
+                      height={675}
+                      sizes="(max-width: 767px) 100vw, 50vw"
+                      loading="eager"
+                    />
+                    <span className="product-detail-page__discount-badge">
+                      Save {bag.discountPercent}%
+                    </span>
+                  </figure>
+                  {/*
+                  Multiple-image gallery is deferred until the backend supports
+                  uploading and returning multiple images for one bag.
+                  */}
                 </div>
               </div>
 
@@ -257,29 +237,13 @@ export default function ProductMain({
                   </p>
                   <h1 className="product-title">{bag.name}</h1>
 
-                  <div className="ratings-container">
-                    <div className="ratings">
-                      <div
-                        className="ratings-val"
-                        style={{ width: `${Math.min(bag.popularity, 100)}%` }}
-                      />
-                    </div>
-                    <span className="ratings-text">
-                      Popular with local shoppers
-                    </span>
-                  </div>
-
                   <div className="product-price product-detail-page__price">
                     <span>{formatPrice(bag.salePrice)}</span>
                     <del>{formatPrice(bag.originalPrice)}</del>
                   </div>
 
-                  <div className="product-content">
-                    <p>
-                      Rescue good food from {bag.storeName} at a discounted
-                      price. Contents vary by day and are available for pickup
-                      during the listed window.
-                    </p>
+                  <div className="product-content product-detail-page__description">
+                    <p>{description || "No description."}</p>
                   </div>
 
                   <dl className="product-detail-page__summary">
@@ -298,21 +262,6 @@ export default function ProductMain({
                       </dd>
                     </div>
                     <div>
-                      <dt>Pickup</dt>
-                      <dd>{formatPickupRange(bag)}</dd>
-                    </div>
-                    <div>
-                      <dt>Expiry</dt>
-                      <dd>
-                        {formatDate(bag.expiryDate)},{" "}
-                        {formatTime(bag.expiryDate)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Available</dt>
-                      <dd>{formatAvailability(bag)}</dd>
-                    </div>
-                    <div>
                       <dt>Category</dt>
                       <dd className="product-detail-page__categories">
                         <Link
@@ -322,43 +271,64 @@ export default function ProductMain({
                         </Link>
                       </dd>
                     </div>
-                  </dl>
-
-                  <div className="details-filter-row details-row-size">
-                    <label htmlFor="product-quantity">Quantity:</label>
-                    <div className="cart-line__quantity product-details-quantity">
-                      <button
-                        type="button"
-                        aria-label={`Decrease quantity of ${bag.name}`}
-                        onClick={() => updateQuantity(quantity - 1)}
-                        disabled={!isAvailable || quantity <= 1}
-                      >
-                        -
-                      </button>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        id="product-quantity"
-                        value={quantity}
-                        disabled={!isAvailable}
-                        onChange={(event) => {
-                          const digits = event.target.value.replace(/\D/g, "");
-                          updateQuantity(Number(digits || 1));
-                        }}
-                      />
-                      <button
-                        type="button"
-                        aria-label={`Increase quantity of ${bag.name}`}
-                        onClick={() => updateQuantity(quantity + 1)}
-                        disabled={
-                          !isAvailable || quantity >= bag.remainingQuantity
-                        }
-                      >
-                        +
-                      </button>
+                    <div>
+                      <dt>Pickup window</dt>
+                      <dd>{formatPickupRange(bag)}</dd>
                     </div>
-                  </div>
+                    <div>
+                      <dt>Expires</dt>
+                      <dd>
+                        {formatDate(bag.expiryDate)},{" "}
+                        {formatTime(bag.expiryDate)}
+                      </dd>
+                    </div>
+                    <div className="product-detail-page__quantity-fact">
+                      <dt>Quantity</dt>
+                      <dd>
+                        <div className="cart-line__quantity product-details-quantity">
+                          <button
+                            type="button"
+                            aria-label={`Decrease quantity of ${bag.name}`}
+                            onClick={() => updateQuantity(quantity - 1)}
+                            disabled={!isAvailable || quantity <= 1}
+                          >
+                            -
+                          </button>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            min={1}
+                            max={bag.remainingQuantity}
+                            step={1}
+                            id="product-quantity"
+                            aria-label={`Quantity of ${bag.name}`}
+                            value={quantity}
+                            disabled={!isAvailable}
+                            onChange={(event) => {
+                              const rawValue = event.target.value;
+                              if (!/^\d*$/.test(rawValue) || rawValue === "") return;
+                              updateQuantity(Number(rawValue));
+                            }}
+                          />
+                          <button
+                            type="button"
+                            aria-label={`Increase quantity of ${bag.name}`}
+                            onClick={() => updateQuantity(quantity + 1)}
+                            disabled={
+                              !isAvailable || quantity >= bag.remainingQuantity
+                            }
+                          >
+                            +
+                          </button>
+                        </div>
+                      </dd>
+                    </div>
+                    <div className="product-detail-page__availability-fact">
+                      <dt>Availability</dt>
+                      <dd>{formatAvailability(bag)}</dd>
+                    </div>
+                  </dl>
 
                   <div className="product-details-action">
                     {isAvailable ? (
@@ -384,131 +354,147 @@ export default function ProductMain({
                     </div>
                     */}
                   </div>
+                  <p className="sr-only" role="status" aria-live="polite">
+                    {isAdded ? `${bag.name} was added to your cart.` : ""}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="product-details-tab">
-            <ul className="nav nav-pills justify-content-center" role="tablist">
+            <ul className="nav nav-pills justify-content-center" role="tablist" aria-label="Bag details">
               <li className="nav-item">
-                <a
-                  className="nav-link active"
-                  id="product-desc-link"
-                  data-toggle="tab"
-                  href="#product-desc-tab"
-                  role="tab"
-                  aria-controls="product-desc-tab"
-                  aria-selected="true"
-                >
-                  Bag information
-                </a>
-              </li>
-              <li className="nav-item">
-                <a
-                  className="nav-link"
+                <button
+                  type="button"
+                  ref={(element) => {
+                    tabRefs.current.pickup = element;
+                  }}
+                  className={`nav-link${activeTab === "pickup" ? " active" : ""}`}
                   id="product-info-link"
-                  data-toggle="tab"
-                  href="#product-info-tab"
                   role="tab"
                   aria-controls="product-info-tab"
-                  aria-selected="false"
+                  aria-selected={activeTab === "pickup"}
+                  tabIndex={activeTab === "pickup" ? 0 : -1}
+                  onClick={() => setActiveTab("pickup")}
+                  onKeyDown={handleTabKeyDown}
                 >
                   Pickup information
-                </a>
+                </button>
               </li>
               <li className="nav-item">
-                <a
-                  className="nav-link"
+                <button
+                  type="button"
+                  ref={(element) => {
+                    tabRefs.current.reviews = element;
+                  }}
+                  className={`nav-link${activeTab === "reviews" ? " active" : ""}`}
                   id="product-review-link"
-                  data-toggle="tab"
-                  href="#product-review-tab"
                   role="tab"
                   aria-controls="product-review-tab"
-                  aria-selected="false"
+                  aria-selected={activeTab === "reviews"}
+                  tabIndex={activeTab === "reviews" ? 0 : -1}
+                  onClick={() => setActiveTab("reviews")}
+                  onKeyDown={handleTabKeyDown}
                 >
                   Reviews
-                </a>
+                </button>
               </li>
             </ul>
 
             <div className="tab-content">
               <div
-                className="tab-pane fade show active"
-                id="product-desc-tab"
-                role="tabpanel"
-                aria-labelledby="product-desc-link"
-              >
-                <div className="product-desc-content">
-                  <h3>About this surprise bag</h3>
-                  <p>
-                    This discounted bag helps {bag.storeName} sell good food
-                    before it goes to waste. The exact contents are selected by
-                    the store and may vary depending on the day&apos;s surplus.
-                  </p>
-                  <ul>
-                    <li>Category: {bag.category}.</li>
-                    <li>
-                      Discount: {bag.discountPercent}% off the original value.
-                    </li>
-                    <li>{formatAvailability(bag)}.</li>
-                  </ul>
-                </div>
-              </div>
-              <div
-                className="tab-pane fade"
+                className={`tab-pane${activeTab === "pickup" ? " active show" : ""}`}
                 id="product-info-tab"
                 role="tabpanel"
                 aria-labelledby="product-info-link"
+                hidden={activeTab !== "pickup"}
               >
                 <div className="product-desc-content">
-                  <h3>Pickup details</h3>
+                  <h3 className="product-detail-page__tab-heading">Pickup details</h3>
                   <p>
                     Collect this bag from {bag.storeName} during the listed
                     pickup window.
                   </p>
                   <dl className="product-detail-page__tab-details">
+                    {storeAddress ? (
+                      <div>
+                        <dt>Store address</dt>
+                        <dd>{storeAddress}</dd>
+                      </div>
+                    ) : null}
+                    {storeProfile?.phone ? (
+                      <div>
+                        <dt>Store phone</dt>
+                        <dd><a href={`tel:${storeProfile.phone}`}>{storeProfile.phone}</a></dd>
+                      </div>
+                    ) : null}
                     <div>
-                      <dt>Pickup</dt>
+                      <dt>Pickup window</dt>
                       <dd>{formatPickupRange(bag)}</dd>
                     </div>
                     <div>
-                      <dt>Expiry</dt>
+                      <dt>Expires</dt>
                       <dd>
                         {formatDate(bag.expiryDate)},{" "}
                         {formatTime(bag.expiryDate)}
                       </dd>
                     </div>
                     <div>
-                      <dt>Available</dt>
+                      <dt>Availability</dt>
                       <dd>{formatAvailability(bag)}</dd>
                     </div>
                   </dl>
                 </div>
               </div>
               <div
-                className="tab-pane fade"
+                className={`tab-pane${activeTab === "reviews" ? " active show" : ""}`}
                 id="product-review-tab"
                 role="tabpanel"
                 aria-labelledby="product-review-link"
+                hidden={activeTab !== "reviews"}
               >
                 <div className="reviews">
-                  <h3>Reviews</h3>
-                  <div className="store-reviews__list">
-                    {reviews.map((review) => (
-                      <article
-                        className="store-review"
-                        key={`${review.author}-${review.date}`}
-                      >
-                        <div className="store-review__header">
-                          <h3>{review.author}</h3>
-                          <strong>{review.rating}/5</strong>
-                        </div>
-                        <p>{review.comment}</p>
-                        <time dateTime={review.date}>{review.date}</time>
-                      </article>
-                    ))}
-                  </div>
+                  <h3 className="product-detail-page__tab-heading">Reviews</h3>
+                  {reviewsLoading && <p>Loading reviews...</p>}
+                  {!reviewsLoading && reviewsError && <p>{reviewsError}</p>}
+                  {!reviewsLoading && !reviewsError && reviews.length === 0 && (
+                    <p>No reviews yet.</p>
+                  )}
+                  {!reviewsLoading && !reviewsError && reviews.length > 0 && (
+                    <>
+                      <div className="store-reviews__list">
+                        {reviews.slice(0, showAllReviews ? reviews.length : 5).map((review) => (
+                        <article className="store-review" key={review.id}>
+                          <div className="store-review__header">
+                            <h3>{review.buyerName}</h3>
+                            <strong>{review.ratingScore}/5</strong>
+                          </div>
+                          <p>{review.comment ?? "This buyer did not leave a comment."}</p>
+                          {review.storeReply ? (
+                            <div className="store-review__reply">
+                              <strong>Store reply</strong>
+                              <p>{review.storeReply}</p>
+                            </div>
+                          ) : null}
+                          <time dateTime={review.createdAt}>
+                            {formatDate(review.createdAt)}
+                          </time>
+                        </article>
+                        ))}
+                      </div>
+                      {reviews.length > 5 ? (
+                        <button
+                          type="button"
+                          className="store-reviews__toggle"
+                          aria-expanded={showAllReviews}
+                          onClick={() => setShowAllReviews((current) => !current)}
+                        >
+                          {showAllReviews ? "Show less" : `Show more (${reviews.length - 5})`}
+                        </button>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -527,7 +513,7 @@ export default function ProductMain({
                 <Link
                   href={`/products?category=${encodeURIComponent(bag.category)}`}
                 >
-                  View more {bag.category.toLowerCase()} bags
+                  View more {bag.category} bags
                 </Link>
               </div>
 
@@ -542,6 +528,13 @@ export default function ProductMain({
           )}
         </div>
       </div>
+      {isAdded && (
+        <AddToCartDialog
+          bag={bag}
+          quantity={quantity}
+          onClose={() => setIsAdded(false)}
+        />
+      )}
     </main>
   );
 }

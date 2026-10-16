@@ -444,6 +444,7 @@ export function toListingBag(bag: SurpriseBagResponse): ListingBag {
     imageSrc: bag.imageUrl || PRODUCT_LISTING_IMAGE,
     imageAlt: bag.name,
     name: bag.name,
+    description: bag.description,
     storeName: bag.storeName,
     category,
     originalPrice: bag.originalPrice,

@@ -1,10 +1,10 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/CartProvider";
+import AddToCartDialog from "@/components/cart/AddToCartDialog";
 import { shouldUseUnoptimizedImage } from "@/lib/image-assets";
 
 export type SurpriseBag = {
@@ -14,6 +14,7 @@ export type SurpriseBag = {
   imageSrc: string;
   imageAlt: string;
   name: string;
+  description?: string | null;
   storeName: string;
   category: string;
   originalPrice: number;
@@ -42,14 +43,20 @@ function SurpriseBagCard({
   eager?: boolean;
   imageSizes?: string;
 }) {
-  const router = useRouter();
   const { addItem } = useCart();
+  const [isAdded, setIsAdded] = useState(false);
   const productKey = bag.backendId ?? bag.slug;
   const productHref = `/product?bag=${encodeURIComponent(productKey)}`;
   const categoryHref = `/products?category=${encodeURIComponent(bag.category)}`;
 
+  function handleAddToCart() {
+    addItem(bag, 1);
+    setIsAdded(true);
+  }
+
   return (
-    <article className="surprise-bag-card">
+    <>
+      <article className="surprise-bag-card">
       <div className="surprise-bag-card__media">
         <Link href={productHref} aria-label={`View ${bag.name}`}>
           <Image
@@ -110,11 +117,14 @@ function SurpriseBagCard({
           <Link href={productHref} className="btn btn-outline-primary-2">
             View Details
           </Link>
-          <button type="button" onClick={() => { addItem(bag, 1); router.push("/newcart"); }} className="btn btn-primary">
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className="btn btn-primary"
+          >
             Add to Cart
           </button>
         </div>
-
         {/* Wishlist is intentionally disabled for near-expiry surprise bags. */}
         {/*
         <Link href={`/wishlist?bag=${encodeURIComponent(bag.slug)}`} className="surprise-bag-card__wishlist">
@@ -123,7 +133,11 @@ function SurpriseBagCard({
         </Link>
         */}
       </div>
-    </article>
+      </article>
+      {isAdded && (
+        <AddToCartDialog bag={bag} quantity={1} onClose={() => setIsAdded(false)} />
+      )}
+    </>
   );
 }
 
