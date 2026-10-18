@@ -1,10 +1,10 @@
 name: Frontend CI
 
 on:
-  # Temporary validation branch. Expand this later to main/develop/PRs.
+  # Production CI runs after code is pushed or merged to main.
   push:
     branches:
-      - duy-dev
+      - main
 
 permissions:
   contents: read
