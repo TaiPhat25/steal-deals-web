@@ -9,7 +9,7 @@ on:
     types:
       - completed
     branches:
-      - duy-dev
+      - main
 
 permissions:
   contents: read

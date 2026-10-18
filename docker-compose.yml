@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: ${FRONTEND_IMAGE:-stealdeal-frontend:local}
     container_name: stealdeal-frontend
     environment:
       - NODE_ENV=production
