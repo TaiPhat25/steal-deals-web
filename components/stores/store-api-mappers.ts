@@ -13,6 +13,7 @@ function mapBagResponse(bag: SurpriseBagResponse): StoreSurpriseBag {
     storeId: bag.storeId,
     name: bag.name,
     description: bag.description,
+    imageUrl: bag.imageUrl,
     originalPrice: bag.originalPrice,
     salePrice: bag.salePrice,
     quantityTotal: bag.quantityTotal,
@@ -54,9 +55,13 @@ function mapStoreWithRelatedData(
   reviews: StoreReviews = [],
 ): StoreProfile {
   const reviewList = Array.isArray(reviews) ? reviews : (reviews?.items ?? []);
+  const reviewCount = Array.isArray(reviews)
+    ? reviews.length
+    : reviews?.totalCount ?? store.reviewCount ?? 0;
 
   return {
     ...store,
+    reviewCount,
     bankAccount: null,
     licenseUrl: null,
     updatedAt: null,

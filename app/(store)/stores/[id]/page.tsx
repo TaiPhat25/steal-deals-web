@@ -74,7 +74,8 @@ export default async function StoreDetailPage({ params }: StoreDetailPageProps) 
           <p className="info-page__eyebrow">Local food rescue partner</p>
           <h1>{store.name}</h1>
           <p>
-            Browse available surprise bags, pickup details, and customer reviews from {store.name}.
+            {store.description ||
+              `Browse available surprise bags, pickup details, and customer reviews from ${store.name}.`}
           </p>
         </div>
       </section>

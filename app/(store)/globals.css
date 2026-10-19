@@ -1754,8 +1754,8 @@ img {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   margin: 1.5rem 0;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e5e5;
+  /* padding-top: 1.5rem; */
+  /* border-top: 1px solid #e5e5e5; */
 }
 
 .store-info__stats div {
@@ -1785,15 +1785,45 @@ img {
   font-size: 1.4rem;
 }
 
+.store-info__map-link {
+  color: #61ab00;
+}
+
+.store-info__map-link:focus:not(:hover) {
+  color: #61ab00 !important;
+  background-color: transparent !important;
+  border-color: #61ab00 !important;
+  box-shadow: none !important;
+}
+
+.store-info__map-link:focus-visible {
+  outline: 0.2rem solid #3f7800;
+  outline-offset: 0.2rem;
+}
+
+.store-info__map-link:hover {
+  color: #fff !important;
+  background-color: #61ab00 !important;
+  border-color: #61ab00 !important;
+}
+
 .store-products-scroll-row {
   display: flex;
+  align-items: stretch;
   gap: 1rem;
   margin: 0 -0.75rem;
   padding: 0 0.75rem 0.75rem;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.store-products-scroll-row:focus-visible {
+  outline: 0.2rem solid #3f7800;
+  outline-offset: 0.3rem;
 }
 
 .store-products-scroll-row::-webkit-scrollbar {
@@ -1804,6 +1834,7 @@ img {
   display: flex;
   flex: 0 0 270px;
   width: 270px;
+  scroll-snap-align: start;
 }
 
 .store-products-scroll-row .surprise-bag-card {
@@ -1832,6 +1863,10 @@ img {
   padding: 4rem 2rem;
   background: #f7f7f7;
   text-align: center;
+}
+
+.store-products__empty .btn {
+  margin-top: 1.5rem;
 }
 
 .store-products__empty h3,

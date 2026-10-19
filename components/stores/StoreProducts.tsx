@@ -35,7 +35,13 @@ function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
 }
 
 export default function StoreProducts({ store }: { store: StoreProfile }) {
-  const activeProducts = store.surpriseBags.filter((bag) => isBagAvailable(bag));
+  const activeProducts = store.surpriseBags
+    .filter((bag) => isBagAvailable(bag))
+    .sort(
+      (first, second) =>
+        new Date(first.pickupEndTime).getTime() -
+        new Date(second.pickupEndTime).getTime(),
+    );
 
   return (
     <section
@@ -61,7 +67,12 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
         </div>
 
         {activeProducts.length ? (
-          <div className="store-products-scroll-row" aria-label={`${store.name} surprise bags`}>
+          <div
+            className="store-products-scroll-row"
+            role="region"
+            aria-label={`${store.name} surprise bags`}
+            tabIndex={0}
+          >
             {activeProducts.map((bag) => (
               <div className="store-products-scroll-row__item" key={bag.id}>
                 <SurpriseBagCard bag={toCardBag(store, bag)} />
@@ -72,6 +83,9 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
           <div className="store-products__empty">
             <h3>No bags available</h3>
             <p>This store does not have active surprise bags right now.</p>
+            <Link href="/products" className="btn btn-outline-primary-2">
+              Browse all bags
+            </Link>
           </div>
         )}
       </div>
