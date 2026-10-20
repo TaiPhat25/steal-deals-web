@@ -6,9 +6,23 @@ type DragScrollRowProps = {
   className?: string;
   children: React.ReactNode;
   visibleItems?: number;
+  fitItems?: boolean;
+  snap?: boolean;
+  role?: string;
+  "aria-label"?: string;
+  tabIndex?: number;
 };
 
-export default function DragScrollRow({ className, children, visibleItems }: DragScrollRowProps) {
+export default function DragScrollRow({
+  className,
+  children,
+  visibleItems,
+  fitItems = false,
+  snap = false,
+  role,
+  "aria-label": ariaLabel,
+  tabIndex,
+}: DragScrollRowProps) {
   const rowRef = useRef<HTMLDivElement | null>(null);
   const childNodes = useMemo(() => Children.toArray(children), [children]);
   const cloneCount = childNodes.length > 1
@@ -53,15 +67,70 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
     let startScrollLeft = 0;
     let loopStart = 0;
     let loopWidth = 0;
+    let itemStep = 0;
+    let scrollEndTimer: number | undefined;
+    let animationFrame: number | undefined;
+    let isSnapping = false;
 
     const normalizeLoopPosition = () => {
-      if (!loopWidth) return;
+      if (!loopWidth) return 0;
 
       if (row.scrollLeft < loopStart - 0.5) {
         row.scrollLeft += loopWidth;
+        return loopWidth;
       } else if (row.scrollLeft >= loopStart + loopWidth - 0.5) {
         row.scrollLeft -= loopWidth;
+        return -loopWidth;
       }
+
+      return 0;
+    };
+
+    const stopSnapAnimation = () => {
+      if (animationFrame !== undefined) {
+        window.cancelAnimationFrame(animationFrame);
+        animationFrame = undefined;
+      }
+      isSnapping = false;
+      row.classList.remove("is-snapping");
+    };
+
+    const snapToNearestItem = () => {
+      if (!snap || !itemStep || isSnapping) return;
+
+      normalizeLoopPosition();
+      const itemIndex = Math.round((row.scrollLeft - loopStart) / itemStep);
+      const startScroll = row.scrollLeft;
+      const targetScroll = loopStart + itemIndex * itemStep;
+
+      if (Math.abs(targetScroll - startScroll) < 0.5) return;
+
+      isSnapping = true;
+      row.classList.add("is-snapping");
+      const startedAt = performance.now();
+      const duration = 250;
+      const animate = (now: number) => {
+        const progress = Math.min((now - startedAt) / duration, 1);
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        row.scrollLeft = startScroll + (targetScroll - startScroll) * easedProgress;
+
+        if (progress < 1) {
+          animationFrame = window.requestAnimationFrame(animate);
+        } else {
+          animationFrame = undefined;
+          isSnapping = false;
+          row.classList.remove("is-snapping");
+        }
+      };
+
+      animationFrame = window.requestAnimationFrame(animate);
+    };
+
+    const scheduleScrollSnap = () => {
+      if (!snap || isDragging || isSnapping) return;
+
+      window.clearTimeout(scrollEndTimer);
+      scrollEndTimer = window.setTimeout(snapToNearestItem, 100);
     };
 
     const measureTrack = () => {
@@ -75,10 +144,14 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
         const track = row.querySelector<HTMLElement>(".drag-scroll-row__track");
         const trackStyles = track ? window.getComputedStyle(track) : null;
         const gap = trackStyles ? Number.parseFloat(trackStyles.columnGap) || 0 : 0;
-        const itemWidth = (row.clientWidth - gap * (itemCount - 1)) / itemCount;
+        const padding = fitItems
+          ? Number.parseFloat(rowStyles.paddingLeft) + Number.parseFloat(rowStyles.paddingRight)
+          : 0;
+        const itemWidth =
+          (row.clientWidth - padding - gap * (itemCount - 1)) / itemCount;
         row.style.setProperty("--drag-item-width", `${Math.max(itemWidth, 0)}px`);
 
-        const itemStep = Math.max(itemWidth, 0) + gap;
+        itemStep = Math.max(itemWidth, 0) + gap;
         loopStart = itemStep * cloneCount;
         loopWidth = itemStep * childNodes.length;
         row.scrollLeft = loopStart;
@@ -89,6 +162,10 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
       if (event.button !== 0) return;
       if ((event.target as HTMLElement).closest("button, input, select, textarea")) return;
 
+      if (snap) {
+        window.clearTimeout(scrollEndTimer);
+        stopSnapAnimation();
+      }
       isDragging = true;
       shouldSuppressClick = false;
       startX = event.clientX;
@@ -114,6 +191,8 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
         row.setPointerCapture(event.pointerId);
       }
       row.scrollLeft = startScrollLeft - distance;
+      const loopOffset = normalizeLoopPosition();
+      if (loopOffset) startScrollLeft += loopOffset;
     };
 
     const onPointerUp = (event: PointerEvent) => {
@@ -124,12 +203,14 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
         row.releasePointerCapture(event.pointerId);
       }
       normalizeLoopPosition();
+      snapToNearestItem();
     };
 
     const onLostPointerCapture = () => {
       isDragging = false;
       row.classList.remove("is-dragging");
       normalizeLoopPosition();
+      snapToNearestItem();
     };
 
     const onNativeDragStart = (event: DragEvent) => {
@@ -145,6 +226,7 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
 
     const onScroll = () => {
       if (!isDragging) normalizeLoopPosition();
+      scheduleScrollSnap();
     };
 
     measureTrack();
@@ -165,6 +247,8 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
     window.addEventListener("pointercancel", onPointerUp);
 
     return () => {
+      window.clearTimeout(scrollEndTimer);
+      stopSnapAnimation();
       row.removeEventListener("pointerdown", onPointerDown);
       row.removeEventListener("pointermove", onPointerMove);
       row.removeEventListener("pointerup", onPointerUp);
@@ -177,12 +261,18 @@ export default function DragScrollRow({ className, children, visibleItems }: Dra
       window.removeEventListener("pointercancel", onPointerUp);
       resizeObserver.disconnect();
     };
-  }, [childNodes.length, cloneCount, visibleItems]);
+  }, [childNodes.length, cloneCount, fitItems, snap, visibleItems]);
 
   if (childNodes.length === 0) return null;
 
   return (
-    <div ref={rowRef} className={className}>
+    <div
+      ref={rowRef}
+      className={[className, snap ? "is-snap-enabled" : ""].filter(Boolean).join(" ")}
+      role={role}
+      aria-label={ariaLabel}
+      tabIndex={tabIndex}
+    >
       <div className="drag-scroll-row__track">{loopedChildNodes}</div>
     </div>
   );

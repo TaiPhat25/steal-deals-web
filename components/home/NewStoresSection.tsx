@@ -62,7 +62,7 @@ export default function NewStoresSection() {
             message="Recently joined stores will appear here."
           />
         ) : (
-          <DragScrollRow className="drag-scroll-row new-stores-scroll-row" visibleItems={5}>
+          <DragScrollRow className="drag-scroll-row new-stores-scroll-row" visibleItems={5} fitItems snap>
             {stores.map((store) => (
               <NewStoreCard key={store.id} store={store} />
             ))}

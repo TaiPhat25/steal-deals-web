@@ -746,6 +746,10 @@ img {
   cursor: grabbing;
 }
 
+.drag-scroll-row.is-snap-enabled.is-snapping {
+  scroll-behavior: smooth;
+}
+
 .drag-scroll-row a,
 .drag-scroll-row img {
   -webkit-user-drag: none;
@@ -941,7 +945,7 @@ img {
 .nearby-scroll-row {
   --drag-visible-items: 1;
   margin: 0 -0.75rem;
-  padding: 0 0.75rem 0.75rem;
+  padding: 0 0 0.75rem 0.75rem;
 }
 
 .nearby-scroll-row .drag-scroll-row__track {
@@ -985,7 +989,7 @@ img {
 .trending-scroll-row {
   --drag-visible-items: 1;
   margin: 0 -0.75rem;
-  padding: 0 0.75rem 0.75rem;
+  padding: 0 0 0.75rem 0.75rem;
 }
 
 .trending-scroll-row .drag-scroll-row__track {
@@ -1029,7 +1033,7 @@ img {
 .new-stores-scroll-row {
   --drag-visible-items: 1;
   margin: 0 -0.75rem;
-  padding: 0 0.75rem 0.75rem;
+  padding: 0 0 0.75rem 0.75rem;
 }
 
 .new-stores-scroll-row .drag-scroll-row__track {
@@ -1139,7 +1143,7 @@ img {
 .near-expiry-scroll-row {
   --drag-visible-items: 1;
   margin: 0 -0.75rem;
-  padding: 0 0.75rem 0.75rem;
+  padding: 0 0 0.75rem 0.75rem;
 }
 
 .near-expiry-scroll-row .drag-scroll-row__track {
@@ -1808,17 +1812,10 @@ img {
 }
 
 .store-products-scroll-row {
-  display: flex;
-  align-items: stretch;
-  gap: 1rem;
+  --drag-visible-items: 1;
   margin: 0 -0.75rem;
-  padding: 0 0.75rem 0.75rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  padding: 0 0 0.75rem 0.75rem;
+  scroll-snap-type: x mandatory;
 }
 
 .store-products-scroll-row:focus-visible {
@@ -1826,20 +1823,12 @@ img {
   outline-offset: 0.3rem;
 }
 
-.store-products-scroll-row::-webkit-scrollbar {
-  display: none;
-}
-
-.store-products-scroll-row__item {
-  display: flex;
-  flex: 0 0 270px;
-  width: 270px;
-  scroll-snap-align: start;
+.store-products-scroll-row .drag-scroll-row__track {
+  gap: 1rem;
 }
 
 .store-products-scroll-row .surprise-bag-card {
-  flex: 1 1 auto;
-  width: 100%;
+  scroll-snap-align: start;
 }
 
 .store-products-scroll-row .surprise-bag-card__body {
@@ -2130,48 +2119,20 @@ img {
   margin-bottom: 4rem;
 }
 
-.product-detail-page__related-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.product-detail-page__related-grid > div {
-  display: flex;
-  min-width: 0;
-}
-
-.product-detail-page__related-grid .surprise-bag-card {
-  flex: 1 1 auto;
-  width: 100%;
-}
-
-@media (max-width: 1199px) {
-  .product-detail-page__related-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 991px) {
-  .product-detail-page__related-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 767px) {
   .product-detail-page__summary {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .product-detail-page__related-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
-@media (max-width: 575px) {
-  .product-detail-page__related-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.product-detail-related-scroll-row {
+  --drag-visible-items: 1;
+  margin: 0 -0.75rem 4rem;
+  padding: 0 0 0.75rem 0.75rem;
+}
+
+.product-detail-related-scroll-row .drag-scroll-row__track {
+  gap: 1rem;
 }
 
 .product-detail-page__related-item {
@@ -2655,24 +2616,6 @@ img {
 
   .product-detail-page__related {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 991px) {
-  .product-detail-page__related-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 767px) {
-  .product-detail-page__related-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 575px) {
-  .product-detail-page__related-grid {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -3236,6 +3179,14 @@ img {
     --drag-visible-items: 3;
   }
 
+  .store-products-scroll-row {
+    --drag-visible-items: 3;
+  }
+
+  .product-detail-related-scroll-row {
+    --drag-visible-items: 3;
+  }
+
   .drag-scroll-row--products .product {
     flex: 0 0 200px;
     width: auto !important;
@@ -3260,6 +3211,14 @@ img {
     --drag-visible-items: 4;
   }
 
+  .store-products-scroll-row {
+    --drag-visible-items: 4;
+  }
+
+  .product-detail-related-scroll-row {
+    --drag-visible-items: 4;
+  }
+
   .drag-scroll-row--products .product {
     flex: 0 0 210px;
     width: auto !important;
@@ -3281,6 +3240,14 @@ img {
   }
 
   .new-stores-scroll-row {
+    --drag-visible-items: 5;
+  }
+
+  .store-products-scroll-row {
+    --drag-visible-items: 5;
+  }
+
+  .product-detail-related-scroll-row {
     --drag-visible-items: 5;
   }
 

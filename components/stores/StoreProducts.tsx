@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DragScrollRow from "@/components/home/DragScrollRow";
 import SurpriseBagCard, { type SurpriseBag } from "@/components/home/SurpriseBagCard";
 import {
   formatPickupWindow,
@@ -67,18 +68,17 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
         </div>
 
         {activeProducts.length ? (
-          <div
-            className="store-products-scroll-row"
+          <DragScrollRow
+            className="drag-scroll-row store-products-scroll-row"
+            visibleItems={5}
             role="region"
             aria-label={`${store.name} surprise bags`}
             tabIndex={0}
           >
             {activeProducts.map((bag) => (
-              <div className="store-products-scroll-row__item" key={bag.id}>
-                <SurpriseBagCard bag={toCardBag(store, bag)} />
-              </div>
+              <SurpriseBagCard key={bag.id} bag={toCardBag(store, bag)} />
             ))}
-          </div>
+          </DragScrollRow>
         ) : (
           <div className="store-products__empty">
             <h3>No bags available</h3>

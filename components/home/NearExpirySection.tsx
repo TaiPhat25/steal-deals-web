@@ -53,7 +53,7 @@ export default function NearExpirySection() {
             message="New near-expiry bags will appear here when stores add them."
           />
         ) : (
-          <DragScrollRow className="drag-scroll-row near-expiry-scroll-row" visibleItems={5}>
+          <DragScrollRow className="drag-scroll-row near-expiry-scroll-row" visibleItems={5} fitItems snap>
             {bags.map((bag) => (
               <SurpriseBagCard key={bag.backendId ?? bag.slug} bag={bag} />
             ))}

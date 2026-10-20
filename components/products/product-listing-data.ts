@@ -395,10 +395,17 @@ export const surpriseBags: ListingBag[] = [
 ];
 
 function getPickupDay(startTime: string): ListingBag["pickupDay"] {
-  const start = new Date(startTime);
-  const now = new Date();
-  const startDate = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
-  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const calendarDay = (value: Date) => {
+    const parts = pickupCalendarDateFormatter.formatToParts(value);
+    const year = Number(parts.find((part) => part.type === "year")?.value);
+    const month = Number(parts.find((part) => part.type === "month")?.value);
+    const day = Number(parts.find((part) => part.type === "day")?.value);
+
+    return Date.UTC(year, month - 1, day);
+  };
+
+  const startDate = calendarDay(new Date(startTime));
+  const today = calendarDay(new Date());
   const dayDifference = Math.round((startDate - today) / 86_400_000);
 
   if (dayDifference <= 0) return "today";
