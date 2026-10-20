@@ -1815,7 +1815,6 @@ img {
   --drag-visible-items: 1;
   margin: 0 -0.75rem;
   padding: 0 0 0.75rem 0.75rem;
-  scroll-snap-type: x mandatory;
 }
 
 .store-products-scroll-row:focus-visible {

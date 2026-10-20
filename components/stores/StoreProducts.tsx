@@ -71,6 +71,7 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
           <DragScrollRow
             className="drag-scroll-row store-products-scroll-row"
             visibleItems={5}
+            snap
             role="region"
             aria-label={`${store.name} surprise bags`}
             tabIndex={0}

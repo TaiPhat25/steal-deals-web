@@ -521,6 +521,7 @@ export default function ProductMain({
               <DragScrollRow
                 className="drag-scroll-row product-detail-related-scroll-row"
                 visibleItems={5}
+                snap
                 role="region"
                 aria-label="Related surprise bags"
                 tabIndex={0}
