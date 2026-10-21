@@ -17,6 +17,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV SERVER_API_BASE_URL="http://nginx"
 
 # Copy sản phẩm sau khi build sang container chạy
 COPY --from=builder /app/public ./public
