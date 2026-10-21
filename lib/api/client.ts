@@ -1,5 +1,21 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+function resolveApiBaseUrl(baseUrl: string) {
+  const configuredBaseUrl = baseUrl.replace(/\/+$/, "");
+
+  if (configuredBaseUrl || typeof window !== "undefined") {
+    return configuredBaseUrl;
+  }
+
+  const serverBaseUrl = process.env.SERVER_API_BASE_URL?.replace(/\/+$/, "");
+
+  if (!serverBaseUrl) {
+    throw new Error("SERVER_API_BASE_URL is required for server-side API requests.");
+  }
+
+  return serverBaseUrl;
+}
+
 export class ApiClientError extends Error {
   readonly status: number;
   readonly details: unknown;
@@ -68,8 +84,10 @@ export async function apiRequest<T>(
     requestHeaders.set("Content-Type", "application/json");
   }
 
+  const requestUrl = `${resolveApiBaseUrl(baseUrl)}${path}`;
+
   const sendRequest = () =>
-    fetch(`${baseUrl}${path}`, {
+    fetch(requestUrl, {
       ...requestOptions,
       headers: requestHeaders,
       credentials: "include",
