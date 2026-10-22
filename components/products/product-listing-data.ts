@@ -16,9 +16,10 @@ const pickupCalendarDateFormatter = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
   timeZone: "Asia/Ho_Chi_Minh",
 });
-const pickupTimeFormatter = new Intl.DateTimeFormat("en-US", {
-  hour: "numeric",
+const pickupTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
   minute: "2-digit",
+  hour12: false,
   timeZone: "Asia/Ho_Chi_Minh",
 });
 
