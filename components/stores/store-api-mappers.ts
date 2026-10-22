@@ -37,6 +37,7 @@ function mapReviewResponse(
     id: review.id,
     orderId: review.orderId,
     buyerId: review.buyerId,
+    buyerName: review.buyerName,
     storeId,
     bagId: "bagId" in review ? review.bagId : "",
     ratingScore: review.ratingScore,

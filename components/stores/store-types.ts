@@ -10,6 +10,7 @@ export type StoreReview = {
   id: string;
   orderId: string;
   buyerId: string;
+  buyerName: string;
   storeId: string;
   bagId: string;
   ratingScore: number;

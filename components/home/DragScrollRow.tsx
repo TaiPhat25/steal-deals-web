@@ -6,6 +6,7 @@ type DragScrollRowProps = {
   className?: string;
   children: React.ReactNode;
   visibleItems?: number;
+  loop?: boolean;
   fitItems?: boolean;
   snap?: boolean;
   role?: string;
@@ -17,6 +18,7 @@ export default function DragScrollRow({
   className,
   children,
   visibleItems,
+  loop = true,
   fitItems = false,
   snap = false,
   role,
@@ -25,7 +27,7 @@ export default function DragScrollRow({
 }: DragScrollRowProps) {
   const rowRef = useRef<HTMLDivElement | null>(null);
   const childNodes = useMemo(() => Children.toArray(children), [children]);
-  const cloneCount = childNodes.length > 1
+  const cloneCount = loop && childNodes.length > 1
     ? Math.min(visibleItems ?? 1, childNodes.length)
     : 0;
   const loopedChildNodes = useMemo(() => {
@@ -153,7 +155,7 @@ export default function DragScrollRow({
 
         itemStep = Math.max(itemWidth, 0) + gap;
         loopStart = itemStep * cloneCount;
-        loopWidth = itemStep * childNodes.length;
+        loopWidth = cloneCount > 0 ? itemStep * childNodes.length : 0;
         row.scrollLeft = loopStart;
       }
     };
@@ -261,7 +263,7 @@ export default function DragScrollRow({
       window.removeEventListener("pointercancel", onPointerUp);
       resizeObserver.disconnect();
     };
-  }, [childNodes.length, cloneCount, fitItems, snap, visibleItems]);
+  }, [childNodes.length, cloneCount, fitItems, loop, snap, visibleItems]);
 
   if (childNodes.length === 0) return null;
 

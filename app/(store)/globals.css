@@ -1909,7 +1909,7 @@ img {
 .store-review {
   background: #fff;
   border-bottom: 1px solid #e5e5e5;
-  padding: 1.25rem 0;
+  padding: 1rem 0;
 }
 
 .store-review:first-child {
@@ -1928,10 +1928,10 @@ img {
   margin-bottom: 0.75rem;
 }
 
-.product-detail-page .store-review__header h3 {
+.store-review__header h3 {
   margin: 0;
   color: #222;
-  font-size: 1.45rem;
+  font-size: 1.35rem;
 }
 
 .store-review__header strong {
@@ -1948,7 +1948,7 @@ img {
 
 .store-review time {
   color: #777;
-  font-size: 1rem;
+  font-size: 1.2rem;
 }
 
 .store-review__reply {

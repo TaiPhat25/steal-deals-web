@@ -108,6 +108,7 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
             key={selectedCategory}
             className="drag-scroll-row store-products-scroll-row"
             visibleItems={5}
+            loop={filteredProducts.length > 5}
             snap
             role="region"
             aria-label={`${store.name} surprise bags`}
