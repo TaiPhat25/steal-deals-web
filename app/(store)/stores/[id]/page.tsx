@@ -80,7 +80,7 @@ export default async function StoreDetailPage({ params }: StoreDetailPageProps) 
         </div>
       </section>
 
-      <nav aria-label="breadcrumb" className="breadcrumb-nav mb-2">
+      <nav aria-label="Breadcrumb" className="breadcrumb-nav mb-2">
         <div className="container">
           <ol className="breadcrumb">
             <li className="breadcrumb-item">

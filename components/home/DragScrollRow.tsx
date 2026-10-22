@@ -7,6 +7,7 @@ type DragScrollRowProps = {
   children: React.ReactNode;
   visibleItems?: number;
   loop?: boolean;
+  keyboardNavigation?: boolean;
   fitItems?: boolean;
   snap?: boolean;
   role?: string;
@@ -19,6 +20,7 @@ export default function DragScrollRow({
   children,
   visibleItems,
   loop = true,
+  keyboardNavigation = false,
   fitItems = false,
   snap = false,
   role,
@@ -219,6 +221,18 @@ export default function DragScrollRow({
       event.preventDefault();
     };
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!keyboardNavigation || !itemStep) return;
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+
+      event.preventDefault();
+      window.clearTimeout(scrollEndTimer);
+      stopSnapAnimation();
+      normalizeLoopPosition();
+      row.scrollLeft += event.key === "ArrowRight" ? itemStep : -itemStep;
+      scheduleScrollSnap();
+    };
+
     const onClick = (event: MouseEvent) => {
       if (!shouldSuppressClick) return;
       event.preventDefault();
@@ -243,6 +257,7 @@ export default function DragScrollRow({
     row.addEventListener("pointercancel", onPointerUp);
     row.addEventListener("lostpointercapture", onLostPointerCapture);
     row.addEventListener("dragstart", onNativeDragStart, true);
+    row.addEventListener("keydown", onKeyDown);
     row.addEventListener("click", onClick, true);
     row.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("pointerup", onPointerUp);
@@ -257,13 +272,14 @@ export default function DragScrollRow({
       row.removeEventListener("pointercancel", onPointerUp);
       row.removeEventListener("lostpointercapture", onLostPointerCapture);
       row.removeEventListener("dragstart", onNativeDragStart, true);
+      row.removeEventListener("keydown", onKeyDown);
       row.removeEventListener("click", onClick, true);
       row.removeEventListener("scroll", onScroll);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
       resizeObserver.disconnect();
     };
-  }, [childNodes.length, cloneCount, fitItems, loop, snap, visibleItems]);
+  }, [childNodes.length, cloneCount, fitItems, keyboardNavigation, loop, snap, visibleItems]);
 
   if (childNodes.length === 0) return null;
 

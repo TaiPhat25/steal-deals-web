@@ -40,13 +40,16 @@ function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
 
 export default function StoreProducts({ store }: { store: StoreProfile }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const activeProducts = store.surpriseBags
-    .filter((bag) => isBagAvailable(bag))
-    .sort(
-      (first, second) =>
-        new Date(first.pickupEndTime).getTime() -
-        new Date(second.pickupEndTime).getTime(),
-    );
+  const activeProducts = useMemo(
+    () => store.surpriseBags
+      .filter((bag) => isBagAvailable(bag))
+      .sort(
+        (first, second) =>
+          new Date(first.pickupEndTime).getTime() -
+          new Date(second.pickupEndTime).getTime(),
+      ),
+    [store.surpriseBags],
+  );
   const categories = useMemo(
     () =>
       Array.from(
@@ -58,11 +61,14 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
       ).sort((first, second) => first.localeCompare(second)),
     [activeProducts],
   );
-  const filteredProducts = selectedCategory === "all"
-    ? activeProducts
-    : activeProducts.filter((bag) =>
-        bag.categories.some((category) => category.name === selectedCategory),
-      );
+  const filteredProducts = useMemo(
+    () => selectedCategory === "all"
+      ? activeProducts
+      : activeProducts.filter((bag) =>
+          bag.categories.some((category) => category.name === selectedCategory),
+        ),
+    [activeProducts, selectedCategory],
+  );
 
   return (
     <section
@@ -109,6 +115,7 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
             className="drag-scroll-row store-products-scroll-row"
             visibleItems={5}
             loop={filteredProducts.length > 5}
+            keyboardNavigation
             snap
             role="region"
             aria-label={`${store.name} surprise bags`}

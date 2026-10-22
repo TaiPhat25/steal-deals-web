@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { StoreReview } from "@/components/stores/store-types";
 
 function formatDate(value: string) {
@@ -13,9 +13,12 @@ function formatDate(value: string) {
 
 export default function StoreReviews({ reviews }: { reviews: StoreReview[] }) {
   const [showAllReviews, setShowAllReviews] = useState(false);
-  const sortedReviews = [...reviews].sort(
-    (first, second) =>
-      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+  const sortedReviews = useMemo(
+    () => [...reviews].sort(
+      (first, second) =>
+        new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+    ),
+    [reviews],
   );
   const visibleReviews = showAllReviews ? sortedReviews : sortedReviews.slice(0, 5);
 
@@ -40,7 +43,9 @@ export default function StoreReviews({ reviews }: { reviews: StoreReview[] }) {
               <article className="store-review" key={review.id}>
                 <div className="store-review__header">
                   <h3>{review.buyerName}</h3>
-                  <strong>{review.ratingScore.toFixed(1)}</strong>
+                  <strong aria-label={`Rating ${review.ratingScore} out of 5`}>
+                    {review.ratingScore.toFixed(1)}
+                  </strong>
                 </div>
                 <p>{review.comment ?? "This buyer did not leave a comment."}</p>
                 {review.storeReply?.trim() ? (

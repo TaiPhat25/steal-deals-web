@@ -39,7 +39,7 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
               height={380}
               sizes="(max-width: 767px) 100vw, 50vw"
               alt={store.avatarUrl ? `${store.name} storefront` : "Store image placeholder"}
-              loading="eager"
+              loading="lazy"
               unoptimized={shouldUseUnoptimizedImage(storeImage)}
             />
           </div>
@@ -92,11 +92,19 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
             </div>
 
             <div className="store-info__actions">
-              <a href="#store-products" className="btn btn-primary">
+              <a
+                href="#store-products"
+                className="btn btn-primary"
+                aria-label={`View available bags from ${store.name}`}
+              >
                 View Bags
               </a>
               {store.phone ? (
-                <a href={`tel:${store.phone.replace(/\s/g, "")}`} className="btn btn-outline-primary-2">
+                <a
+                  href={`tel:${store.phone.replace(/\s/g, "")}`}
+                  className="btn btn-outline-primary-2"
+                  aria-label={`Call ${store.name} at ${store.phone}`}
+                >
                   Call Store
                 </a>
               ) : null}
@@ -106,6 +114,7 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
                   className="btn btn-outline-primary-2 store-info__map-link"
                   target="_blank"
                   rel="noreferrer"
+                  aria-label={`View ${store.name} on Google Maps`}
                 >
                   View on Map
                 </a>
