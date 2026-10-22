@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import DragScrollRow from "@/components/home/DragScrollRow";
 import SurpriseBagCard, { type SurpriseBag } from "@/components/home/SurpriseBagCard";
 import {
@@ -36,6 +39,7 @@ function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
 }
 
 export default function StoreProducts({ store }: { store: StoreProfile }) {
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const activeProducts = store.surpriseBags
     .filter((bag) => isBagAvailable(bag))
     .sort(
@@ -43,6 +47,22 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
         new Date(first.pickupEndTime).getTime() -
         new Date(second.pickupEndTime).getTime(),
     );
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          activeProducts.flatMap((bag) =>
+            bag.categories.map((category) => category.name),
+          ),
+        ),
+      ).sort((first, second) => first.localeCompare(second)),
+    [activeProducts],
+  );
+  const filteredProducts = selectedCategory === "all"
+    ? activeProducts
+    : activeProducts.filter((bag) =>
+        bag.categories.some((category) => category.name === selectedCategory),
+      );
 
   return (
     <section
@@ -57,18 +77,35 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
             <h2 id="store-products-title" className="title mb-1">
               Bags From {store.name}
             </h2>
-            <p className="store-detail-page__description mb-0">
-              Current products this store is selling for pickup.
-            </p>
+            <div className="store-products__description-row">
+              <label className="store-products__filter">
+                <span>Category</span>
+                <select
+                  value={selectedCategory}
+                  onChange={(event) => setSelectedCategory(event.target.value)}
+                  aria-label="Filter surprise bags by category"
+                >
+                  <option value="all">All categories</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
-          <Link href={`/products?store=${encodeURIComponent(store.id)}`} className="store-detail-page__view-all">
-            View in marketplace
-            <i className="icon-angle-right" aria-hidden="true"></i>
-          </Link>
+          <div className="store-products__controls">
+            <Link href={`/products?store=${encodeURIComponent(store.id)}`} className="store-detail-page__view-all">
+              View in marketplace
+              <i className="icon-angle-right" aria-hidden="true"></i>
+            </Link>
+          </div>
         </div>
 
-        {activeProducts.length ? (
+        {filteredProducts.length ? (
           <DragScrollRow
+            key={selectedCategory}
             className="drag-scroll-row store-products-scroll-row"
             visibleItems={5}
             snap
@@ -76,10 +113,22 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
             aria-label={`${store.name} surprise bags`}
             tabIndex={0}
           >
-            {activeProducts.map((bag) => (
+            {filteredProducts.map((bag) => (
               <SurpriseBagCard key={bag.id} bag={toCardBag(store, bag)} />
             ))}
           </DragScrollRow>
+        ) : activeProducts.length ? (
+          <div className="store-products__empty">
+            <h3>No bags in this category</h3>
+            <p>Choose another category to see this store&apos;s available bags.</p>
+            <button
+              type="button"
+              className="btn btn-outline-primary-2"
+              onClick={() => setSelectedCategory("all")}
+            >
+              Show all bags
+            </button>
+          </div>
         ) : (
           <div className="store-products__empty">
             <h3>No bags available</h3>
