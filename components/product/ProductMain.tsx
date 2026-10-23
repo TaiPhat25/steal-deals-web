@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useCart } from "@/components/cart/CartProvider";
 import AddToCartDialog from "@/components/cart/AddToCartDialog";
+import DragScrollRow from "@/components/home/DragScrollRow";
 import { BRAND_NAME } from "@/lib/brand";
 import { listBagReviews } from "@/lib/api/store";
 import type { StoreProfileResponse, StoreReviewResponse } from "@/lib/api/dashboard-types";
@@ -517,13 +518,18 @@ export default function ProductMain({
                 </Link>
               </div>
 
-              <div className="product-detail-page__related-grid">
+              <DragScrollRow
+                className="drag-scroll-row product-detail-related-scroll-row"
+                visibleItems={5}
+                snap
+                role="region"
+                aria-label="Related surprise bags"
+                tabIndex={0}
+              >
                 {relatedBags.map((relatedBag) => (
-                  <div key={relatedBag.slug}>
-                    <SurpriseBagCard bag={relatedBag} />
-                  </div>
+                  <SurpriseBagCard key={relatedBag.slug} bag={relatedBag} />
                 ))}
-              </div>
+              </DragScrollRow>
             </section>
           )}
         </div>

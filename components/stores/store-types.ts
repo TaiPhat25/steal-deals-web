@@ -10,6 +10,7 @@ export type StoreReview = {
   id: string;
   orderId: string;
   buyerId: string;
+  buyerName: string;
   storeId: string;
   bagId: string;
   ratingScore: number;
@@ -45,6 +46,8 @@ export type StoreProfile = {
   name: string;
   description: string | null;
   address: string | null;
+  province?: string | null;
+  commune?: string | null;
   latitude: number;
   longitude: number;
   avatarUrl: string | null;

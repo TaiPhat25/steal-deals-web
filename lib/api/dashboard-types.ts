@@ -122,6 +122,7 @@ export type PublicStoreReviewResponse = {
   id: string;
   orderId: string;
   buyerId: string;
+  buyerName: string;
   ratingScore: number;
   comment: string | null;
   storeReply: string | null;

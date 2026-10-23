@@ -48,7 +48,7 @@ export default function NearbySection() {
             message="Nearby surprise bags will appear here when stores add them."
           />
         ) : (
-          <DragScrollRow className="drag-scroll-row nearby-scroll-row" visibleItems={5}>
+          <DragScrollRow className="drag-scroll-row nearby-scroll-row" visibleItems={5} fitItems snap>
             {bags.map((bag) => (
               <SurpriseBagCard key={bag.backendId ?? bag.slug} bag={bag} />
             ))}

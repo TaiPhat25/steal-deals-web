@@ -14,16 +14,19 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function formatCoordinate(value: number) {
-  return value.toFixed(4);
-}
-
 export default function StoreInfo({ store }: { store: StoreProfile }) {
   const productCount = store.surpriseBags.filter((bag) =>
     isBagAvailable(bag),
   ).length;
-  const reviewCount = store.storeReviews.length;
+  const reviewCount = store.reviewCount ?? store.storeReviews.length;
   const storeImage = store.avatarUrl || STORE_FALLBACK_IMAGE;
+  const hasCoordinates = Number.isFinite(store.latitude) && Number.isFinite(store.longitude);
+  const fullAddress = [store.address, store.commune, store.province]
+    .filter(Boolean)
+    .join(", ");
+  const mapHref = hasCoordinates
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${store.latitude},${store.longitude}`)}`
+    : null;
 
   return (
     <section className="store-detail-page__section store-info-section" aria-labelledby="store-info-title">
@@ -35,8 +38,8 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
               width={570}
               height={380}
               sizes="(max-width: 767px) 100vw, 50vw"
-              alt={`${store.name} storefront`}
-              loading="eager"
+              alt={store.avatarUrl ? `${store.name} storefront` : "Store image placeholder"}
+              loading="lazy"
               unoptimized={shouldUseUnoptimizedImage(storeImage)}
             />
           </div>
@@ -46,13 +49,15 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
             <h2 id="store-info-title" className="store-info__title">
               {store.name}
             </h2>
-            {store.description ? <p className="store-info__description">{store.description}</p> : null}
+            <p className="store-info__description">
+              {store.description || "This store has not added a description yet."}
+            </p>
 
             <dl className="store-info__details">
-              {store.address ? (
+              {fullAddress ? (
                 <div>
                   <dt>Address</dt>
-                  <dd>{store.address}</dd>
+                  <dd>{fullAddress}</dd>
                 </div>
               ) : null}
               {store.phone ? (
@@ -68,12 +73,6 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
               <div className="store-info__details-item--bordered store-info__details-item--row-end">
                 <dt>Status</dt>
                 <dd>{store.isActive ? "Open" : "Closed"}</dd>
-              </div>
-              <div>
-                <dt>Coordinates</dt>
-                <dd>
-                  {formatCoordinate(store.latitude)}, {formatCoordinate(store.longitude)}
-                </dd>
               </div>
             </dl>
 
@@ -93,12 +92,31 @@ export default function StoreInfo({ store }: { store: StoreProfile }) {
             </div>
 
             <div className="store-info__actions">
-              <a href="#store-products" className="btn btn-primary">
+              <a
+                href="#store-products"
+                className="btn btn-primary"
+                aria-label={`View available bags from ${store.name}`}
+              >
                 View Bags
               </a>
               {store.phone ? (
-                <a href={`tel:${store.phone.replace(/\s/g, "")}`} className="btn btn-outline-primary-2">
+                <a
+                  href={`tel:${store.phone.replace(/\s/g, "")}`}
+                  className="btn btn-outline-primary-2"
+                  aria-label={`Call ${store.name} at ${store.phone}`}
+                >
                   Call Store
+                </a>
+              ) : null}
+              {mapHref ? (
+                <a
+                  href={mapHref}
+                  className="btn btn-outline-primary-2 store-info__map-link"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`View ${store.name} on Google Maps`}
+                >
+                  View on Map
                 </a>
               ) : null}
             </div>

@@ -52,7 +52,7 @@ export default function TrendingSection() {
             message="Popular surprise bags will appear here as buyers discover them."
           />
         ) : (
-          <DragScrollRow className="drag-scroll-row trending-scroll-row" visibleItems={5}>
+          <DragScrollRow className="drag-scroll-row trending-scroll-row" visibleItems={5} fitItems snap>
             {bags.map((bag) => (
               <SurpriseBagCard key={bag.backendId ?? bag.slug} bag={bag} />
             ))}
