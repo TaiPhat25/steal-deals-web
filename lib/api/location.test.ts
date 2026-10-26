@@ -45,7 +45,7 @@ describe("location API", () => {
   });
 
   describe("autocompleteLocations", () => {
-    it("calls /api/locations/autocomplete with Bearer header and query params", async () => {
+    it("calls /api/store/locations/autocomplete with Bearer header and query params", async () => {
       let requestedUrl = "";
       let authHeader = "";
 
@@ -69,7 +69,7 @@ describe("location API", () => {
         sessionToken: "session-abc",
       });
 
-      expect(requestedUrl).toContain("http://store.test/api/locations/autocomplete");
+      expect(requestedUrl).toContain("http://store.test/api/store/locations/autocomplete");
       expect(requestedUrl).toContain("input=Nguyen+Hue");
       expect(requestedUrl).toContain("sessionToken=session-abc");
       expect(authHeader).toBe("Bearer my-seller-token");
@@ -90,7 +90,7 @@ describe("location API", () => {
   });
 
   describe("getLocationPlaceDetail", () => {
-    it("calls /api/locations/place-detail with placeId query", async () => {
+    it("calls /api/store/locations/place-detail with placeId query", async () => {
       let requestedUrl = "";
 
       globalThis.fetch = vi.fn().mockImplementation((url: string) => {
@@ -113,7 +113,7 @@ describe("location API", () => {
         sessionToken: "sess-1",
       });
 
-      expect(requestedUrl).toContain("http://store.test/api/locations/place-detail");
+      expect(requestedUrl).toContain("http://store.test/api/store/locations/place-detail");
       expect(requestedUrl).toContain("placeId=p1");
       expect(requestedUrl).toContain("sessionToken=sess-1");
       expect(detail.name).toBe("Central Post Office");
