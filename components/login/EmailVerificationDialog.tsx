@@ -85,12 +85,12 @@ export default function EmailVerificationDialog({
             <div className="modal-body">
               <div className="form-box">
                 <div className="form-tab">
-                  <h2 id="verify-email-title" className="text-center mb-2">
+                  <h2 id="verify-email-title" className="mb-2">
                     Verify Your Email
                   </h2>
                   <p
                     id="verify-email-description"
-                    className="text-center mb-3"
+                    className="mb-3"
                   >
                     Enter the OTP sent to your email address.
                   </p>

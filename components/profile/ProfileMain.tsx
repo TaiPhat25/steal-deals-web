@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type SubmitEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { BRAND_NAME } from "@/lib/brand";
 import { ApiClientError } from "@/lib/api/client";
-import { getProfile } from "@/lib/api/account";
+import { getProfile, updateProfile, uploadAvatar } from "@/lib/api/account";
 import { verifyEmail } from "@/lib/api/auth";
 import { createStore } from "@/lib/api/store";
+import { shouldUseUnoptimizedImage } from "@/lib/image-assets";
 import OtpInput from "@/components/auth/OtpInput";
 import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import type { UserProfile, UserAddress } from "@/lib/api/store-types";
@@ -50,19 +51,35 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function getInitials(fullName: string | null, email: string | null) {
+  const source = fullName?.trim() || email?.trim() || "U";
+  const words = source.split(/\s+/).filter(Boolean);
+
+  return words.length > 1
+    ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
+    : source.slice(0, 2).toUpperCase();
+}
+
 export default function ProfileMain() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { accessToken, isInitialized } = useAuth();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [verificationOtp, setVerificationOtp] = useState("");
   const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [fullNameInput, setFullNameInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [addressForm, setAddressForm] = useState<AddressForm>(emptyAddressForm);
   const [editError, setEditError] = useState<string | null>(null);
+  const [profileActionError, setProfileActionError] = useState<string | null>(null);
+  const [profileActionMessage, setProfileActionMessage] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [sellerApplication, setSellerApplication] = useState<SellerApplicationForm>(emptySellerApplication);
   const [sellerApplicationError, setSellerApplicationError] = useState<string | null>(null);
   const [sellerApplicationSubmitted, setSellerApplicationSubmitted] = useState(false);
@@ -70,7 +87,7 @@ export default function ProfileMain() {
 
   const showVerificationModal = searchParams.get("verify") === "email" && profile !== null && !profile.isEmailVerified;
   const editTarget = searchParams.get("edit");
-  const showPhoneModal = editTarget === "phone" && profile !== null;
+  const showPhoneModal = (editTarget === "phone" || editTarget === "profile") && profile !== null;
   const showAddressModal = editTarget === "address" && profile !== null;
   const showSellerModal = searchParams.get("seller") === "apply" && profile !== null;
   const isSeller = profile?.roles.some((role) => role.toLowerCase() === "seller") ?? false;
@@ -89,6 +106,7 @@ export default function ProfileMain() {
       .then((result) => {
         if (active) {
           setProfile(result);
+          setFullNameInput(result.fullName ?? "");
           setPhoneInput(result.phone ?? "");
           setAddressForm(emptyAddressForm);
           setError(null);
@@ -106,9 +124,96 @@ export default function ProfileMain() {
     };
   }, [accessToken, isInitialized, router]);
 
+  const handleSaveProfile = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEditError(null);
+    setProfileActionError(null);
+    setProfileActionMessage(null);
+
+    const fullName = fullNameInput.trim();
+    const phone = phoneInput.trim();
+
+    if (!fullName) {
+      setEditError("Full name is required.");
+      return;
+    }
+
+    if (!accessToken || !profile) {
+      setEditError("Your session has expired. Please sign in again.");
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const updatedProfile = await updateProfile(accessToken, {
+        fullName,
+        phone: phone || null,
+        avatarUrl: profile.avatarUrl,
+      });
+
+      setProfile(updatedProfile);
+      setFullNameInput(updatedProfile.fullName ?? "");
+      setPhoneInput(updatedProfile.phone ?? "");
+      setProfileActionMessage("Your personal information has been saved.");
+      closeEditModal();
+    } catch (requestError) {
+      setEditError(
+        requestError instanceof ApiClientError
+          ? requestError.message
+          : "Unable to save your personal information. Please try again.",
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setProfileActionError(null);
+    setProfileActionMessage(null);
+
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setProfileActionError("Please choose a JPEG, PNG, or WebP image.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileActionError("Profile images must be 5 MB or smaller.");
+      return;
+    }
+
+    if (!accessToken) {
+      setProfileActionError("Your session has expired. Please sign in again.");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const updatedProfile = await uploadAvatar(accessToken, file);
+      setProfile(updatedProfile);
+      setFullNameInput(updatedProfile.fullName ?? "");
+      setPhoneInput(updatedProfile.phone ?? "");
+      setProfileActionMessage("Your profile photo has been updated.");
+    } catch (requestError) {
+      setProfileActionError(
+        requestError instanceof ApiClientError
+          ? requestError.message
+          : "Unable to upload your profile photo. Please try again.",
+      );
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleVerifyEmail = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setVerificationError(null);
+    setVerificationMessage(null);
 
     const normalizedOtp = verificationOtp.replace(/\D/g, "");
     if (!/^\d{6}$/.test(normalizedOtp)) {
@@ -132,6 +237,7 @@ export default function ProfileMain() {
       }
 
       setVerificationOtp("");
+      setProfileActionMessage("Your email has been verified.");
       router.replace("/profile");
     } catch (verificationRequestError) {
       setVerificationError(
@@ -149,6 +255,7 @@ export default function ProfileMain() {
   const handleEnterLater = () => {
     setVerificationOtp("");
     setVerificationError(null);
+    setVerificationMessage(null);
     router.replace("/profile", { scroll: false });
   };
 
@@ -235,19 +342,6 @@ export default function ProfileMain() {
     } finally {
       setIsSubmittingSellerApplication(false);
     }
-  };
-
-  const handleSavePhone = (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const normalizedPhone = phoneInput.trim();
-    if (!normalizedPhone) {
-      setEditError("Phone number is required.");
-      return;
-    }
-
-    setProfile((current) => (current ? { ...current, phone: normalizedPhone } : current));
-    closeEditModal();
   };
 
   const handleSaveAddress = (event: SubmitEvent<HTMLFormElement>) => {
@@ -338,18 +432,80 @@ export default function ProfileMain() {
                   Account details
                 </h2>
                 <p className="mb-2">Manage and review your account information.</p>
-                <span
-                  className={`badge ${profile.isActive ? "badge-success" : "badge-secondary"}`}
-                  style={{ fontSize: "inherit", fontWeight: 400 }}
-                >
-                  {profile.isActive ? "Active" : "Inactive"}
-                </span>
               </div>
+
+              <div className="profile-account-summary border p-4 mb-2">
+                <div className="profile-account-summary__identity">
+                  <div className="profile-account-summary__avatar" aria-label="Profile photo">
+                    {profile.avatarUrl ? (
+                      <Image
+                        src={profile.avatarUrl}
+                        alt={`${profile.fullName || "Account"}'s profile photo`}
+                        width={96}
+                        height={96}
+                        unoptimized={shouldUseUnoptimizedImage(profile.avatarUrl)}
+                      />
+                    ) : (
+                      <span aria-hidden="true">{getInitials(profile.fullName, profile.email)}</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className={`badge ${profile.isActive ? "badge-success" : "badge-secondary"} mb-1`}>
+                      {profile.isActive ? "Active" : "Inactive"}
+                    </span>
+                    <h2 className="profile-account-summary__name mb-1">
+                      {profile.fullName || "Complete your profile"}
+                    </h2>
+                    <p className="mb-0">
+                      {profile.roles.length ? profile.roles.join(", ") : "Customer"}
+                    </p>
+                  </div>
+                </div>
+                <div className="profile-account-summary__actions">
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    onChange={handleAvatarChange}
+                    aria-label="Choose a profile photo"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary-2"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                  >
+                    {isUploadingAvatar ? "UPLOADING..." : "CHANGE PHOTO"}
+                  </button>
+                </div>
+              </div>
+
+              {profileActionError && (
+                <div className="alert alert-danger" role="alert" aria-live="polite">
+                  {profileActionError}
+                </div>
+              )}
+              {profileActionMessage && (
+                <div className="alert alert-success" role="status" aria-live="polite">
+                  {profileActionMessage}
+                </div>
+              )}
 
               <div className="row">
                 <div className="col-lg-8">
                   <div className="border p-4 mb-4">
-                    <h3 className="mb-3">Personal information</h3>
+                    <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
+                      <h3 className="mb-0">Personal information</h3>
+                      <Link
+                        href="/profile?edit=profile"
+                        scroll={false}
+                        className="profile-action-link text-primary"
+                        style={{ fontWeight: 600, textDecoration: "underline" }}
+                      >
+                        Edit
+                      </Link>
+                    </div>
                     <dl className="row mb-0">
                       <dt className="col-sm-4">Full name</dt>
                       <dd className="col-sm-8">{profile.fullName || "Not provided"}</dd>
@@ -357,31 +513,7 @@ export default function ProfileMain() {
                       <dd className="col-sm-8">{profile.email || "Not provided"}</dd>
                       <dt className="col-sm-4">Phone number</dt>
                       <dd className="col-sm-8">
-                        {profile.phone ? (
-                          <>
-                            <span>{profile.phone}</span>
-                            <Link
-                              href="/profile?edit=phone"
-                              scroll={false}
-                              className="profile-action-link ml-2 text-primary"
-                              style={{ fontWeight: 600, textDecoration: "underline" }}
-                            >
-                              Edit
-                            </Link>
-                          </>
-                        ) : (
-                          <>
-                            <span>Not provided</span>
-                            <Link
-                              href="/profile?edit=phone"
-                              scroll={false}
-                              className="profile-action-link ml-2 text-primary"
-                              style={{ fontWeight: 600, textDecoration: "underline" }}
-                            >
-                              Edit
-                            </Link>
-                          </>
-                        )}
+                        {profile.phone || "Not provided"}
                       </dd>
                       <dt className="col-sm-4">Email verification</dt>
                       <dd className="col-sm-8">
@@ -470,10 +602,11 @@ export default function ProfileMain() {
         <>
           <div className="modal-backdrop fade show" />
           <div
-            className="modal fade show"
+            className="modal fade show profile-form-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="profile-verify-email-title"
+            aria-describedby="profile-verify-email-description"
             style={{ display: "block" }}
           >
             <div className="modal-dialog modal-dialog-centered" role="document">
@@ -481,10 +614,10 @@ export default function ProfileMain() {
                 <div className="modal-body">
                   <div className="form-box">
                     <div className="form-tab">
-                      <h2 id="profile-verify-email-title" className="text-center mb-2">
+                      <h2 id="profile-verify-email-title" className="mb-2">
                         Verify Your Email
                       </h2>
-                      <p className="text-center mb-3">
+                      <p id="profile-verify-email-description" className="mb-3">
                         Enter the OTP sent to your email address.
                       </p>
 
@@ -503,48 +636,62 @@ export default function ProfileMain() {
                         </div>
 
                         <div className="form-group">
-                          <label htmlFor="profile-verification-otp">Verification code *</label>
+                          <span id="profile-verification-code-label" className="form-label">
+                            Verification code *
+                          </span>
+                          <p id="profile-verification-code-help" className="profile-form-modal__hint mb-2">
+                            Enter the 6-digit code. You can paste the full code into any box.
+                          </p>
                           <OtpInput
                             value={verificationOtp}
                             onChange={setVerificationOtp}
                             disabled={isVerifying}
                             idPrefix="profile-verification-otp"
+                            ariaLabelledBy="profile-verification-code-label"
+                            ariaDescribedBy="profile-verification-code-help"
+                            invalid={Boolean(verificationError)}
                           />
                         </div>
 
+                        {verificationMessage && (
+                          <div className="alert alert-success" role="status" aria-live="polite">
+                            {verificationMessage}
+                          </div>
+                        )}
                         {verificationError && (
                           <div className="alert alert-danger" role="alert" aria-live="polite">
                             {verificationError}
                           </div>
                         )}
 
-                        <div className="verification-form-footer form-footer d-flex flex-row align-items-center justify-content-between">
-                          <div className="d-flex align-items-center">
-                            <button
-                              type="submit"
-                              className="btn btn-outline-primary-2"
-                              disabled={isVerifying}
-                            >
-                              <span>{isVerifying ? "VERIFYING..." : "ENTER"}</span>
-                              <i className="icon-long-arrow-right"></i>
-                            </button>
+                        <div className="profile-form-modal__footer">
+                          <button
+                            type="submit"
+                            className="btn btn-outline-primary-2 profile-form-modal__submit"
+                            disabled={isVerifying}
+                          >
+                            <span>{isVerifying ? "VERIFYING..." : "VERIFY EMAIL"}</span>
+                            <i className="icon-long-arrow-right" aria-hidden="true"></i>
+                          </button>
+                          <div className="profile-form-modal__secondary-actions">
                             <ResendOtpButton
                               email={profile?.email ?? ""}
                               disabled={isVerifying}
                               onResent={() => {
                                 setVerificationOtp("");
                                 setVerificationError(null);
+                                setVerificationMessage("A new verification code was sent to your email.");
                               }}
                             />
+                            <button
+                              type="button"
+                              className="btn btn-link"
+                              onClick={handleEnterLater}
+                              disabled={isVerifying}
+                            >
+                              Enter later
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            className="btn btn-link"
-                            onClick={handleEnterLater}
-                            disabled={isVerifying}
-                          >
-                            Enter later
-                          </button>
                         </div>
                       </form>
                     </div>
@@ -560,10 +707,10 @@ export default function ProfileMain() {
         <>
           <div className="modal-backdrop fade show" />
           <div
-            className="modal fade show profile-edit-modal"
+            className="modal fade show profile-form-modal profile-edit-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby={showPhoneModal ? "profile-edit-phone-title" : "profile-edit-address-title"}
+            aria-labelledby={showPhoneModal ? "profile-edit-profile-title" : "profile-edit-address-title"}
             style={{ display: "block" }}
           >
             <div className="modal-dialog modal-dialog-centered" role="document">
@@ -572,31 +719,45 @@ export default function ProfileMain() {
                   <div className="form-box">
                     <div className="form-tab">
                       <h2
-                        id={showPhoneModal ? "profile-edit-phone-title" : "profile-edit-address-title"}
-                        className="text-center mb-2"
+                        id={showPhoneModal ? "profile-edit-profile-title" : "profile-edit-address-title"}
+                        className="mb-2"
                       >
-                        {showPhoneModal ? "Add Phone Number" : "Add Address"}
+                        {showPhoneModal ? "Edit Personal Information" : "Add Address"}
                       </h2>
-                      <p className="text-center mb-3">
+                      <p className="mb-3">
                         {showPhoneModal
-                          ? "Add a phone number for order and pickup contact."
+                          ? "Keep your account details up to date."
                           : "Add an address for delivery orders."}
                       </p>
 
-                      <form onSubmit={showPhoneModal ? handleSavePhone : handleSaveAddress}>
+                      <form onSubmit={showPhoneModal ? handleSaveProfile : handleSaveAddress}>
                         {showPhoneModal ? (
-                          <div className="form-group">
-                            <label htmlFor="profile-edit-phone">Phone number *</label>
-                            <input
-                              type="tel"
-                              className="form-control"
-                              id="profile-edit-phone"
-                              value={phoneInput}
-                              onChange={(event) => setPhoneInput(event.target.value)}
-                              autoComplete="tel"
-                              required
-                            />
-                          </div>
+                          <>
+                            <div className="form-group">
+                              <label htmlFor="profile-edit-full-name">Full name *</label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                id="profile-edit-full-name"
+                                value={fullNameInput}
+                                onChange={(event) => setFullNameInput(event.target.value)}
+                                autoComplete="name"
+                                maxLength={200}
+                                required
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="profile-edit-phone">Phone number</label>
+                              <input
+                                type="tel"
+                                className="form-control"
+                                id="profile-edit-phone"
+                                value={phoneInput}
+                                onChange={(event) => setPhoneInput(event.target.value)}
+                                autoComplete="tel"
+                              />
+                            </div>
+                          </>
                         ) : (
                           <>
                             <div className="form-group">
@@ -672,12 +833,27 @@ export default function ProfileMain() {
                           </div>
                         )}
 
-                        <div className="form-footer profile-edit-modal__footer">
-                          <button type="submit" className="btn btn-outline-primary-2">
-                            <span>{showPhoneModal ? "SAVE PHONE" : "SAVE ADDRESS"}</span>
+                        <div className="form-footer profile-form-modal__footer">
+                          <button
+                            type="submit"
+                            className="btn btn-outline-primary-2"
+                            disabled={showPhoneModal && isSavingProfile}
+                          >
+                            <span>
+                              {showPhoneModal
+                                ? isSavingProfile
+                                  ? "SAVING..."
+                                  : "SAVE CHANGES"
+                                : "SAVE ADDRESS"}
+                            </span>
                             <i className="icon-long-arrow-right"></i>
                           </button>
-                          <button type="button" className="btn btn-link" onClick={closeEditModal}>
+                          <button
+                            type="button"
+                            className="btn btn-link"
+                            onClick={closeEditModal}
+                            disabled={showPhoneModal && isSavingProfile}
+                          >
                             Cancel
                           </button>
                         </div>
@@ -695,7 +871,7 @@ export default function ProfileMain() {
         <>
           <div className="modal-backdrop fade show" />
           <div
-            className="modal fade show profile-edit-modal"
+            className="modal fade show profile-form-modal profile-edit-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="seller-application-title"
@@ -706,7 +882,7 @@ export default function ProfileMain() {
                 <div className="modal-body">
                   <div className="form-box">
                     <div className="form-tab">
-                      <h2 id="seller-application-title" className="text-center mb-2">
+                      <h2 id="seller-application-title" className="mb-2">
                         Become a Seller
                       </h2>
 
@@ -722,7 +898,7 @@ export default function ProfileMain() {
                         </div>
                       ) : (
                         <>
-                          <p className="text-center mb-3">
+                          <p className="mb-3">
                             Tell us about the store you want to register on {BRAND_NAME}.
                           </p>
 
@@ -813,7 +989,7 @@ export default function ProfileMain() {
                               </div>
                             )}
 
-                            <div className="form-footer profile-edit-modal__footer">
+                            <div className="form-footer profile-form-modal__footer">
                               <button
                                 type="submit"
                                 className="btn btn-outline-primary-2"
