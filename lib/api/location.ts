@@ -199,7 +199,7 @@ export async function autocompleteLocations(
     try {
       const params = buildAutocompleteQueryParams(query);
       return await apiRequest<AutocompleteSuggestionResponse[]>(
-        `/api/locations/autocomplete?${params.toString()}`,
+        `/api/store/locations/autocomplete?${params.toString()}`,
         {
           method: "GET",
           headers: bearer(accessToken),
@@ -245,7 +245,7 @@ export async function getLocationPlaceDetail(
       }
 
       return await apiRequest<PlaceDetailResponse>(
-        `/api/locations/place-detail?${searchParams.toString()}`,
+        `/api/store/locations/place-detail?${searchParams.toString()}`,
         {
           method: "GET",
           headers: bearer(accessToken),
