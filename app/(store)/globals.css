@@ -1564,6 +1564,149 @@ a.profile-action-link.text-primary:focus {
   padding: 0 0 20px 0 !important;
 }
 
+.profile-seller-card {
+  background: #fbfcf8;
+}
+
+.site-toast-region {
+  position: fixed;
+  z-index: 1080;
+  top: 2rem;
+  right: 1.5rem;
+  display: flex;
+  width: min(24rem, calc(100vw - 2rem));
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.site-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1rem 1rem 0.9rem;
+  border: 1px solid rgba(34, 34, 34, 0.1);
+  border-left: 0.35rem solid #61ab00;
+  background: #fff;
+  color: #222;
+  box-shadow: 0 0.8rem 2.4rem rgba(34, 34, 34, 0.16);
+  pointer-events: auto;
+  animation: site-toast-enter 0.24s ease-out both;
+}
+
+.site-toast--error {
+  border-left-color: #c83232;
+}
+
+.site-toast--warning {
+  border-left-color: #d28a00;
+}
+
+.site-toast--info {
+  border-left-color: #3478b9;
+}
+
+.site-toast--leaving {
+  animation: site-toast-exit 0.18s ease-in both;
+}
+
+.site-toast__icon {
+  display: inline-flex;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: 0 0 2.2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eaf4dc;
+  color: #3f7800;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.site-toast--error .site-toast__icon {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+.site-toast--warning .site-toast__icon {
+  background: #fff3d6;
+  color: #9a6500;
+}
+
+.site-toast--info .site-toast__icon {
+  background: #e5f0fb;
+  color: #245b8f;
+}
+
+.site-toast__message {
+  flex: 1;
+  margin: 0.1rem 0 0;
+  font-size: 1.3rem;
+  line-height: 1.45;
+}
+
+.site-toast__dismiss {
+  display: inline-flex;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 2.4rem;
+  align-items: center;
+  justify-content: center;
+  margin: -0.25rem -0.25rem 0 0;
+  border: 0;
+  background: transparent;
+  color: #777;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.site-toast__dismiss:hover,
+.site-toast__dismiss:focus {
+  color: #222;
+}
+
+@keyframes site-toast-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(1rem, -0.5rem, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes site-toast-exit {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(1rem, -0.25rem, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-toast {
+    animation: none;
+  }
+}
+
+@media (max-width: 575px) {
+  .site-toast-region {
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    width: auto;
+  }
+
+}
+
 .profile-addresses {
   background: #fff;
 }
@@ -1588,6 +1731,10 @@ a.profile-action-link.text-primary:focus {
 .profile-addresses__selector .form-control:focus {
   border-color: #61ab00;
   box-shadow: 0 0 0 0.2rem rgba(97, 171, 0, 0.15);
+}
+
+#profile-saved-address.form-control {
+  padding-left: 1rem !important;
 }
 
 .profile-addresses__details {
@@ -1776,6 +1923,44 @@ a.profile-action-link.text-primary:focus {
   opacity: 0.65;
 }
 
+.profile-confirm-modal .modal-dialog {
+  max-width: 42rem;
+}
+
+.profile-form-modal .profile-confirm-modal__body {
+  padding: 3.2rem;
+}
+
+.profile-confirm-modal__body h2 {
+  color: #222;
+  font-size: 2.4rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.profile-confirm-modal__body p {
+  color: #666;
+  line-height: 1.55;
+}
+
+.profile-confirm-modal__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.6rem;
+}
+
+.profile-confirm-modal__actions .btn-link {
+  margin: 0;
+  padding: 0;
+  color: #61ab00;
+}
+
+.profile-confirm-modal__actions .btn-link:hover,
+.profile-confirm-modal__actions .btn-link:focus {
+  color: #447800;
+}
+
 .profile-form-modal__secondary-actions {
   display: flex;
   align-items: center;
@@ -1803,6 +1988,20 @@ a.profile-action-link.text-primary:focus {
 
   .profile-form-modal .form-box {
     padding: 2.4rem 2rem 3rem;
+  }
+
+  .profile-form-modal .profile-confirm-modal__body {
+    padding: 2.4rem 2rem 2.8rem;
+  }
+
+  .profile-confirm-modal__actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+    gap: 1rem;
+  }
+
+  .profile-confirm-modal__actions .btn {
+    width: 100%;
   }
 
   .profile-form-modal__secondary-actions {

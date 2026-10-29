@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useToast } from "@/components/notifications/ToastProvider";
 import { BRAND_NAME } from "@/lib/brand";
 import { ApiClientError } from "@/lib/api/client";
 import {
@@ -92,13 +93,13 @@ export default function ProfileMain() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { accessToken, isInitialized } = useAuth();
+  const { showToast } = useToast();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [verificationOtp, setVerificationOtp] = useState("");
   const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [verificationMessage, setVerificationMessage] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [fullNameInput, setFullNameInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
@@ -106,12 +107,11 @@ export default function ProfileMain() {
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
-  const [profileActionError, setProfileActionError] = useState<string | null>(null);
-  const [profileActionMessage, setProfileActionMessage] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
+  const [addressPendingDelete, setAddressPendingDelete] = useState<UserAddress | null>(null);
   const [sellerApplication, setSellerApplication] = useState<SellerApplicationForm>(emptySellerApplication);
   const [sellerApplicationError, setSellerApplicationError] = useState<string | null>(null);
   const [sellerApplicationSubmitted, setSellerApplicationSubmitted] = useState(false);
@@ -164,8 +164,6 @@ export default function ProfileMain() {
   const handleSaveProfile = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setEditError(null);
-    setProfileActionError(null);
-    setProfileActionMessage(null);
 
     const fullName = fullNameInput.trim();
     const phone = phoneInput.trim();
@@ -192,14 +190,15 @@ export default function ProfileMain() {
       setProfile(updatedProfile);
       setFullNameInput(updatedProfile.fullName ?? "");
       setPhoneInput(updatedProfile.phone ?? "");
-      setProfileActionMessage("Your personal information has been saved.");
+      showToast("Your personal information has been saved.", "success");
       closeEditModal();
     } catch (requestError) {
-      setEditError(
+      const message =
         requestError instanceof ApiClientError
           ? requestError.message
-          : "Unable to save your personal information. Please try again.",
-      );
+          : "Unable to save your personal information. Please try again.";
+      setEditError(message);
+      showToast(message, "error");
     } finally {
       setIsSavingProfile(false);
     }
@@ -208,23 +207,21 @@ export default function ProfileMain() {
   const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    setProfileActionError(null);
-    setProfileActionMessage(null);
 
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setProfileActionError("Please choose a JPEG, PNG, or WebP image.");
+      showToast("Please choose a JPEG, PNG, or WebP image.", "error");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setProfileActionError("Profile images must be 5 MB or smaller.");
+      showToast("Profile images must be 5 MB or smaller.", "error");
       return;
     }
 
     if (!accessToken) {
-      setProfileActionError("Your session has expired. Please sign in again.");
+      showToast("Your session has expired. Please sign in again.", "error");
       return;
     }
 
@@ -235,12 +232,13 @@ export default function ProfileMain() {
       setProfile(updatedProfile);
       setFullNameInput(updatedProfile.fullName ?? "");
       setPhoneInput(updatedProfile.phone ?? "");
-      setProfileActionMessage("Your profile photo has been updated.");
+      showToast("Your profile photo has been updated.", "success");
     } catch (requestError) {
-      setProfileActionError(
+      showToast(
         requestError instanceof ApiClientError
           ? requestError.message
           : "Unable to upload your profile photo. Please try again.",
+        "error",
       );
     } finally {
       setIsUploadingAvatar(false);
@@ -250,7 +248,6 @@ export default function ProfileMain() {
   const handleVerifyEmail = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setVerificationError(null);
-    setVerificationMessage(null);
 
     const normalizedOtp = verificationOtp.replace(/\D/g, "");
     if (!/^\d{6}$/.test(normalizedOtp)) {
@@ -274,16 +271,17 @@ export default function ProfileMain() {
       }
 
       setVerificationOtp("");
-      setProfileActionMessage("Your email has been verified.");
+      showToast("Your email has been verified.", "success");
       router.replace("/profile");
     } catch (verificationRequestError) {
-      setVerificationError(
+      const message =
         verificationRequestError instanceof ApiClientError && verificationRequestError.status === 400
           ? "The verification code is incorrect or expired."
           : verificationRequestError instanceof ApiClientError
             ? verificationRequestError.message
-            : "Unable to verify your email. Please try again.",
-      );
+            : "Unable to verify your email. Please try again.";
+      setVerificationError(message);
+      showToast(message, "error");
     } finally {
       setIsVerifying(false);
     }
@@ -292,7 +290,6 @@ export default function ProfileMain() {
   const handleEnterLater = () => {
     setVerificationOtp("");
     setVerificationError(null);
-    setVerificationMessage(null);
     router.replace("/profile", { scroll: false });
   };
 
@@ -396,12 +393,14 @@ export default function ProfileMain() {
 
       setSellerApplication(normalizedApplication);
       setSellerApplicationSubmitted(true);
+      showToast("Your seller application has been submitted for review.", "success");
     } catch (requestError) {
-      setSellerApplicationError(
+      const message =
         requestError instanceof ApiClientError
           ? requestError.message
-          : "Unable to submit your seller application. Please try again.",
-      );
+          : "Unable to submit your seller application. Please try again.";
+      setSellerApplicationError(message);
+      showToast(message, "error");
     } finally {
       setIsSubmittingSellerApplication(false);
     }
@@ -462,25 +461,33 @@ export default function ProfileMain() {
       const updatedProfile = await getProfile(accessToken);
       setProfile(updatedProfile);
       setSelectedAddressId(savedAddress.id);
-      setProfileActionMessage(editingAddressId ? "Your address has been updated." : "Your address has been saved.");
+      showToast(
+        editingAddressId ? "Your address has been updated." : "Your address has been saved.",
+        "success",
+      );
       closeEditModal();
     } catch (requestError) {
-      setEditError(
+      const message =
         requestError instanceof ApiClientError
           ? requestError.message
-          : "Unable to save your address. Please try again.",
-      );
+          : "Unable to save your address. Please try again.";
+      setEditError(message);
+      showToast(message, "error");
     } finally {
       setIsSavingAddress(false);
     }
   };
 
-  const handleDeleteAddress = async (address: UserAddress) => {
+  const handleDeleteAddress = (address: UserAddress) => {
     if (!accessToken || deletingAddressId) return;
-    if (!window.confirm(`Delete ${address.label || "this address"}?`)) return;
+    setAddressPendingDelete(address);
+  };
 
-    setProfileActionError(null);
-    setProfileActionMessage(null);
+  const handleConfirmDeleteAddress = async () => {
+    if (!accessToken || !addressPendingDelete || deletingAddressId) return;
+
+    const address = addressPendingDelete;
+
     setDeletingAddressId(address.id);
 
     try {
@@ -492,15 +499,17 @@ export default function ProfileMain() {
           ? currentId
           : updatedProfile.userAddresses.find((item) => item.isDefault)?.id ?? updatedProfile.userAddresses[0]?.id ?? "",
       );
-      setProfileActionMessage("Your address has been deleted.");
+      showToast("Your address has been deleted.", "success");
     } catch (requestError) {
-      setProfileActionError(
+      showToast(
         requestError instanceof ApiClientError
           ? requestError.message
           : "Unable to delete your address. Please try again.",
+        "error",
       );
     } finally {
       setDeletingAddressId(null);
+      setAddressPendingDelete(null);
     }
   };
 
@@ -601,17 +610,6 @@ export default function ProfileMain() {
                 </div>
               </div>
 
-              {profileActionError && (
-                <div className="alert alert-danger" role="alert" aria-live="polite">
-                  {profileActionError}
-                </div>
-              )}
-              {profileActionMessage && (
-                <div className="alert alert-success" role="status" aria-live="polite">
-                  {profileActionMessage}
-                </div>
-              )}
-
               <div className="row">
                 <div className="col-lg-8">
                   <div className="border p-4 mb-4">
@@ -657,21 +655,31 @@ export default function ProfileMain() {
                     </dl>
                   </div>
 
-                  <div className="border p-4 mb-4">
-                    <h3 className="mb-3">Roles</h3>
-                    <p className="mb-0">{profile.roles.length ? profile.roles.join(", ") : "No roles assigned"}</p>
-                    {!isSeller && (
-                      <Link
-                        href="/profile?seller=apply"
-                        scroll={false}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          openSellerModal();
-                        }}
-                        className="profile-action-link d-inline-block mt-3 text-primary"
-                      >
-                        Become a Seller
-                      </Link>
+                  <div className="profile-seller-card border p-4 mb-4">
+                    {isSeller ? (
+                      <>
+                        <h3 className="mb-2">Seller dashboard</h3>
+                        <p className="mb-3">
+                          Manage your store, surprise bags, orders, and customer reviews.
+                        </p>
+                        <Link href="/seller" className="btn btn-primary">
+                          Open Seller Dashboard
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="mb-2">Become a Seller</h3>
+                        <p className="mb-3">
+                          Reach local buyers and help reduce food waste by offering your surplus food on StealDeals.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={openSellerModal}
+                        >
+                          Become a Seller
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -720,7 +728,7 @@ export default function ProfileMain() {
                               <button
                                 type="button"
                                 className="btn btn-link p-0 text-danger"
-                                onClick={() => void handleDeleteAddress(selectedAddress)}
+                                onClick={() => handleDeleteAddress(selectedAddress)}
                                 disabled={deletingAddressId === selectedAddress.id}
                                 aria-label={`Delete ${selectedAddress.label || "address"}`}
                               >
@@ -809,11 +817,6 @@ export default function ProfileMain() {
                           />
                         </div>
 
-                        {verificationMessage && (
-                          <div className="alert alert-success" role="status" aria-live="polite">
-                            {verificationMessage}
-                          </div>
-                        )}
                         {verificationError && (
                           <div className="alert alert-danger" role="alert" aria-live="polite">
                             {verificationError}
@@ -836,7 +839,7 @@ export default function ProfileMain() {
                               onResent={() => {
                                 setVerificationOtp("");
                                 setVerificationError(null);
-                                setVerificationMessage("A new verification code was sent to your email.");
+                                showToast("A new verification code was sent to your email.", "success");
                               }}
                             />
                             <button
@@ -1056,6 +1059,51 @@ export default function ProfileMain() {
                         </div>
                       </form>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {addressPendingDelete && (
+        <>
+          <div className="modal-backdrop fade show" />
+          <div
+            className="modal fade show profile-form-modal profile-confirm-modal"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="profile-delete-address-title"
+            aria-describedby="profile-delete-address-description"
+            style={{ display: "block" }}
+          >
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <div className="modal-content">
+                <div className="modal-body profile-confirm-modal__body">
+                  <h2 id="profile-delete-address-title" className="mb-2">
+                    Delete address?
+                  </h2>
+                  <p id="profile-delete-address-description" className="mb-4">
+                    Are you sure you want to delete {addressPendingDelete.label || "this address"}? This action cannot be undone.
+                  </p>
+                  <div className="profile-confirm-modal__actions">
+                    <button
+                      type="button"
+                      className="btn btn-link"
+                      onClick={() => setAddressPendingDelete(null)}
+                      disabled={Boolean(deletingAddressId)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => void handleConfirmDeleteAddress()}
+                      disabled={Boolean(deletingAddressId)}
+                    >
+                      {deletingAddressId ? "Deleting..." : "Delete address"}
+                    </button>
                   </div>
                 </div>
               </div>
