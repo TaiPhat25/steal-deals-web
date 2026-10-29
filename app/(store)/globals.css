@@ -1487,9 +1487,23 @@ img {
   text-decoration: none;
 }
 
+.profile-action-link {
+  font-weight: 400;
+  text-decoration: none;
+}
+
 .profile-action-link:hover,
 .profile-action-link:focus {
-  color: #3f7800 !important;
+  color: #61ab00 !important;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+a.profile-action-link.text-primary:hover,
+a.profile-action-link.text-primary:focus {
+  color: #61ab00 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 0.15em;
 }
 
 .profile-account-summary {
@@ -1544,6 +1558,94 @@ img {
 .profile-account-summary__actions {
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.profile-page .page-content {
+  padding: 0 0 20px 0 !important;
+}
+
+.profile-addresses {
+  background: #fff;
+}
+
+.profile-addresses__title {
+  color: #222;
+}
+
+.profile-addresses__selector {
+  position: relative;
+}
+
+.profile-addresses__selector .form-control {
+  height: 3.25rem;
+  margin-bottom: 0;
+  border-color: rgba(97, 171, 0, 0.55);
+  background-color: #fbfcf8;
+  color: #222;
+  font-weight: 600;
+}
+
+.profile-addresses__selector .form-control:focus {
+  border-color: #61ab00;
+  box-shadow: 0 0 0 0.2rem rgba(97, 171, 0, 0.15);
+}
+
+.profile-addresses__details {
+  padding-top: 1.25rem;
+}
+
+.profile-addresses__address {
+  color: #222;
+  line-height: 1.75;
+}
+
+.profile-addresses__actions {
+  align-items: center;
+  column-gap: 1rem;
+  color: #61ab00;
+}
+
+.profile-addresses__actions .btn-link {
+  border-bottom: 0 !important;
+  font-weight: 600;
+  margin: 0;
+  padding: 0 !important;
+  text-decoration: none !important;
+}
+
+.profile-addresses__actions .btn-link:hover,
+.profile-addresses__actions .btn-link:focus {
+  border-bottom: 0 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 0.15em;
+}
+
+.profile-addresses__add {
+  border-bottom: 0 !important;
+  margin-top: 1.5rem;
+  margin-left: 0;
+  padding: 0 !important;
+  color: #61ab00;
+  font-weight: 600;
+  text-decoration: none !important;
+}
+
+.profile-addresses__add:hover,
+.profile-addresses__add:focus {
+  border-bottom: 0 !important;
+  color: #61ab00 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 0.15em;
+}
+
+@media (max-width: 575px) {
+  .profile-addresses__details {
+    padding-top: 1rem;
+  }
+
+  .profile-addresses__actions {
+    row-gap: 0.25rem;
+  }
 }
 
 @media (max-width: 575px) {

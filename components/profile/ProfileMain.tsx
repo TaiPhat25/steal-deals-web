@@ -7,7 +7,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { BRAND_NAME } from "@/lib/brand";
 import { ApiClientError } from "@/lib/api/client";
-import { getProfile, updateProfile, uploadAvatar } from "@/lib/api/account";
+import {
+  createAddress,
+  deleteAddress,
+  getProfile,
+  updateAddress,
+  updateProfile,
+  uploadAvatar,
+  type UserAddressRequest,
+} from "@/lib/api/account";
 import { verifyEmail } from "@/lib/api/auth";
 import { createStore } from "@/lib/api/store";
 import { shouldUseUnoptimizedImage } from "@/lib/image-assets";
@@ -15,7 +23,9 @@ import OtpInput from "@/components/auth/OtpInput";
 import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import type { UserProfile, UserAddress } from "@/lib/api/store-types";
 
-type AddressForm = Pick<UserAddress, "label" | "address" | "district" | "city"> & {
+type AddressForm = Pick<UserAddress, "label" | "address" | "commune" | "province"> & {
+  latitude: string;
+  longitude: string;
   isDefault: boolean;
 };
 
@@ -31,8 +41,10 @@ type SellerApplicationForm = {
 const emptyAddressForm: AddressForm = {
   label: "",
   address: "",
-  district: "",
-  city: "",
+  commune: "",
+  province: "",
+  latitude: "",
+  longitude: "",
   isDefault: false,
 };
 
@@ -60,6 +72,22 @@ function getInitials(fullName: string | null, email: string | null) {
     : source.slice(0, 2).toUpperCase();
 }
 
+function formatAddress(address: Pick<UserAddress, "address" | "commune" | "province">) {
+  return [address.address, address.commune, address.province].filter(Boolean).join(", ");
+}
+
+function addressToForm(address: UserAddress): AddressForm {
+  return {
+    label: address.label,
+    address: address.address,
+    commune: address.commune,
+    province: address.province,
+    latitude: address.latitude?.toString() ?? "",
+    longitude: address.longitude?.toString() ?? "",
+    isDefault: address.isDefault,
+  };
+}
+
 export default function ProfileMain() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,11 +103,15 @@ export default function ProfileMain() {
   const [fullNameInput, setFullNameInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [addressForm, setAddressForm] = useState<AddressForm>(emptyAddressForm);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [profileActionError, setProfileActionError] = useState<string | null>(null);
   const [profileActionMessage, setProfileActionMessage] = useState<string | null>(null);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
   const [sellerApplication, setSellerApplication] = useState<SellerApplicationForm>(emptySellerApplication);
   const [sellerApplicationError, setSellerApplicationError] = useState<string | null>(null);
   const [sellerApplicationSubmitted, setSellerApplicationSubmitted] = useState(false);
@@ -91,6 +123,8 @@ export default function ProfileMain() {
   const showAddressModal = editTarget === "address" && profile !== null;
   const showSellerModal = searchParams.get("seller") === "apply" && profile !== null;
   const isSeller = profile?.roles.some((role) => role.toLowerCase() === "seller") ?? false;
+  const selectedAddress =
+    profile?.userAddresses.find((address) => address.id === selectedAddressId) ?? profile?.userAddresses[0] ?? null;
 
   useEffect(() => {
     if (!isInitialized) return;
@@ -106,6 +140,9 @@ export default function ProfileMain() {
       .then((result) => {
         if (active) {
           setProfile(result);
+          setSelectedAddressId(
+            result.userAddresses.find((address) => address.isDefault)?.id ?? result.userAddresses[0]?.id ?? "",
+          );
           setFullNameInput(result.fullName ?? "");
           setPhoneInput(result.phone ?? "");
           setAddressForm(emptyAddressForm);
@@ -261,7 +298,33 @@ export default function ProfileMain() {
 
   const closeEditModal = () => {
     setEditError(null);
+    setEditingAddressId(null);
+    setAddressForm(emptyAddressForm);
     router.replace("/profile", { scroll: false });
+  };
+
+  const openAddressModal = (address?: UserAddress) => {
+    setEditError(null);
+    setEditingAddressId(address?.id ?? null);
+    setAddressForm(address ? addressToForm(address) : emptyAddressForm);
+    router.push(address ? `/profile?edit=address&addressId=${address.id}` : "/profile?edit=address", {
+      scroll: false,
+    });
+  };
+
+  const openSellerModal = () => {
+    const defaultAddress = profile?.userAddresses.find((address) => address.isDefault);
+
+    if (defaultAddress) {
+      setSellerApplication((current) => ({
+        ...current,
+        address: current.address || formatAddress(defaultAddress),
+        latitude: current.latitude || defaultAddress.latitude?.toString() || "",
+        longitude: current.longitude || defaultAddress.longitude?.toString() || "",
+      }));
+    }
+
+    router.push("/profile?seller=apply", { scroll: false });
   };
 
   const closeSellerModal = () => {
@@ -344,44 +407,101 @@ export default function ProfileMain() {
     }
   };
 
-  const handleSaveAddress = (event: SubmitEvent<HTMLFormElement>) => {
+  const handleSaveAddress = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setEditError(null);
 
     const normalizedAddress = {
       label: addressForm.label.trim(),
       address: addressForm.address.trim(),
-      district: addressForm.district.trim(),
-      city: addressForm.city.trim(),
+      commune: addressForm.commune.trim(),
+      province: addressForm.province.trim(),
+      latitude: addressForm.latitude.trim(),
+      longitude: addressForm.longitude.trim(),
     };
 
-    if (!normalizedAddress.address || !normalizedAddress.district || !normalizedAddress.city) {
-      setEditError("Street address, district, and city are required.");
+    if (!normalizedAddress.address || !normalizedAddress.commune || !normalizedAddress.province) {
+      setEditError("Street address, commune, and province are required.");
       return;
     }
 
-    setProfile((current) => {
-      if (!current) return current;
+    const latitude = normalizedAddress.latitude ? Number(normalizedAddress.latitude) : null;
+    const longitude = normalizedAddress.longitude ? Number(normalizedAddress.longitude) : null;
 
-      const shouldBeDefault = addressForm.isDefault || current.userAddresses.length === 0;
-      const newAddress: UserAddress = {
-        id: `local-${Date.now()}`,
-        ...normalizedAddress,
-        isDefault: shouldBeDefault,
-      };
+    if (
+      (latitude === null) !== (longitude === null) ||
+      (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+      (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))
+    ) {
+      setEditError("Enter both coordinates, with latitude between -90 and 90 and longitude between -180 and 180.");
+      return;
+    }
 
-      return {
-        ...current,
-        userAddresses: [
-          ...current.userAddresses.map((address) => ({
-            ...address,
-            isDefault: shouldBeDefault ? false : address.isDefault,
-          })),
-          newAddress,
-        ],
-      };
-    });
-    setAddressForm(emptyAddressForm);
-    closeEditModal();
+    if (!accessToken || !profile) {
+      setEditError("Your session has expired. Please sign in again.");
+      return;
+    }
+
+    const request: UserAddressRequest = {
+      label: normalizedAddress.label,
+      address: normalizedAddress.address,
+      commune: normalizedAddress.commune,
+      province: normalizedAddress.province,
+      latitude,
+      longitude,
+      isDefault: addressForm.isDefault,
+    };
+
+    setIsSavingAddress(true);
+
+    try {
+      const savedAddress = editingAddressId
+        ? await updateAddress(accessToken, editingAddressId, request)
+        : await createAddress(accessToken, request);
+
+      const updatedProfile = await getProfile(accessToken);
+      setProfile(updatedProfile);
+      setSelectedAddressId(savedAddress.id);
+      setProfileActionMessage(editingAddressId ? "Your address has been updated." : "Your address has been saved.");
+      closeEditModal();
+    } catch (requestError) {
+      setEditError(
+        requestError instanceof ApiClientError
+          ? requestError.message
+          : "Unable to save your address. Please try again.",
+      );
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
+
+  const handleDeleteAddress = async (address: UserAddress) => {
+    if (!accessToken || deletingAddressId) return;
+    if (!window.confirm(`Delete ${address.label || "this address"}?`)) return;
+
+    setProfileActionError(null);
+    setProfileActionMessage(null);
+    setDeletingAddressId(address.id);
+
+    try {
+      await deleteAddress(accessToken, address.id);
+      const updatedProfile = await getProfile(accessToken);
+      setProfile(updatedProfile);
+      setSelectedAddressId((currentId) =>
+        updatedProfile.userAddresses.some((item) => item.id === currentId)
+          ? currentId
+          : updatedProfile.userAddresses.find((item) => item.isDefault)?.id ?? updatedProfile.userAddresses[0]?.id ?? "",
+      );
+      setProfileActionMessage("Your address has been deleted.");
+    } catch (requestError) {
+      setProfileActionError(
+        requestError instanceof ApiClientError
+          ? requestError.message
+          : "Unable to delete your address. Please try again.",
+      );
+    } finally {
+      setDeletingAddressId(null);
+    }
   };
 
   return (
@@ -501,7 +621,6 @@ export default function ProfileMain() {
                         href="/profile?edit=profile"
                         scroll={false}
                         className="profile-action-link text-primary"
-                        style={{ fontWeight: 600, textDecoration: "underline" }}
                       >
                         Edit
                       </Link>
@@ -528,7 +647,6 @@ export default function ProfileMain() {
                             href="/profile?verify=email"
                             scroll={false}
                             className="profile-action-link ml-2 text-primary"
-                            style={{ fontWeight: 600, textDecoration: "underline" }}
                           >
                             Verify
                           </Link>
@@ -546,8 +664,11 @@ export default function ProfileMain() {
                       <Link
                         href="/profile?seller=apply"
                         scroll={false}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          openSellerModal();
+                        }}
                         className="profile-action-link d-inline-block mt-3 text-primary"
-                        style={{ fontWeight: 600, textDecoration: "underline" }}
                       >
                         Become a Seller
                       </Link>
@@ -556,32 +677,67 @@ export default function ProfileMain() {
                 </div>
 
                 <div className="col-lg-4">
-                  <div className="border p-4 mb-4">
-                    <h3 className="mb-3">Addresses</h3>
+                  <div className="profile-addresses border p-4 mb-4">
+                    <h3 className="profile-addresses__title mb-3">Addresses</h3>
                     {profile.userAddresses.length === 0 ? (
-                      <p className="mb-2">No addresses saved.</p>
+                      <p className="profile-addresses__empty mb-3">No addresses saved.</p>
                     ) : (
-                      <ul className="list-unstyled mb-0">
-                        {profile.userAddresses.map((address) => (
-                          <li key={address.id} className="mb-3">
-                            <strong>{address.label || "Address"}</strong>
-                            <br />
-                            {address.address || ""}
-                            {address.district ? `, ${address.district}` : ""}
-                            {address.city ? `, ${address.city}` : ""}
-                            {address.isDefault && <span className="d-block text-primary">Default</span>}
-                          </li>
-                        ))}
-                      </ul>
+                      <>
+                        <div className="profile-addresses__selector">
+                          <label htmlFor="profile-saved-address" className="sr-only">
+                            Select a saved address
+                          </label>
+                          <select
+                            id="profile-saved-address"
+                            className="form-control"
+                            value={selectedAddress?.id ?? ""}
+                            onChange={(event) => setSelectedAddressId(event.target.value)}
+                          >
+                            {profile.userAddresses.map((address) => (
+                              <option key={address.id} value={address.id}>
+                                {address.label || "Address"}{address.isDefault ? " (Default)" : ""}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {selectedAddress && (
+                          <div className="profile-addresses__details">
+                            <p className="profile-addresses__address mb-2">
+                              <span className="d-block">{selectedAddress.address}</span>
+                              <span className="d-block">{selectedAddress.commune}</span>
+                              <span className="d-block">{selectedAddress.province}</span>
+                            </p>
+                            <div className="profile-addresses__actions d-flex flex-wrap">
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 text-primary"
+                                onClick={() => openAddressModal(selectedAddress)}
+                                aria-label={`Edit ${selectedAddress.label || "address"}`}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 text-danger"
+                                onClick={() => void handleDeleteAddress(selectedAddress)}
+                                disabled={deletingAddressId === selectedAddress.id}
+                                aria-label={`Delete ${selectedAddress.label || "address"}`}
+                              >
+                                {deletingAddressId === selectedAddress.id ? "Deleting..." : "Delete"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
-                    <Link
-                      href="/profile?edit=address"
-                      scroll={false}
-                      className="profile-action-link text-primary"
-                      style={{ fontWeight: 600, textDecoration: "underline" }}
+                    <button
+                      type="button"
+                      className="profile-addresses__add profile-action-link btn btn-link"
+                      onClick={() => openAddressModal()}
                     >
-                      Add address
-                    </Link>
+                      Add Address
+                    </button>
                   </div>
 
                   {profile.userTrustScore && (
@@ -722,12 +878,12 @@ export default function ProfileMain() {
                         id={showPhoneModal ? "profile-edit-profile-title" : "profile-edit-address-title"}
                         className="mb-2"
                       >
-                        {showPhoneModal ? "Edit Personal Information" : "Add Address"}
+                        {showPhoneModal ? "Edit Personal Information" : editingAddressId ? "Edit Address" : "Add Address"}
                       </h2>
                       <p className="mb-3">
                         {showPhoneModal
                           ? "Keep your account details up to date."
-                          : "Add an address for delivery orders."}
+                          : "Save an address for delivery orders and distance calculations."}
                       </p>
 
                       <form onSubmit={showPhoneModal ? handleSaveProfile : handleSaveAddress}>
@@ -761,7 +917,7 @@ export default function ProfileMain() {
                         ) : (
                           <>
                             <div className="form-group">
-                              <label htmlFor="profile-edit-address-label">Label</label>
+                              <label htmlFor="profile-edit-address-label">Label *</label>
                               <input
                                 type="text"
                                 className="form-control"
@@ -769,10 +925,11 @@ export default function ProfileMain() {
                                 value={addressForm.label}
                                 onChange={(event) => setAddressForm((current) => ({ ...current, label: event.target.value }))}
                                 placeholder="Home, work, or another label"
+                                required
                               />
                             </div>
                             <div className="form-group">
-                              <label htmlFor="profile-edit-address">Street address *</label>
+                              <label htmlFor="profile-edit-address">Street address / Specific address *</label>
                               <input
                                 type="text"
                                 className="form-control"
@@ -786,28 +943,64 @@ export default function ProfileMain() {
                             <div className="row">
                               <div className="col-sm-6">
                                 <div className="form-group">
-                                  <label htmlFor="profile-edit-district">District *</label>
+                                  <label htmlFor="profile-edit-commune">Ward / Commune *</label>
                                   <input
                                     type="text"
                                     className="form-control"
-                                    id="profile-edit-district"
-                                    value={addressForm.district}
-                                    onChange={(event) => setAddressForm((current) => ({ ...current, district: event.target.value }))}
+                                    id="profile-edit-commune"
+                                    value={addressForm.commune}
+                                    onChange={(event) => setAddressForm((current) => ({ ...current, commune: event.target.value }))}
                                     required
                                   />
                                 </div>
                               </div>
                               <div className="col-sm-6">
                                 <div className="form-group">
-                                  <label htmlFor="profile-edit-city">City *</label>
+                                  <label htmlFor="profile-edit-province">City / Province *</label>
                                   <input
                                     type="text"
                                     className="form-control"
-                                    id="profile-edit-city"
-                                    value={addressForm.city}
-                                    onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))}
-                                    autoComplete="address-level2"
+                                    id="profile-edit-province"
+                                    value={addressForm.province}
+                                    onChange={(event) => setAddressForm((current) => ({ ...current, province: event.target.value }))}
+                                    autoComplete="address-level1"
                                     required
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="row">
+                              <div className="col-sm-6">
+                                <div className="form-group">
+                                  <label htmlFor="profile-edit-latitude">Latitude</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    id="profile-edit-latitude"
+                                    value={addressForm.latitude}
+                                    onChange={(event) => setAddressForm((current) => ({ ...current, latitude: event.target.value }))}
+                                    inputMode="decimal"
+                                    min="-90"
+                                    max="90"
+                                    step="any"
+                                    placeholder="e.g. 10.7769"
+                                  />
+                                </div>
+                              </div>
+                              <div className="col-sm-6">
+                                <div className="form-group">
+                                  <label htmlFor="profile-edit-longitude">Longitude</label>
+                                  <input
+                                    type="number"
+                                    className="form-control"
+                                    id="profile-edit-longitude"
+                                    value={addressForm.longitude}
+                                    onChange={(event) => setAddressForm((current) => ({ ...current, longitude: event.target.value }))}
+                                    inputMode="decimal"
+                                    min="-180"
+                                    max="180"
+                                    step="any"
+                                    placeholder="e.g. 106.7009"
                                   />
                                 </div>
                               </div>
@@ -837,14 +1030,18 @@ export default function ProfileMain() {
                           <button
                             type="submit"
                             className="btn btn-outline-primary-2"
-                            disabled={showPhoneModal && isSavingProfile}
+                            disabled={showPhoneModal ? isSavingProfile : isSavingAddress}
                           >
                             <span>
                               {showPhoneModal
                                 ? isSavingProfile
                                   ? "SAVING..."
                                   : "SAVE CHANGES"
-                                : "SAVE ADDRESS"}
+                                  : isSavingAddress
+                                    ? "SAVING..."
+                                    : editingAddressId
+                                      ? "UPDATE ADDRESS"
+                                      : "SAVE ADDRESS"}
                             </span>
                             <i className="icon-long-arrow-right"></i>
                           </button>
@@ -852,7 +1049,7 @@ export default function ProfileMain() {
                             type="button"
                             className="btn btn-link"
                             onClick={closeEditModal}
-                            disabled={showPhoneModal && isSavingProfile}
+                            disabled={showPhoneModal ? isSavingProfile : isSavingAddress}
                           >
                             Cancel
                           </button>
