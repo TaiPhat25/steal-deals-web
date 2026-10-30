@@ -56,8 +56,8 @@ export type CreateStoreRequest = {
   address?: string | null;
   province?: string | null;
   commune?: string | null;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   phone?: string | null;
   bankAccount?: string | null;
   licenseUrl?: string | null;

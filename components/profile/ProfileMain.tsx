@@ -34,9 +34,13 @@ type SellerApplicationForm = {
   storeName: string;
   description: string;
   address: string;
+  province: string;
+  commune: string;
   latitude: string;
   longitude: string;
   phone: string;
+  bankAccount: string;
+  licenseUrl: string;
 };
 
 const emptyAddressForm: AddressForm = {
@@ -53,9 +57,13 @@ const emptySellerApplication: SellerApplicationForm = {
   storeName: "",
   description: "",
   address: "",
+  province: "",
+  commune: "",
   latitude: "",
   longitude: "",
   phone: "",
+  bankAccount: "",
+  licenseUrl: "",
 };
 
 function formatDate(value: string) {
@@ -312,14 +320,15 @@ export default function ProfileMain() {
   const openSellerModal = () => {
     const defaultAddress = profile?.userAddresses.find((address) => address.isDefault);
 
-    if (defaultAddress) {
-      setSellerApplication((current) => ({
-        ...current,
-        address: current.address || formatAddress(defaultAddress),
-        latitude: current.latitude || defaultAddress.latitude?.toString() || "",
-        longitude: current.longitude || defaultAddress.longitude?.toString() || "",
-      }));
-    }
+    setSellerApplication((current) => ({
+      ...current,
+      address: current.address || (defaultAddress ? formatAddress(defaultAddress) : ""),
+      commune: current.commune || defaultAddress?.commune || "",
+      province: current.province || defaultAddress?.province || "",
+      latitude: current.latitude || defaultAddress?.latitude?.toString() || "",
+      longitude: current.longitude || defaultAddress?.longitude?.toString() || "",
+      phone: current.phone || profile?.phone || "",
+    }));
 
     router.push("/profile?seller=apply", { scroll: false });
   };
@@ -345,32 +354,36 @@ export default function ProfileMain() {
       storeName: sellerApplication.storeName.trim(),
       description: sellerApplication.description.trim(),
       address: sellerApplication.address.trim(),
+      province: sellerApplication.province.trim(),
+      commune: sellerApplication.commune.trim(),
       latitude: sellerApplication.latitude.trim(),
       longitude: sellerApplication.longitude.trim(),
       phone: sellerApplication.phone.trim(),
+      bankAccount: sellerApplication.bankAccount.trim(),
+      licenseUrl: sellerApplication.licenseUrl.trim(),
     };
 
-    const latitude = Number(normalizedApplication.latitude);
-    const longitude = Number(normalizedApplication.longitude);
+    const latitude = normalizedApplication.latitude ? Number(normalizedApplication.latitude) : null;
+    const longitude = normalizedApplication.longitude ? Number(normalizedApplication.longitude) : null;
 
-    if (!normalizedApplication.storeName || !normalizedApplication.address || !normalizedApplication.phone) {
-      setSellerApplicationError("Store name, address, and contact phone are required.");
+    if (
+      !normalizedApplication.storeName ||
+      !normalizedApplication.address ||
+      !normalizedApplication.commune ||
+      !normalizedApplication.province ||
+      !normalizedApplication.phone
+    ) {
+      setSellerApplicationError("Store name, address, commune, province, and contact phone are required.");
       return;
     }
 
     if (
-      !normalizedApplication.latitude ||
-      !normalizedApplication.longitude ||
-      !Number.isFinite(latitude) ||
-      latitude < -90 ||
-      latitude > 90 ||
-      !Number.isFinite(longitude) ||
-      longitude < -180 ||
-      longitude > 180
+      (latitude !== null &&
+        (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) ||
+      (longitude !== null &&
+        (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))
     ) {
-      setSellerApplicationError(
-        "Enter a valid latitude between -90 and 90 and longitude between -180 and 180.",
-      );
+      setSellerApplicationError("Enter a valid latitude between -90 and 90 and longitude between -180 and 180.");
       return;
     }
 
@@ -386,9 +399,13 @@ export default function ProfileMain() {
         name: normalizedApplication.storeName,
         description: normalizedApplication.description || null,
         address: normalizedApplication.address,
+        province: normalizedApplication.province || null,
+        commune: normalizedApplication.commune || null,
         latitude,
         longitude,
         phone: normalizedApplication.phone,
+        bankAccount: normalizedApplication.bankAccount || null,
+        licenseUrl: normalizedApplication.licenseUrl || null,
       });
 
       setSellerApplication(normalizedApplication);
@@ -1172,7 +1189,7 @@ export default function ProfileMain() {
                               />
                             </div>
                             <div className="form-group">
-                              <label htmlFor="seller-store-address">Store address *</label>
+                              <label htmlFor="seller-store-address">Store address / Specific address*</label>
                               <input
                                 type="text"
                                 className="form-control"
@@ -1180,6 +1197,30 @@ export default function ProfileMain() {
                                 value={sellerApplication.address}
                                 onChange={(event) => handleSellerApplicationChange("address", event.target.value)}
                                 autoComplete="street-address"
+                                required
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="seller-store-commune">Ward / Commune *</label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                id="seller-store-commune"
+                                value={sellerApplication.commune}
+                                onChange={(event) => handleSellerApplicationChange("commune", event.target.value)}
+                                autoComplete="address-level3"
+                                required
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="seller-store-province">City / Province *</label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                id="seller-store-province"
+                                value={sellerApplication.province}
+                                onChange={(event) => handleSellerApplicationChange("province", event.target.value)}
+                                autoComplete="address-level1"
                                 required
                               />
                             </div>
@@ -1196,7 +1237,18 @@ export default function ProfileMain() {
                               />
                             </div>
                             <div className="form-group">
-                              <label htmlFor="seller-store-latitude">Latitude *</label>
+                              <label htmlFor="seller-store-bank-account">Bank account</label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                id="seller-store-bank-account"
+                                value={sellerApplication.bankAccount}
+                                onChange={(event) => handleSellerApplicationChange("bankAccount", event.target.value)}
+                                autoComplete="off"
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="seller-store-latitude">Latitude</label>
                               <input
                                 type="number"
                                 className="form-control"
@@ -1208,11 +1260,10 @@ export default function ProfileMain() {
                                 max="90"
                                 step="any"
                                 placeholder="e.g. 10.7769"
-                                required
                               />
                             </div>
                             <div className="form-group">
-                              <label htmlFor="seller-store-longitude">Longitude *</label>
+                              <label htmlFor="seller-store-longitude">Longitude</label>
                               <input
                                 type="number"
                                 className="form-control"
@@ -1224,7 +1275,18 @@ export default function ProfileMain() {
                                 max="180"
                                 step="any"
                                 placeholder="e.g. 106.7009"
-                                required
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label htmlFor="seller-store-license-url">License URL</label>
+                              <input
+                                type="url"
+                                className="form-control"
+                                id="seller-store-license-url"
+                                value={sellerApplication.licenseUrl}
+                                onChange={(event) => handleSellerApplicationChange("licenseUrl", event.target.value)}
+                                autoComplete="url"
+                                placeholder="https://example.com/license"
                               />
                             </div>
 
