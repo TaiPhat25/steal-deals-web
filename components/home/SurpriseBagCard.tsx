@@ -22,6 +22,7 @@ export type SurpriseBag = {
   discountPercent: number;
   pickupWindow: string;
   distance: string;
+  distanceKm?: number;
   remainingQuantity: number;
   availabilityLabel: string;
   storeSlug?: string;
@@ -104,7 +105,7 @@ function SurpriseBagCard({
             <dd>{bag.pickupWindow}</dd>
           </div>
           <div>
-            <dt>Location</dt>
+            <dt>Distance</dt>
             <dd>{bag.distance}</dd>
           </div>
           <div>

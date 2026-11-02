@@ -7,6 +7,8 @@ import InteractiveHandlers from "@/components/home/InteractiveHandlers";
 import MobileMenu from "@/components/home/MobileMenu";
 import AuthProvider from "@/components/auth/AuthProvider";
 import CartProvider from "@/components/cart/CartProvider";
+import ToastProvider from "@/components/notifications/ToastProvider";
+import UserLocationProvider from "@/components/location/UserLocationProvider";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,18 +16,22 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <AuthProvider>
-      <CartProvider>
-        <div className={`page-wrapper ${isHome ? "page-wrapper--home" : "page-wrapper--inner"}`}>
-          <Header />
-          {children}
-          <Footer />
-        </div>
-        <button id="scroll-top" title="Back to Top">
-          <i className="icon-arrow-up"></i>
-        </button>
-        <MobileMenu />
-        <InteractiveHandlers />
-      </CartProvider>
+      <UserLocationProvider>
+        <CartProvider>
+          <ToastProvider>
+            <div className={`page-wrapper ${isHome ? "page-wrapper--home" : "page-wrapper--inner"}`}>
+              <Header />
+              {children}
+              <Footer />
+            </div>
+            <button id="scroll-top" title="Back to Top">
+              <i className="icon-arrow-up"></i>
+            </button>
+            <MobileMenu />
+            <InteractiveHandlers />
+          </ToastProvider>
+        </CartProvider>
+      </UserLocationProvider>
     </AuthProvider>
   );
 }

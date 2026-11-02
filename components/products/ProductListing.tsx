@@ -7,6 +7,8 @@ import SurpriseBagCard from "@/components/home/SurpriseBagCard";
 import { useDialogFocusTrap } from "@/components/login/use-dialog-focus-trap";
 import { ApiClientError } from "@/lib/api/client";
 import { listAvailableBags } from "@/lib/api/store";
+import { listAvailableBagsWithDistances } from "@/lib/api/store";
+import { useUserLocation } from "@/components/location/UserLocationProvider";
 import {
   filterBags,
   normalizeSort,
@@ -104,6 +106,7 @@ export default function ProductListing({
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const filterDialogRef = useRef<HTMLDivElement>(null);
   const deferredQuery = useDeferredValue(query);
+  const { coordinates, isLoading: isUserLocationLoading } = useUserLocation();
 
   useDialogFocusTrap({
     dialogRef: filterDialogRef,
@@ -113,9 +116,15 @@ export default function ProductListing({
   });
 
   useEffect(() => {
+    if (isUserLocationLoading) return;
+
     let active = true;
 
-    void listAvailableBags()
+    const bagsRequest = coordinates
+      ? listAvailableBagsWithDistances({ ...coordinates, radiusInKm: 100, limit: 100 })
+      : listAvailableBags();
+
+    void bagsRequest
       .then((response) => {
         if (!active) return;
 
@@ -137,7 +146,7 @@ export default function ProductListing({
     return () => {
       active = false;
     };
-  }, [reloadKey]);
+  }, [coordinates, isUserLocationLoading, reloadKey]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia?.("(min-width: 992px)");

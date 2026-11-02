@@ -23,7 +23,7 @@ function formatPrice(value: number) {
 }
 
 function formatAddress(address: UserAddress) {
-  return [address.address, address.district, address.city].filter(Boolean).join(", ");
+  return [address.address, address.commune, address.province].filter(Boolean).join(", ");
 }
 
 export default function CheckoutMain() {
@@ -321,7 +321,7 @@ export default function CheckoutMain() {
                       {savedAddresses.length === 0 || selectedAddressId === "new" ? (
                         <label className="checkout-field checkout-field--full">
                           <span>Delivery address *</span>
-                          <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="House number, street, district, city" required rows={3} />
+                          <textarea value={deliveryAddress} onChange={(event) => setDeliveryAddress(event.target.value)} placeholder="House number, street, commune, province" required rows={3} />
                         </label>
                       ) : (
                         <div className="checkout-selected-address" aria-live="polite">

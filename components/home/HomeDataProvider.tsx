@@ -11,9 +11,11 @@ import {
 } from "react";
 import {
   listAvailableBags,
+  listAvailableBagsWithDistances,
   listCategories,
   listStores,
 } from "@/lib/api/store";
+import { useUserLocation } from "@/components/location/UserLocationProvider";
 import type {
   CategoryResponse,
   StoreProfileResponse,
@@ -62,6 +64,7 @@ function resolveResource<T>(
 const HomeDataContext = createContext<HomeData | undefined>(undefined);
 
 export default function HomeDataProvider({ children }: { children: ReactNode }) {
+  const { coordinates, isLoading: isUserLocationLoading } = useUserLocation();
   const [data, setData] = useState<HomeResources>(INITIAL_HOME_DATA);
   const [requestVersion, setRequestVersion] = useState(0);
 
@@ -75,9 +78,15 @@ export default function HomeDataProvider({ children }: { children: ReactNode }) 
   }, []);
 
   useEffect(() => {
+    if (isUserLocationLoading) return;
+
     let active = true;
 
-    Promise.allSettled([listAvailableBags(), listCategories(), listStores()]).then(
+    const bagsRequest = coordinates
+      ? listAvailableBagsWithDistances({ ...coordinates, radiusInKm: 100, limit: 100 })
+      : listAvailableBags();
+
+    Promise.allSettled([bagsRequest, listCategories(), listStores()]).then(
       ([bagsResult, categoriesResult, storesResult]) => {
         if (!active) return;
 
@@ -95,7 +104,7 @@ export default function HomeDataProvider({ children }: { children: ReactNode }) 
     return () => {
       active = false;
     };
-  }, [requestVersion]);
+  }, [coordinates, isUserLocationLoading, requestVersion]);
 
   const contextValue = useMemo(() => ({ ...data, retry }), [data, retry]);
 

@@ -377,9 +377,9 @@ export default function LocationMapView({
       <div ref={containerRef} className="h-full w-full" aria-label="Interactive map" />
 
       {/* Map overlay controls */}
-      <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 shadow backdrop-blur-sm">
-          <span className="size-2 rounded-full bg-primary" />
+      <div className="location-map-view__overlay pointer-events-none absolute inset-x-3 bottom-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="location-map-view__meta pointer-events-auto flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 shadow backdrop-blur-sm">
+          <span className="location-map-view__dot size-2 rounded-full bg-primary" />
           <span>
             {hasValidCoordinates
               ? `${latitude?.toFixed(5)}, ${longitude?.toFixed(5)}`
@@ -390,14 +390,14 @@ export default function LocationMapView({
           </span>
         </div>
 
-        <div className="pointer-events-auto flex gap-1.5">
+        <div className="location-map-view__actions pointer-events-auto flex gap-1.5">
           <button
             type="button"
             onClick={handleLocateMe}
             disabled={isLocating || disabled}
             title="Locate my position"
             aria-label="Locate my current position"
-            className="flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-700 shadow hover:bg-white hover:text-primary backdrop-blur-sm transition-colors disabled:opacity-50"
+            className="location-map-view__action flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-700 shadow hover:bg-white hover:text-primary backdrop-blur-sm transition-colors disabled:opacity-50"
           >
             <svg
               className={`size-3.5 ${isLocating ? "animate-spin text-primary" : ""}`}
@@ -417,7 +417,7 @@ export default function LocationMapView({
               onClick={handleRecenter}
               title="Recenter on pin"
               aria-label="Recenter map on pin"
-              className="flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-700 shadow hover:bg-white hover:text-primary backdrop-blur-sm transition-colors"
+              className="location-map-view__action flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-gray-700 shadow hover:bg-white hover:text-primary backdrop-blur-sm transition-colors"
             >
               <span>Recenter</span>
             </button>

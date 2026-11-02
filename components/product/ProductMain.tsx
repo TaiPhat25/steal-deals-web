@@ -8,9 +8,11 @@ import AddToCartDialog from "@/components/cart/AddToCartDialog";
 import DragScrollRow from "@/components/home/DragScrollRow";
 import { BRAND_NAME } from "@/lib/brand";
 import { listBagReviews } from "@/lib/api/store";
+import { listNearbyBags } from "@/lib/api/store";
+import { useUserLocation } from "@/components/location/UserLocationProvider";
 import type { StoreProfileResponse, StoreReviewResponse } from "@/lib/api/dashboard-types";
 import SurpriseBagCard from "@/components/home/SurpriseBagCard";
-import type { ListingBag } from "@/components/products/product-listing-data";
+import { formatDistanceKm, type ListingBag } from "@/components/products/product-listing-data";
 
 /*
 const galleryImagesBySlug: Record<string, string[]> = {
@@ -117,6 +119,8 @@ export default function ProductMain({
   const [reviewsError, setReviewsError] = useState("");
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [displayRelatedBags, setDisplayRelatedBags] = useState(relatedBags);
+  const { coordinates, isLoading: isUserLocationLoading } = useUserLocation();
   const tabRefs = useRef<Record<"pickup" | "reviews", HTMLButtonElement | null>>({
     pickup: null,
     reviews: null,
@@ -129,6 +133,32 @@ export default function ProductMain({
   ].filter(Boolean).join(", ");
   // const wishlistHref = `/wishlist?bag=${encodeURIComponent(bag.slug)}`;
   const description = bag.description?.trim();
+
+  useEffect(() => {
+    if (isUserLocationLoading || !coordinates) return;
+
+    let active = true;
+    void listNearbyBags({ ...coordinates, radiusInKm: 100, limit: 100 })
+      .then((nearbyBags) => {
+        if (!active) return;
+
+        const distanceByBagId = new Map(
+          nearbyBags
+            .filter((nearbyBag) => nearbyBag.distanceKm !== null && nearbyBag.distanceKm !== undefined)
+            .map((nearbyBag) => [nearbyBag.id, nearbyBag.distanceKm as number]),
+        );
+
+        setDisplayRelatedBags(relatedBags.map((relatedBag) => {
+          const distanceKm = distanceByBagId.get(relatedBag.backendId ?? "");
+          return distanceKm === undefined
+            ? relatedBag
+            : { ...relatedBag, distanceKm, distance: formatDistanceKm(distanceKm) };
+        }));
+      })
+      .catch(() => undefined);
+
+    return () => { active = false; };
+  }, [coordinates, isUserLocationLoading, relatedBags]);
 
   useEffect(() => {
     if (!bag.backendId) return;
@@ -526,7 +556,7 @@ export default function ProductMain({
                 aria-label="Related surprise bags"
                 tabIndex={0}
               >
-                {relatedBags.map((relatedBag) => (
+                {displayRelatedBags.map((relatedBag) => (
                   <SurpriseBagCard key={relatedBag.slug} bag={relatedBag} />
                 ))}
               </DragScrollRow>

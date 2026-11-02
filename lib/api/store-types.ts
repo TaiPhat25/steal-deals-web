@@ -32,8 +32,10 @@ export type UserAddress = {
   id: string;
   label: string;
   address: string;
-  district: string;
-  city: string;
+  commune: string;
+  province: string;
+  latitude: number | null;
+  longitude: number | null;
   isDefault: boolean;
 };
 

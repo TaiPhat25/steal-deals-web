@@ -56,11 +56,23 @@ export type CreateStoreRequest = {
   address?: string | null;
   province?: string | null;
   commune?: string | null;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   phone?: string | null;
   bankAccount?: string | null;
   licenseUrl?: string | null;
+};
+
+export type NearbyBagsRequest = {
+  latitude: number;
+  longitude: number;
+  radiusInKm?: number;
+  limit?: number;
+  status?: string;
+  query?: string;
+  category?: string;
+  sortBy?: "distance" | "price" | "rating" | "name";
+  sortOrder?: "asc" | "desc";
 };
 
 export {
@@ -163,6 +175,31 @@ export function listStores() {
   );
 }
 
+function buildNearbyBagsQuery(request: NearbyBagsRequest) {
+  const params = new URLSearchParams({
+    latitude: String(request.latitude),
+    longitude: String(request.longitude),
+  });
+
+  if (request.radiusInKm !== undefined) params.set("radiusInKm", String(request.radiusInKm));
+  if (request.limit !== undefined) params.set("limit", String(request.limit));
+  if (request.status) params.set("status", request.status);
+  if (request.query) params.set("query", request.query);
+  if (request.category) params.set("category", request.category);
+  if (request.sortBy) params.set("sortBy", request.sortBy);
+  if (request.sortOrder) params.set("sortOrder", request.sortOrder);
+
+  return params.toString();
+}
+
+export function listNearbyBags(request: NearbyBagsRequest) {
+  return apiRequest<SurpriseBagResponse[]>(
+    `/api/store/bags/nearby?${buildNearbyBagsQuery(request)}`,
+    { method: "GET" },
+    storeApiBaseUrl(),
+  ).then((bags) => bags.map(normalizeSurpriseBagResponse));
+}
+
 export function getStore(id: string) {
   return apiRequest<StoreProfileResponse>(
     `/api/store/stores/${encodeURIComponent(id)}`,
@@ -202,6 +239,31 @@ export function listBags() {
 
 export async function listAvailableBags(now = Date.now()) {
   return filterAvailableBags(await listBags(), now);
+}
+
+export async function listAvailableNearbyBags(
+  request: NearbyBagsRequest,
+  now = Date.now(),
+) {
+  return filterAvailableBags(await listNearbyBags(request), now);
+}
+
+export async function listAvailableBagsWithDistances(
+  request: NearbyBagsRequest,
+  now = Date.now(),
+) {
+  const bags = await listAvailableBags(now);
+  const nearbyBags = await listNearbyBags(request).catch(() => []);
+  const distances = new Map(
+    nearbyBags
+      .filter((bag) => bag.distanceKm !== null && bag.distanceKm !== undefined)
+      .map((bag) => [bag.id, bag.distanceKm as number]),
+  );
+
+  return bags.map((bag) => ({
+    ...bag,
+    distanceKm: distances.get(bag.id) ?? null,
+  }));
 }
 
 export function getBag(id: string) {
