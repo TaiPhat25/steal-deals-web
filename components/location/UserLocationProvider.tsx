@@ -26,6 +26,9 @@ const DEFAULT_CONTEXT: UserLocationContextValue = {
   isLoading: false,
 };
 
+export const SELECTED_ADDRESS_STORAGE_KEY = "stealdeals.selected-address-id";
+export const SELECTED_ADDRESS_CHANGE_EVENT = "stealdeals:selected-address-change";
+
 const UserLocationContext = createContext<UserLocationContextValue>(DEFAULT_CONTEXT);
 
 function validCoordinates(latitude: number | null, longitude: number | null): UserCoordinates | null {
@@ -41,6 +44,14 @@ export default function UserLocationProvider({ children }: { children: ReactNode
     coordinates: null,
     isLoading: true,
   });
+  const [selectionVersion, setSelectionVersion] = useState(0);
+
+  useEffect(() => {
+    const handleSelectedAddressChange = () => setSelectionVersion((version) => version + 1);
+
+    window.addEventListener(SELECTED_ADDRESS_CHANGE_EVENT, handleSelectedAddressChange);
+    return () => window.removeEventListener(SELECTED_ADDRESS_CHANGE_EVENT, handleSelectedAddressChange);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -61,7 +72,9 @@ export default function UserLocationProvider({ children }: { children: ReactNode
       .then((profile) => {
         if (!active) return;
 
-        const address = profile.userAddresses.find((item) => item.isDefault)
+        const selectedAddressId = window.localStorage.getItem(SELECTED_ADDRESS_STORAGE_KEY);
+        const address = profile.userAddresses.find((item) => item.id === selectedAddressId)
+          ?? profile.userAddresses.find((item) => item.isDefault)
           ?? profile.userAddresses[0];
         setLocation({
           coordinates: address
@@ -75,7 +88,7 @@ export default function UserLocationProvider({ children }: { children: ReactNode
       });
 
     return () => { active = false; };
-  }, [accessToken, isInitialized]);
+  }, [accessToken, isInitialized, selectionVersion]);
 
   const value = useMemo(() => location, [location]);
 

@@ -247,7 +247,7 @@ export default function OrderHistoryMain() {
             </section>
           ) : visibleOrders.length ? (
             <>
-            <section className="order-history-list" aria-label="Orders">
+            <section id="order-reviews" className="order-history-list" aria-label="Orders and reviews">
               {paginatedOrders.map((order) => {
                 const transaction = transactionsByOrderId[order.id] ?? null;
                 const remainingSeconds = getRemainingSeconds(transaction?.expiresAt ?? null, now);

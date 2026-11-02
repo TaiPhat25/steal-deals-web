@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type SubmitEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type SubmitEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -11,6 +11,7 @@ import { ApiClientError } from "@/lib/api/client";
 import {
   createAddress,
   deleteAddress,
+  changePassword,
   getProfile,
   updateAddress,
   updateProfile,
@@ -19,68 +20,24 @@ import {
 } from "@/lib/api/account";
 import { verifyEmail } from "@/lib/api/auth";
 import { createStore } from "@/lib/api/store";
-import { shouldUseUnoptimizedImage } from "@/lib/image-assets";
 import AddressMapPicker from "@/components/location/AddressMapPicker";
+import {
+  SELECTED_ADDRESS_CHANGE_EVENT,
+  SELECTED_ADDRESS_STORAGE_KEY,
+} from "@/components/location/UserLocationProvider";
 import OtpInput from "@/components/auth/OtpInput";
 import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import type { UserProfile, UserAddress } from "@/lib/api/store-types";
-
-type AddressForm = Pick<UserAddress, "label" | "address" | "commune" | "province"> & {
-  latitude: string;
-  longitude: string;
-  isDefault: boolean;
-};
-
-type SellerApplicationForm = {
-  storeName: string;
-  description: string;
-  address: string;
-  province: string;
-  commune: string;
-  latitude: string;
-  longitude: string;
-  phone: string;
-  bankAccount: string;
-  licenseUrl: string;
-};
-
-const emptyAddressForm: AddressForm = {
-  label: "",
-  address: "",
-  commune: "",
-  province: "",
-  latitude: "",
-  longitude: "",
-  isDefault: false,
-};
-
-const emptySellerApplication: SellerApplicationForm = {
-  storeName: "",
-  description: "",
-  address: "",
-  province: "",
-  commune: "",
-  latitude: "",
-  longitude: "",
-  phone: "",
-  bankAccount: "",
-  licenseUrl: "",
-};
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-  }).format(new Date(value));
-}
-
-function getInitials(fullName: string | null, email: string | null) {
-  const source = fullName?.trim() || email?.trim() || "U";
-  const words = source.split(/\s+/).filter(Boolean);
-
-  return words.length > 1
-    ? `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase()
-    : source.slice(0, 2).toUpperCase();
-}
+import ProfileAccountSections from "@/components/profile/ProfileAccountSections";
+import ProfileModals from "@/components/profile/ProfileModals";
+import {
+  emptyAddressForm,
+  emptyPasswordForm,
+  emptySellerApplication,
+  type AddressForm,
+  type PasswordForm,
+  type SellerApplicationForm,
+} from "@/components/profile/profile-types";
 
 function formatAddress(address: Pick<UserAddress, "address" | "commune" | "province">) {
   return [address.address, address.commune, address.province].filter(Boolean).join(", ");
@@ -96,6 +53,17 @@ function addressToForm(address: UserAddress): AddressForm {
     longitude: address.longitude?.toString() ?? "",
     isDefault: address.isDefault,
   };
+}
+
+function persistSelectedAddress(addressId: string) {
+  if (typeof window === "undefined") return;
+
+  if (addressId) {
+    window.localStorage.setItem(SELECTED_ADDRESS_STORAGE_KEY, addressId);
+  } else {
+    window.localStorage.removeItem(SELECTED_ADDRESS_STORAGE_KEY);
+  }
+  window.dispatchEvent(new Event(SELECTED_ADDRESS_CHANGE_EVENT));
 }
 
 export default function ProfileMain() {
@@ -119,6 +87,9 @@ export default function ProfileMain() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [passwordForm, setPasswordForm] = useState<PasswordForm>(emptyPasswordForm);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
   const [addressPendingDelete, setAddressPendingDelete] = useState<UserAddress | null>(null);
   const [sellerApplication, setSellerApplication] = useState<SellerApplicationForm>(emptySellerApplication);
@@ -129,13 +100,14 @@ export default function ProfileMain() {
   const showVerificationModal = searchParams.get("verify") === "email" && profile !== null && !profile.isEmailVerified;
   const editTarget = searchParams.get("edit");
   const showPhoneModal = (editTarget === "phone" || editTarget === "profile") && profile !== null;
+  const showPasswordModal = editTarget === "password" && profile !== null;
   const showAddressModal = editTarget === "address" && profile !== null;
   const showSellerModal = searchParams.get("seller") === "apply" && profile !== null;
   const isSeller = profile?.roles.some((role) => role.toLowerCase() === "seller") ?? false;
   const selectedAddress =
     profile?.userAddresses.find((address) => address.id === selectedAddressId) ?? profile?.userAddresses[0] ?? null;
 
-  useEffect(() => {
+  const loadProfile = useCallback(() => {
     if (!isInitialized) return;
 
     if (!accessToken) {
@@ -144,18 +116,22 @@ export default function ProfileMain() {
     }
 
     let active = true;
+    setIsLoading(true);
+    setError(null);
 
     void getProfile(accessToken)
       .then((result) => {
         if (active) {
           setProfile(result);
-          setSelectedAddressId(
-            result.userAddresses.find((address) => address.isDefault)?.id ?? result.userAddresses[0]?.id ?? "",
-          );
+          const savedAddressId = window.localStorage.getItem(SELECTED_ADDRESS_STORAGE_KEY);
+          const nextAddressId = result.userAddresses.some((address) => address.id === savedAddressId)
+            ? savedAddressId ?? ""
+            : result.userAddresses.find((address) => address.isDefault)?.id ?? result.userAddresses[0]?.id ?? "";
+          setSelectedAddressId(nextAddressId);
+          persistSelectedAddress(nextAddressId);
           setFullNameInput(result.fullName ?? "");
           setPhoneInput(result.phone ?? "");
           setAddressForm(emptyAddressForm);
-          setError(null);
         }
       })
       .catch(() => {
@@ -169,6 +145,11 @@ export default function ProfileMain() {
       active = false;
     };
   }, [accessToken, isInitialized, router]);
+
+  useEffect(() => {
+    const retryableLoad = window.setTimeout(() => void loadProfile(), 0);
+    return () => window.clearTimeout(retryableLoad);
+  }, [loadProfile]);
 
   const handleSaveProfile = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -210,6 +191,58 @@ export default function ProfileMain() {
       showToast(message, "error");
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError(null);
+
+    const currentPassword = passwordForm.currentPassword;
+    const newPassword = passwordForm.newPassword;
+    const confirmPassword = passwordForm.confirmPassword;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Complete all password fields.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError("Your new password must be at least 8 characters.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("The password confirmation does not match.");
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setPasswordError("Your new password must be different from your current password.");
+      return;
+    }
+
+    if (!accessToken) {
+      setPasswordError("Your session has expired. Please sign in again.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      await changePassword(accessToken, { currentPassword, newPassword });
+      setPasswordForm(emptyPasswordForm);
+      showToast("Your password has been changed. Please sign in again.", "success");
+      closeEditModal();
+    } catch (requestError) {
+      const message =
+        requestError instanceof ApiClientError
+          ? requestError.message
+          : "Unable to change your password. Please try again.";
+      setPasswordError(message);
+      showToast(message, "error");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -304,6 +337,8 @@ export default function ProfileMain() {
 
   const closeEditModal = () => {
     setEditError(null);
+    setPasswordError(null);
+    setPasswordForm(emptyPasswordForm);
     setEditingAddressId(null);
     setAddressForm(emptyAddressForm);
     router.replace("/profile", { scroll: false });
@@ -479,6 +514,7 @@ export default function ProfileMain() {
       const updatedProfile = await getProfile(accessToken);
       setProfile(updatedProfile);
       setSelectedAddressId(savedAddress.id);
+      persistSelectedAddress(savedAddress.id);
       showToast(
         editingAddressId ? "Your address has been updated." : "Your address has been saved.",
         "success",
@@ -501,6 +537,11 @@ export default function ProfileMain() {
     setAddressPendingDelete(address);
   };
 
+  const handleSelectAddress = (addressId: string) => {
+    setSelectedAddressId(addressId);
+    persistSelectedAddress(addressId);
+  };
+
   const handleConfirmDeleteAddress = async () => {
     if (!accessToken || !addressPendingDelete || deletingAddressId) return;
 
@@ -512,11 +553,12 @@ export default function ProfileMain() {
       await deleteAddress(accessToken, address.id);
       const updatedProfile = await getProfile(accessToken);
       setProfile(updatedProfile);
-      setSelectedAddressId((currentId) =>
-        updatedProfile.userAddresses.some((item) => item.id === currentId)
-          ? currentId
-          : updatedProfile.userAddresses.find((item) => item.isDefault)?.id ?? updatedProfile.userAddresses[0]?.id ?? "",
-      );
+      const savedSelection = window.localStorage.getItem(SELECTED_ADDRESS_STORAGE_KEY);
+      const nextAddressId = updatedProfile.userAddresses.some((item) => item.id === savedSelection)
+        ? savedSelection ?? ""
+        : updatedProfile.userAddresses.find((item) => item.isDefault)?.id ?? updatedProfile.userAddresses[0]?.id ?? "";
+      setSelectedAddressId(nextAddressId);
+      persistSelectedAddress(nextAddressId);
       showToast("Your address has been deleted.", "success");
     } catch (requestError) {
       showToast(
@@ -532,7 +574,7 @@ export default function ProfileMain() {
   };
 
   return (
-    <main className="main profile-page">
+    <main className="main profile-page" aria-busy={isLoading}>
       <section className="info-page__hero info-page__hero--image">
         <Image
           src="/assets/images/page-headers/profile-account-v2.webp"
@@ -564,224 +606,93 @@ export default function ProfileMain() {
 
       <div className="page-content">
         <div className="container">
-          {isLoading && <p>Loading profile...</p>}
+          {isLoading && (
+            <div className="profile-page__state" role="status" aria-live="polite" aria-atomic="true">
+              <span className="profile-page__spinner" aria-hidden="true" />
+              <span>Loading profile...</span>
+            </div>
+          )}
 
           {!isLoading && error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
+            <div className="profile-page__state profile-page__state--error" role="alert" aria-live="assertive">
+              <p className="mb-2">{error}</p>
+              <button type="button" className="btn btn-outline-primary-2" onClick={() => void loadProfile()}>
+                Try again
+              </button>
             </div>
           )}
 
           {!isLoading && !error && profile && (
-            <section aria-labelledby="profile-heading">
-              <div className="mb-4">
-                <h2 id="profile-heading" className="mb-1">
-                  Account details
-                </h2>
-                <p className="mb-2">Manage and review your account information.</p>
-              </div>
-
-              <div className="profile-account-summary border p-4 mb-2">
-                <div className="profile-account-summary__identity">
-                  <div className="profile-account-summary__avatar" aria-label="Profile photo">
-                    {profile.avatarUrl ? (
-                      <Image
-                        src={profile.avatarUrl}
-                        alt={`${profile.fullName || "Account"}'s profile photo`}
-                        width={96}
-                        height={96}
-                        unoptimized={shouldUseUnoptimizedImage(profile.avatarUrl)}
-                      />
-                    ) : (
-                      <span aria-hidden="true">{getInitials(profile.fullName, profile.email)}</span>
-                    )}
-                  </div>
-                  <div>
-                    <span className={`badge ${profile.isActive ? "badge-success" : "badge-secondary"} mb-1`}>
-                      {profile.isActive ? "Active" : "Inactive"}
-                    </span>
-                    <h2 className="profile-account-summary__name mb-1">
-                      {profile.fullName || "Complete your profile"}
-                    </h2>
-                    <p className="mb-0">
-                      {profile.roles.length ? profile.roles.join(", ") : "Customer"}
-                    </p>
-                  </div>
-                </div>
-                <div className="profile-account-summary__actions">
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="sr-only"
-                    onChange={handleAvatarChange}
-                    aria-label="Choose a profile photo"
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-primary-2"
-                    onClick={() => avatarInputRef.current?.click()}
-                    disabled={isUploadingAvatar}
-                  >
-                    {isUploadingAvatar ? "UPLOADING..." : "CHANGE PHOTO"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="row">
-                <div className="col-lg-8">
-                  <div className="border p-4 mb-4">
-                    <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
-                      <h3 className="mb-0">Personal information</h3>
-                      <Link
-                        href="/profile?edit=profile"
-                        scroll={false}
-                        className="profile-action-link text-primary"
-                      >
-                        Edit
-                      </Link>
-                    </div>
-                    <dl className="row mb-0">
-                      <dt className="col-sm-4">Full name</dt>
-                      <dd className="col-sm-8">{profile.fullName || "Not provided"}</dd>
-                      <dt className="col-sm-4">Email address</dt>
-                      <dd className="col-sm-8">{profile.email || "Not provided"}</dd>
-                      <dt className="col-sm-4">Phone number</dt>
-                      <dd className="col-sm-8">
-                        {profile.phone || "Not provided"}
-                      </dd>
-                      <dt className="col-sm-4">Email verification</dt>
-                      <dd className="col-sm-8">
-                        <span
-                          className={`badge ${profile.isEmailVerified ? "badge-success" : "badge-danger"}`}
-                          style={{ fontSize: "inherit", fontWeight: 400 }}
-                        >
-                          {profile.isEmailVerified ? "Verified" : "Not verified"}
-                        </span>
-                        {!profile.isEmailVerified && (
-                          <Link
-                            href="/profile?verify=email"
-                            scroll={false}
-                            className="profile-action-link ml-2 text-primary"
-                          >
-                            Verify
-                          </Link>
-                        )}
-                      </dd>
-                      <dt className="col-sm-4">Member since</dt>
-                      <dd className="col-sm-8">{formatDate(profile.createdAt)}</dd>
-                    </dl>
-                  </div>
-
-                  <div className="profile-seller-card border p-4 mb-4">
-                    {isSeller ? (
-                      <>
-                        <h3 className="mb-2">Seller dashboard</h3>
-                        <p className="mb-3">
-                          Manage your store, surprise bags, orders, and customer reviews.
-                        </p>
-                        <Link href="/seller" className="btn btn-primary">
-                          Open Seller Dashboard
-                        </Link>
-                      </>
-                    ) : (
-                      <>
-                        <h3 className="mb-2">Become a Seller</h3>
-                        <p className="mb-3">
-                          Reach local buyers and help reduce food waste by offering your surplus food on StealDeals.
-                        </p>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={openSellerModal}
-                        >
-                          Become a Seller
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="col-lg-4">
-                  <div className="profile-addresses border p-4 mb-4">
-                    <h3 className="profile-addresses__title mb-3">Addresses</h3>
-                    {profile.userAddresses.length === 0 ? (
-                      <p className="profile-addresses__empty mb-3">No addresses saved.</p>
-                    ) : (
-                      <>
-                        <div className="profile-addresses__selector">
-                          <label htmlFor="profile-saved-address" className="sr-only">
-                            Select a saved address
-                          </label>
-                          <select
-                            id="profile-saved-address"
-                            className="form-control"
-                            value={selectedAddress?.id ?? ""}
-                            onChange={(event) => setSelectedAddressId(event.target.value)}
-                          >
-                            {profile.userAddresses.map((address) => (
-                              <option key={address.id} value={address.id}>
-                                {address.label || "Address"}{address.isDefault ? " (Default)" : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {selectedAddress && (
-                          <div className="profile-addresses__details">
-                            <p className="profile-addresses__address mb-2">
-                              <span className="d-block">{selectedAddress.address}</span>
-                              <span className="d-block">{selectedAddress.commune}</span>
-                              <span className="d-block">{selectedAddress.province}</span>
-                            </p>
-                            <div className="profile-addresses__actions d-flex flex-wrap">
-                              <button
-                                type="button"
-                                className="btn btn-link p-0 text-primary"
-                                onClick={() => openAddressModal(selectedAddress)}
-                                aria-label={`Edit ${selectedAddress.label || "address"}`}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-link p-0 text-danger"
-                                onClick={() => handleDeleteAddress(selectedAddress)}
-                                disabled={deletingAddressId === selectedAddress.id}
-                                aria-label={`Delete ${selectedAddress.label || "address"}`}
-                              >
-                                {deletingAddressId === selectedAddress.id ? "Deleting..." : "Delete"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <button
-                      type="button"
-                      className="profile-addresses__add profile-action-link btn btn-link"
-                      onClick={() => openAddressModal()}
-                    >
-                      Add Address
-                    </button>
-                  </div>
-
-                  {profile.userTrustScore && (
-                    <div className="border p-4">
-                      <h3 className="mb-3">Trust score</h3>
-                      <p className="h3 mb-2">{profile.userTrustScore.score}</p>
-                      <p className="mb-0">Based on {profile.userTrustScore.totalOrders} orders</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
+            <ProfileAccountSections
+              profile={profile}
+              avatarInputRef={avatarInputRef}
+              isUploadingAvatar={isUploadingAvatar}
+              onAvatarChange={handleAvatarChange}
+              isSeller={isSeller}
+              onOpenSellerModal={openSellerModal}
+              selectedAddress={selectedAddress}
+              onSelectAddress={handleSelectAddress}
+              onOpenAddressModal={openAddressModal}
+              onDeleteAddress={handleDeleteAddress}
+              deletingAddressId={deletingAddressId}
+            />
           )}
         </div>
       </div>
 
-      {showVerificationModal && (
+      <ProfileModals
+        profile={profile}
+        showVerificationModal={showVerificationModal}
+        verificationOtp={verificationOtp}
+        setVerificationOtp={setVerificationOtp}
+        verificationError={verificationError}
+        isVerifying={isVerifying}
+        onVerifyEmail={handleVerifyEmail}
+        onEnterLater={handleEnterLater}
+        onResentVerification={() => {
+          setVerificationOtp("");
+          setVerificationError(null);
+          showToast("A new verification code was sent to your email.", "success");
+        }}
+        showPhoneModal={showPhoneModal}
+        showAddressModal={showAddressModal}
+        editingAddressId={editingAddressId}
+        fullNameInput={fullNameInput}
+        setFullNameInput={setFullNameInput}
+        phoneInput={phoneInput}
+        setPhoneInput={setPhoneInput}
+        addressForm={addressForm}
+        setAddressForm={setAddressForm}
+        onSaveProfile={handleSaveProfile}
+        onSaveAddress={handleSaveAddress}
+        editError={editError}
+        isSavingProfile={isSavingProfile}
+        isSavingAddress={isSavingAddress}
+        onCloseEditModal={closeEditModal}
+        showPasswordModal={showPasswordModal}
+        passwordForm={passwordForm}
+        setPasswordForm={setPasswordForm}
+        passwordError={passwordError}
+        isChangingPassword={isChangingPassword}
+        onChangePassword={handleChangePassword}
+        addressPendingDelete={addressPendingDelete}
+        deletingAddressId={deletingAddressId}
+        onCancelDelete={() => setAddressPendingDelete(null)}
+        onConfirmDelete={() => void handleConfirmDeleteAddress()}
+        showSellerModal={showSellerModal}
+        sellerApplicationSubmitted={sellerApplicationSubmitted}
+        onCloseSellerModal={closeSellerModal}
+        sellerApplication={sellerApplication}
+        onSellerApplicationChange={handleSellerApplicationChange}
+        onSubmitSellerApplication={handleSubmitSellerApplication}
+        sellerApplicationError={sellerApplicationError}
+        isSubmittingSellerApplication={isSubmittingSellerApplication}
+      />
+
+      {false && (
         <>
+        {showVerificationModal && (
+          <>
           <div className="modal-backdrop fade show" />
           <div
             className="modal fade show profile-form-modal"
@@ -1106,6 +1017,102 @@ export default function ProfileMain() {
         </>
       )}
 
+      {showPasswordModal && (
+        <>
+          <div className="modal-backdrop fade show" />
+          <div
+            className="modal fade show profile-form-modal profile-edit-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-change-password-title"
+            style={{ display: "block" }}
+          >
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <div className="modal-content">
+                <div className="modal-body">
+                  <div className="form-box">
+                    <div className="form-tab">
+                      <h2 id="profile-change-password-title" className="mb-2">
+                        Change password
+                      </h2>
+                      <p className="mb-3">
+                        Use a new password with at least 8 characters.
+                      </p>
+
+                      <form onSubmit={handleChangePassword}>
+                        <div className="form-group">
+                          <label htmlFor="profile-current-password">Current password *</label>
+                          <input
+                            type="password"
+                            className="form-control"
+                            id="profile-current-password"
+                            value={passwordForm.currentPassword}
+                            onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                            autoComplete="current-password"
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label htmlFor="profile-new-password">New password *</label>
+                          <input
+                            type="password"
+                            className="form-control"
+                            id="profile-new-password"
+                            value={passwordForm.newPassword}
+                            onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
+                            autoComplete="new-password"
+                            minLength={8}
+                            required
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label htmlFor="profile-confirm-password">Confirm new password *</label>
+                          <input
+                            type="password"
+                            className="form-control"
+                            id="profile-confirm-password"
+                            value={passwordForm.confirmPassword}
+                            onChange={(event) => setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                            autoComplete="new-password"
+                            minLength={8}
+                            required
+                          />
+                        </div>
+
+                        {passwordError && (
+                          <div className="alert alert-danger" role="alert" aria-live="polite">
+                            {passwordError}
+                          </div>
+                        )}
+
+                        <div className="form-footer profile-form-modal__footer">
+                          <button
+                            type="submit"
+                            className="btn btn-outline-primary-2"
+                            disabled={isChangingPassword}
+                          >
+                            <span>{isChangingPassword ? "CHANGING..." : "CHANGE PASSWORD"}</span>
+                            <i className="icon-long-arrow-right" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-link"
+                            onClick={closeEditModal}
+                            disabled={isChangingPassword}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {addressPendingDelete && (
         <>
           <div className="modal-backdrop fade show" />
@@ -1124,7 +1131,7 @@ export default function ProfileMain() {
                     Delete address?
                   </h2>
                   <p id="profile-delete-address-description" className="mb-4">
-                    Are you sure you want to delete {addressPendingDelete.label || "this address"}? This action cannot be undone.
+                    Are you sure you want to delete {addressPendingDelete?.label || "this address"}? This action cannot be undone.
                   </p>
                   <div className="profile-confirm-modal__actions">
                     <button
@@ -1340,6 +1347,8 @@ export default function ProfileMain() {
               </div>
             </div>
           </div>
+        </>
+      )}
         </>
       )}
     </main>

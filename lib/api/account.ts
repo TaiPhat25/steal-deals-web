@@ -7,6 +7,11 @@ export type UpdateProfileRequest = {
   avatarUrl?: string | null;
 };
 
+export type ChangePasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export function getProfile(accessToken: string) {
   return apiRequest<UserProfile>("/api/identity/account/profile", {
     method: "GET",
@@ -18,6 +23,16 @@ export function getProfile(accessToken: string) {
 
 export function updateProfile(accessToken: string, request: UpdateProfileRequest) {
   return apiRequest<UserProfile>("/api/identity/account/profile", {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: request,
+  });
+}
+
+export function changePassword(accessToken: string, request: ChangePasswordRequest) {
+  return apiRequest<null>("/api/identity/account/password", {
     method: "PUT",
     headers: {
       Authorization: `Bearer ${accessToken}`,
