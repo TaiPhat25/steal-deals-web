@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
 } from "react";
 import dynamic from "next/dynamic";
@@ -53,6 +54,7 @@ export interface AddressMapPickerProps {
   className?: string;
   label?: string;
   required?: boolean;
+  showAddressFields?: boolean;
   error?: string;
   hint?: string;
 }
@@ -64,6 +66,11 @@ function generateSessionToken(): string {
   return `st_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+const subscribeToBrowserCapability = () => () => {};
+const getGeolocationSupport = () =>
+  typeof navigator !== "undefined" && "geolocation" in navigator;
+const getServerGeolocationSupport = () => false;
+
 export default function AddressMapPicker({
   value,
   defaultValue,
@@ -73,6 +80,7 @@ export default function AddressMapPicker({
   className = "",
   label = "Store location & address",
   required = false,
+  showAddressFields = true,
   error,
   hint = "Search for your address or place the pin directly on the map.",
 }: AddressMapPickerProps) {
@@ -102,9 +110,14 @@ export default function AddressMapPicker({
   const [isResolvingDetail, setIsResolvingDetail] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [sessionToken, setSessionToken] = useState(() => generateSessionToken());
+  const [sessionToken, setSessionToken] = useState("");
   const [showManualMap, setShowManualMap] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const hasGeolocation = useSyncExternalStore(
+    subscribeToBrowserCapability,
+    getGeolocationSupport,
+    getServerGeolocationSupport,
+  );
 
   const hasCoordinates =
     typeof activeValue.latitude === "number" &&
@@ -169,9 +182,11 @@ export default function AddressMapPicker({
       setSearchError("");
 
       try {
+        const activeSessionToken = sessionToken || generateSessionToken();
+        if (!sessionToken) setSessionToken(activeSessionToken);
         const results = await autocompleteLocations(effectiveToken, {
           input: trimmed,
-          sessionToken,
+          sessionToken: activeSessionToken,
           latitude: activeValue.latitude ?? undefined,
           longitude: activeValue.longitude ?? undefined,
         });
@@ -220,6 +235,9 @@ export default function AddressMapPicker({
     setIsDropdownOpen(false);
     setSearchQuery(suggestion.description);
 
+    const activeSessionToken = sessionToken || generateSessionToken();
+    if (!sessionToken) setSessionToken(activeSessionToken);
+
     let lat = suggestion.latitude;
     let lng = suggestion.longitude;
     let commune = suggestion.commune ?? activeValue.commune ?? "";
@@ -232,7 +250,7 @@ export default function AddressMapPicker({
       try {
         const detail = await getLocationPlaceDetail(effectiveToken, {
           placeId: suggestion.placeId,
-          sessionToken,
+          sessionToken: activeSessionToken,
         });
         lat = detail.latitude;
         lng = detail.longitude;
@@ -291,7 +309,7 @@ export default function AddressMapPicker({
     "mt-1.5 h-10 w-full rounded-xl border-none bg-gray-100 px-3.5 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary disabled:opacity-60";
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`address-map-picker space-y-4 ${className}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <label className="text-sm font-semibold text-gray-900">
           {label} {required && <span className="text-error">*</span>}
@@ -300,7 +318,7 @@ export default function AddressMapPicker({
       </div>
 
       {/* Search Input with Autocomplete Dropdown */}
-      <div ref={searchContainerRef} className="relative">
+      <div ref={searchContainerRef} className="address-map-picker__search relative">
         <div className="relative flex items-center">
           <span className="pointer-events-none absolute left-3.5 text-gray-400" aria-hidden="true">
             <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,7 +341,7 @@ export default function AddressMapPicker({
               }
             }}
             disabled={disabled}
-            className="h-11 w-full rounded-xl border-none bg-gray-100 pl-10 pr-20 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"
+            className="address-map-picker__search-input h-11 w-full rounded-xl border-none bg-gray-100 pl-10 pr-20 text-sm ring ring-gray-500/20 focus:ring-2 focus:ring-primary"
           />
 
           <div className="absolute right-3 flex items-center gap-1.5">
@@ -342,7 +360,7 @@ export default function AddressMapPicker({
                 onClick={handleClearSearch}
                 title="Clear search"
                 aria-label="Clear search input"
-                className="rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+                className="address-map-picker__clear rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
               >
                 <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -357,7 +375,7 @@ export default function AddressMapPicker({
           <div
             id="address-suggestions-list"
             role="listbox"
-            className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl"
+            className="address-map-picker__suggestions absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1.5 shadow-xl"
           >
             {isSearching && suggestions.length === 0 && (
               <div className="p-3 text-center text-xs text-gray-500">Searching address suggestions…</div>
@@ -383,20 +401,20 @@ export default function AddressMapPicker({
                 role="option"
                 aria-selected={false}
                 onClick={() => void handleSelectSuggestion(item)}
-                className="flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left text-sm transition-colors hover:bg-primary-lighter/40 focus:bg-primary-lighter/40"
+                className="address-map-picker__suggestion flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left text-sm transition-colors hover:bg-primary-lighter/40 focus:bg-primary-lighter/40"
               >
                 <span className="mt-0.5 shrink-0 text-primary" aria-hidden="true">
-                  <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-gray-900">
+                  <p className="address-map-picker__suggestion-title truncate font-semibold text-gray-900">
                     {item.mainText || item.description}
                   </p>
                   {item.secondaryText && (
-                    <p className="truncate text-xs text-light-secondary-text">
+                    <p className="address-map-picker__suggestion-secondary truncate text-xs text-light-secondary-text">
                       {item.secondaryText}
                     </p>
                   )}
@@ -412,12 +430,13 @@ export default function AddressMapPicker({
         {isMapVisible ? (
           <>
             <LocationMapView
+              className="address-map-picker__map"
               latitude={activeValue.latitude}
               longitude={activeValue.longitude}
               onCoordinatesChange={handleCoordinatesChange}
               disabled={disabled}
             />
-            <div className="mt-1.5 flex items-center justify-between text-xs text-light-secondary-text">
+            <div className="address-map-picker__tip mt-1.5 flex items-center justify-between text-xs text-light-secondary-text">
               <span>💡 Tip: Click anywhere on the map or drag the pin marker to fine-tune exact storefront entrance.</span>
             </div>
           </>
@@ -437,7 +456,7 @@ export default function AddressMapPicker({
               Search your store address above and select a suggestion, or type details below to display your location on the map.
             </p>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              {typeof window !== "undefined" && "geolocation" in navigator && (
+              {hasGeolocation && (
                 <button
                   type="button"
                   onClick={handleUseCurrentLocation}
@@ -469,7 +488,7 @@ export default function AddressMapPicker({
       </div>
 
       {/* Address Details Fields */}
-      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+      {showAddressFields && <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
         <label className="text-xs font-semibold sm:col-span-2 md:col-span-3">
           Street address / Specific address *
           <input
@@ -539,7 +558,7 @@ export default function AddressMapPicker({
             />
           </label>
         </div>
-      </div>
+      </div>}
 
       {error && (
         <p role="alert" className="text-xs font-medium text-error">

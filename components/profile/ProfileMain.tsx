@@ -20,6 +20,7 @@ import {
 import { verifyEmail } from "@/lib/api/auth";
 import { createStore } from "@/lib/api/store";
 import { shouldUseUnoptimizedImage } from "@/lib/image-assets";
+import AddressMapPicker from "@/components/location/AddressMapPicker";
 import OtpInput from "@/components/auth/OtpInput";
 import ResendOtpButton from "@/components/auth/ResendOtpButton";
 import type { UserProfile, UserAddress } from "@/lib/api/store-types";
@@ -948,6 +949,27 @@ export default function ProfileMain() {
                                 required
                               />
                             </div>
+                            <AddressMapPicker
+                              label="Find address on map"
+                              showAddressFields={false}
+                              value={{
+                                address: addressForm.address,
+                                commune: addressForm.commune,
+                                province: addressForm.province,
+                                latitude: addressForm.latitude ? Number(addressForm.latitude) : null,
+                                longitude: addressForm.longitude ? Number(addressForm.longitude) : null,
+                              }}
+                              onChange={(location) =>
+                                setAddressForm((current) => ({
+                                  ...current,
+                                  address: location.address,
+                                  commune: location.commune ?? "",
+                                  province: location.province ?? "",
+                                  latitude: location.latitude?.toString() ?? "",
+                                  longitude: location.longitude?.toString() ?? "",
+                                }))
+                              }
+                            />
                             <div className="form-group">
                               <label htmlFor="profile-edit-address">Street address / Specific address *</label>
                               <input
