@@ -36,6 +36,15 @@ export type ListingBag = SurpriseBag & {
   createdOrder: number;
 };
 
+export function formatDistanceKm(distanceKm: number | null | undefined) {
+  if (distanceKm === null || distanceKm === undefined || !Number.isFinite(distanceKm)) {
+    return "Distance unavailable";
+  }
+
+  const formatted = distanceKm < 10 ? distanceKm.toFixed(1) : Math.round(distanceKm).toString();
+  return `${formatted} km away`;
+}
+
 const searchableTextCache = new WeakMap<ListingBag, string>();
 
 export type ListingFilters = {
@@ -444,6 +453,7 @@ export function toListingBag(bag: SurpriseBagResponse): ListingBag {
   const discountPercent = bag.originalPrice > 0
     ? Math.round((1 - bag.salePrice / bag.originalPrice) * 100)
     : 0;
+  const distanceKm = bag.distanceKm ?? Number.POSITIVE_INFINITY;
 
   return {
     backendId: bag.id,
@@ -464,8 +474,8 @@ export function toListingBag(bag: SurpriseBagResponse): ListingBag {
     expiryDate: bag.expiryDate,
     status: bag.status,
     pickupDay,
-    distance: "Store pickup",
-    distanceKm: Number.POSITIVE_INFINITY,
+    distance: formatDistanceKm(distanceKm),
+    distanceKm,
     remainingQuantity: bag.quantityRemaining,
     quantityTotal: bag.quantityTotal,
     availabilityLabel: getPickupAvailabilityLabel(bag.pickupStartTime),

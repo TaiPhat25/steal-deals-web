@@ -1,18 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DragScrollRow from "@/components/home/DragScrollRow";
 import SurpriseBagCard, { type SurpriseBag } from "@/components/home/SurpriseBagCard";
 import {
+  formatDistanceKm,
   formatPickupWindow,
   getPickupAvailabilityLabel,
   PRODUCT_LISTING_IMAGE,
 } from "@/components/products/product-listing-data";
+import { listNearbyBags } from "@/lib/api/store";
+import { useUserLocation } from "@/components/location/UserLocationProvider";
 import { isBagAvailable } from "@/lib/bag-availability";
 import type { StoreProfile, StoreSurpriseBag } from "@/components/stores/store-types";
 
-function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
+function toCardBag(store: StoreProfile, bag: StoreSurpriseBag, distanceKm?: number): SurpriseBag {
   const category = bag.categories[0]?.name ?? "Surprise Bag";
   const discountPercent = bag.originalPrice > 0
     ? Math.round(((bag.originalPrice - bag.salePrice) / bag.originalPrice) * 100)
@@ -31,7 +34,8 @@ function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
     salePrice: bag.salePrice,
     discountPercent,
     pickupWindow: formatPickupWindow(bag.pickupStartTime, bag.pickupEndTime),
-    distance: "Store pickup",
+    distance: formatDistanceKm(distanceKm),
+    distanceKm,
     remainingQuantity: bag.quantityRemaining,
     availabilityLabel: getPickupAvailabilityLabel(bag.pickupStartTime),
     storeSlug: store.id,
@@ -40,6 +44,8 @@ function toCardBag(store: StoreProfile, bag: StoreSurpriseBag): SurpriseBag {
 
 export default function StoreProducts({ store }: { store: StoreProfile }) {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [distances, setDistances] = useState<Record<string, number>>({});
+  const { coordinates, isLoading: isUserLocationLoading } = useUserLocation();
   const activeProducts = useMemo(
     () => store.surpriseBags
       .filter((bag) => isBagAvailable(bag))
@@ -69,6 +75,29 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
         ),
     [activeProducts, selectedCategory],
   );
+
+  useEffect(() => {
+    if (isUserLocationLoading || !coordinates) return;
+
+    let active = true;
+    void listNearbyBags({ ...coordinates, radiusInKm: 100, limit: 100 })
+      .then((bags) => {
+        if (!active) return;
+
+        const nextDistances: Record<string, number> = {};
+        for (const bag of bags) {
+          if (bag.storeId === store.id && bag.distanceKm !== null && bag.distanceKm !== undefined) {
+            nextDistances[bag.id] = bag.distanceKm;
+          }
+        }
+        setDistances(nextDistances);
+      })
+      .catch(() => {
+        if (active) setDistances({});
+      });
+
+    return () => { active = false; };
+  }, [coordinates, isUserLocationLoading, store.id]);
 
   return (
     <section
@@ -122,7 +151,7 @@ export default function StoreProducts({ store }: { store: StoreProfile }) {
             tabIndex={0}
           >
             {filteredProducts.map((bag) => (
-              <SurpriseBagCard key={bag.id} bag={toCardBag(store, bag)} />
+              <SurpriseBagCard key={bag.id} bag={toCardBag(store, bag, distances[bag.id])} />
             ))}
           </DragScrollRow>
         ) : activeProducts.length ? (

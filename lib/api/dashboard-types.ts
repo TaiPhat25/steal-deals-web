@@ -45,6 +45,7 @@ export type SurpriseBagResponse = {
   expiryDate: string;
   status: string;
   categories: CategoryResponse[];
+  distanceKm?: number | null;
   createdAt: string;
 };
 
