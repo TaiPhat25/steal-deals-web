@@ -29,15 +29,23 @@ export default function ChatMain() {
   const [gpsCoords, setGpsCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isRequestingGps, setIsRequestingGps] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Active proximity coordinates: GPS takes priority, falls back to profile address
   const activeCoords = gpsCoords ?? profileCoords ?? null;
 
   const scrollToBottom = useCallback(() => {
-    if (typeof messagesEndRef.current?.scrollIntoView === "function") {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      if (typeof container.scrollTo === "function") {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: "smooth",
+        });
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
     }
   }, []);
 
@@ -282,7 +290,12 @@ export default function ChatMain() {
         </header>
 
         {/* Message Stream */}
-        <div className="chat-messages" role="log" aria-live="polite">
+        <div
+          ref={messagesContainerRef}
+          className="chat-messages"
+          role="log"
+          aria-live="polite"
+        >
           {isLoadingHistory ? (
             <div className="chat-loading-state">
               <div className="spinner-border text-primary" role="status">
@@ -340,7 +353,6 @@ export default function ChatMain() {
               )}
             </>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Bottom Input Area */}
