@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import ChatBagCard from "./ChatBagCard";
 import ChatStoreCard from "./ChatStoreCard";
 import type {
@@ -27,7 +28,13 @@ export default function ChatMessageItem({ message }: { message: ChatMessage }) {
     >
       {!isUser && (
         <div className="chat-avatar" aria-hidden="true">
-          <i className="las la-robot"></i>
+          <Image
+            src="/assets/images/brand/ai-bot-avatar.png"
+            alt="StealDeals Bot"
+            width={32}
+            height={32}
+            className="chat-avatar-img"
+          />
         </div>
       )}
 
@@ -43,7 +50,7 @@ export default function ChatMessageItem({ message }: { message: ChatMessage }) {
         {!isUser && message.suggestedBags && message.suggestedBags.length > 0 && (
           <div className="chat-suggestions">
             <h5 className="chat-suggestions__heading">
-              <i className="las la-shopping-bag" aria-hidden="true"></i> Recommended Surprise Bags (
+              <i className="la la-shopping-bag" aria-hidden="true"></i> Recommended Surprise Bags (
               {message.suggestedBags.length})
             </h5>
             <div className="chat-suggestions__carousel">
@@ -57,7 +64,7 @@ export default function ChatMessageItem({ message }: { message: ChatMessage }) {
         {!isUser && message.suggestedStores && message.suggestedStores.length > 0 && (
           <div className="chat-suggestions">
             <h5 className="chat-suggestions__heading">
-              <i className="las la-store" aria-hidden="true"></i> Recommended Stores (
+              <i className="la la-building" aria-hidden="true"></i> Recommended Stores (
               {message.suggestedStores.length})
             </h5>
             <div className="chat-suggestions__carousel">

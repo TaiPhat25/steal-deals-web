@@ -32,7 +32,7 @@ export default function ChatStoreCard({ store }: { store: StoreProfileResponse }
         </Link>
         {store.distanceKm != null && Number.isFinite(store.distanceKm) && (
           <span className="chat-card__distance">
-            <i className="las la-map-marker-alt" aria-hidden="true"></i>{" "}
+            <i className="icon-map-marker" aria-hidden="true"></i>{" "}
             {store.distanceKm.toFixed(1)} km
           </span>
         )}
@@ -40,7 +40,7 @@ export default function ChatStoreCard({ store }: { store: StoreProfileResponse }
 
       <div className="chat-card__body">
         <div className="chat-card__rating">
-          <i className="las la-star text-warning" aria-hidden="true"></i>
+          <i className="la la-star text-warning" aria-hidden="true"></i>
           {reviewCount > 0 ? (
             <span>
               <strong>{store.ratingScore.toFixed(1)}</strong> ({reviewCount})

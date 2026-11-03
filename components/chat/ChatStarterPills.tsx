@@ -12,7 +12,7 @@ const STARTER_PROMPTS = [
     prompt: "Show me surprise bags available near my location today",
   },
   {
-    icon: "la-bread-slice",
+    icon: "la-cutlery",
     label: "Bakery deals today",
     prompt: "What bakeries have surplus surprise bags available today?",
   },
@@ -35,7 +35,7 @@ export default function ChatStarterPills({
   return (
     <div className="chat-starter-pills">
       <p className="chat-starter-pills__label">
-        <i className="las la-lightbulb" aria-hidden="true"></i> Quick prompts to get started:
+        <i className="la la-lightbulb-o" aria-hidden="true"></i> Quick prompts to get started:
       </p>
       <div className="chat-starter-pills__list">
         {STARTER_PROMPTS.map((item) => (
@@ -46,7 +46,7 @@ export default function ChatStarterPills({
             disabled={disabled}
             onClick={() => onSelectPrompt(item.prompt)}
           >
-            <i className={`las ${item.icon}`} aria-hidden="true"></i>
+            <i className={`la ${item.icon}`} aria-hidden="true"></i>
             <span>{item.label}</span>
           </button>
         ))}

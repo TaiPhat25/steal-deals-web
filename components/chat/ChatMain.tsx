@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -14,6 +15,7 @@ import ChatMessageItem, { type ChatMessage } from "./ChatMessageItem";
 import ChatStarterPills from "./ChatStarterPills";
 
 const MAX_MESSAGE_LENGTH = 500;
+const BOT_AVATAR_SRC = "/assets/images/brand/ai-bot-avatar.png";
 
 export default function ChatMain() {
   const { accessToken, isInitialized, currentUser } = useAuth();
@@ -209,7 +211,13 @@ export default function ChatMain() {
       <div className="chat-page-container">
         <div className="chat-auth-card">
           <div className="chat-auth-card__icon" aria-hidden="true">
-            <i className="las la-robot"></i>
+            <Image
+              src={BOT_AVATAR_SRC}
+              alt="StealDeals Bot"
+              width={64}
+              height={64}
+              className="chat-avatar-img"
+            />
           </div>
           <h2>Sign in to chat with our AI Assistant</h2>
           <p>
@@ -236,7 +244,13 @@ export default function ChatMain() {
         <header className="chat-header">
           <div className="chat-header__info">
             <div className="chat-header__avatar">
-              <i className="las la-robot"></i>
+              <Image
+                src={BOT_AVATAR_SRC}
+                alt="StealDeals Bot"
+                width={38}
+                height={38}
+                className="chat-avatar-img"
+              />
               <span className="chat-header__status-dot" title="Online"></span>
             </div>
             <div>
@@ -251,7 +265,7 @@ export default function ChatMain() {
             {/* Location Pill */}
             {gpsCoords ? (
               <span className="chat-location-pill chat-location-pill--active" title="Using Browser GPS">
-                <i className="las la-crosshairs"></i> GPS Active
+                <i className="la la-crosshairs" aria-hidden="true"></i> GPS Active
               </span>
             ) : profileCoords ? (
               <button
@@ -261,7 +275,7 @@ export default function ChatMain() {
                 className="chat-location-pill chat-location-pill--profile"
                 title="Using Saved Address Coordinates. Click to switch to GPS."
               >
-                <i className="las la-map-marker-alt"></i> Saved Address (Use GPS)
+                <i className="icon-map-marker" aria-hidden="true"></i> Saved Address (Use GPS)
               </button>
             ) : (
               <button
@@ -271,7 +285,7 @@ export default function ChatMain() {
                 className="chat-location-pill chat-location-pill--off"
                 title="Enable Location for Distance Sorting"
               >
-                <i className="las la-map-marker"></i> {isRequestingGps ? "Acquiring..." : "Enable GPS"}
+                <i className="icon-map-marker" aria-hidden="true"></i> {isRequestingGps ? "Acquiring..." : "Enable GPS"}
               </button>
             )}
 
@@ -283,7 +297,7 @@ export default function ChatMain() {
               className="chat-header__clear-btn"
               title="Clear Conversation History"
             >
-              <i className="las la-trash"></i>
+              <i className="la la-trash" aria-hidden="true"></i>
               <span>Clear Chat</span>
             </button>
           </div>
@@ -317,7 +331,13 @@ export default function ChatMain() {
           ) : messages.length === 0 ? (
             <div className="chat-empty-state">
               <div className="chat-empty-state__icon" aria-hidden="true">
-                <i className="las la-comment-dots"></i>
+                <Image
+                  src={BOT_AVATAR_SRC}
+                  alt="StealDeals Bot"
+                  width={56}
+                  height={56}
+                  className="chat-avatar-img"
+                />
               </div>
               <h4>Welcome to StealDeals Assistant!</h4>
               <p>
@@ -337,7 +357,13 @@ export default function ChatMain() {
               {isSending && (
                 <div className="chat-message-row chat-message-row--model">
                   <div className="chat-avatar" aria-hidden="true">
-                    <i className="las la-robot"></i>
+                    <Image
+                      src={BOT_AVATAR_SRC}
+                      alt="StealDeals Bot"
+                      width={28}
+                      height={28}
+                      className="chat-avatar-img"
+                    />
                   </div>
                   <div className="chat-message-content">
                     <div className="chat-bubble chat-bubble--model chat-bubble--thinking">
@@ -385,7 +411,15 @@ export default function ChatMain() {
                 className="chat-send-btn"
                 aria-label="Send message"
               >
-                <i className="las la-paper-plane" aria-hidden="true"></i>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
               </button>
             </div>
           </div>

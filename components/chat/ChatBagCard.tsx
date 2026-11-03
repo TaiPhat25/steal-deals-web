@@ -70,7 +70,7 @@ export default function ChatBagCard({ bag }: { bag: SurpriseBagResponse }) {
         )}
         {bag.distanceKm != null && Number.isFinite(bag.distanceKm) && (
           <span className="chat-card__distance">
-            <i className="las la-map-marker-alt" aria-hidden="true"></i>{" "}
+            <i className="icon-map-marker" aria-hidden="true"></i>{" "}
             {bag.distanceKm.toFixed(1)} km
           </span>
         )}
@@ -93,18 +93,19 @@ export default function ChatBagCard({ bag }: { bag: SurpriseBagResponse }) {
 
         {pickupTime && (
           <div className="chat-card__meta">
-            <i className="las la-clock" aria-hidden="true"></i> {pickupTime}
+            <i className="la la-clock-o" aria-hidden="true"></i> {pickupTime}
           </div>
         )}
 
+        {/* Stacked vertically: View Details on top, Add to Cart directly below */}
         <div className="chat-card__actions">
-          <Link href={productHref} className="btn btn-outline-primary-2 btn-sm">
-            View
+          <Link href={productHref} className="btn btn-outline-primary-2 btn-sm w-100 text-center">
+            View Details
           </Link>
           <button
             type="button"
             onClick={handleAddToCart}
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm w-100 text-center"
           >
             Add to Cart
           </button>

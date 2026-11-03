@@ -7661,15 +7661,15 @@ a.profile-action-link.text-primary:focus-visible {
 
 .chat-header__avatar {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: #e8f7ec;
-  color: #22a642;
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.2rem;
+  overflow: visible;
 }
 
 .chat-header__status-dot {
@@ -7847,17 +7847,25 @@ a.profile-action-link.text-primary:focus-visible {
 }
 
 .chat-avatar {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #e8f7ec;
-  color: #22a642;
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
   flex-shrink: 0;
   margin-top: 4px;
+  overflow: hidden;
+}
+
+.chat-avatar-img {
+  object-fit: contain;
+  width: auto;
+  height: auto;
+  max-width: 90%;
+  max-height: 90%;
 }
 
 .chat-message-content {
@@ -8078,16 +8086,18 @@ a.profile-action-link.text-primary:focus-visible {
 
 .chat-card__actions {
   display: flex;
+  flex-direction: column;
   gap: 0.6rem;
   margin-top: auto;
-  padding-top: 0.6rem;
+  padding-top: 0.8rem;
 }
 
 .chat-card__actions .btn-sm {
-  font-size: 1.15rem;
-  padding: 0.4rem 0.8rem;
-  flex: 1;
+  font-size: 1.2rem;
+  padding: 0.6rem 1rem;
+  width: 100%;
   text-align: center;
+  display: block;
 }
 
 .chat-input-bar {
