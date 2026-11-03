@@ -63,10 +63,13 @@ admin and seller dashboards.
   `storeId` when building `/stores/[id]` URLs; presentation slugs remain only
   as a fallback for legacy static data.
 
-The storefront currently exposes 19 routes or route patterns:
+The customer AI Support Chatbot is implemented at `/chat` (`app/(store)/chat/page.tsx` rendering `components/chat/ChatMain.tsx`). It connects to the Store Service (`POST /api/store/chat`, `GET /api/store/chat`, `DELETE /api/store/chat`) using Bearer tokens via `useAuth`. Chat supports dual-source proximity querying (browser GPS with fallback to saved profile coordinates from `useUserLocation()`), renders compact interactive deal carousels for `suggestedBags` (`ChatBagCard`) and `suggestedStores` (`ChatStoreCard`), enforces 1-500 char message bounds, provides starter prompt pills (`ChatStarterPills`), and enables session resets via `DELETE /api/store/chat` with toast notifications.
+
+The storefront currently exposes 20 routes or route patterns:
 
 | Route | Main component | Current data/behavior |
 | --- | --- | --- |
+| `/chat` | `components/chat/ChatMain.tsx` | Authenticated Store Service AI chatbot with interactive deal carousels, dual GPS/profile location, and session history management |
 | `/` | Home sections under `components/home` | Store Service-backed categories, bags, and stores with shared loading/error/empty states, retry, a React carousel, and drag scrolling |
 | `/about` | `components/about/AboutMain.tsx` | StealDeals purpose, principles, and three-step food-rescue explanation using local assets |
 | `/cart` | `components/cart/CartMain.tsx` | Legacy client-side cart UI; authenticated mutations are mirrored to Cart Service, but initial state is not restored from Redis |

@@ -20,6 +20,7 @@ export type StoreProfileResponse = {
   phone: string | null;
   ratingScore: number;
   reviewCount?: number;
+  distanceKm?: number | null;
   isVerify: boolean;
   isActive: boolean;
   createdAt: string;
