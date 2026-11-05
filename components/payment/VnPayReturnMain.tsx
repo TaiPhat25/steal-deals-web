@@ -8,7 +8,6 @@ import {
   formatPaymentDate,
   formatPaymentPrice,
   getPaymentStatusTone,
-  getTransactionStatusLabel,
 } from "@/components/payment/payment-view-utils";
 import { ApiClientError } from "@/lib/api/client";
 import { getOrder } from "@/lib/api/order";
@@ -19,6 +18,24 @@ import {
   type VnPayReturnVerification,
 } from "@/lib/api/payment";
 import type { OrderResponse } from "@/lib/api/dashboard-types";
+
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  Pending: "Awaiting confirmation",
+  InventoryReservationFailed: "Items no longer available",
+  PaymentFailed: "Payment unsuccessful",
+  Confirmed: "Confirmed",
+  Cancelled: "Cancelled",
+};
+
+const PAYMENT_STATUS_LABELS: Record<TransactionResponse["status"], string> = {
+  Pending: "Awaiting confirmation",
+  Success: "Paid",
+  Failed: "Unsuccessful",
+  Expired: "Payment expired",
+  RefundPending: "Refund pending",
+  Refunded: "Refunded",
+  RefundFailed: "Refund needs attention",
+};
 
 function findGuid(value: string | null) {
   if (!value) return null;
@@ -48,7 +65,7 @@ function getResultCopy(
       tone: "success",
       icon: "OK",
       title: "Payment successful",
-      text: "Your payment has been confirmed and the store can continue preparing the order.",
+      text: "Thank you! Your payment and order are confirmed. View your order for the next steps.",
     };
   }
 
@@ -57,7 +74,7 @@ function getResultCopy(
       tone: "success",
       icon: "OK",
       title: "Payment received",
-      text: "VNPAY confirmed the payment. The order status may take a moment to update.",
+      text: "Your payment was successful. We're updating your order details.",
     };
   }
 
@@ -65,17 +82,37 @@ function getResultCopy(
     return {
       tone: "warning",
       icon: "!",
-      title: "Payment needs review",
-      text: "The payment arrived after the order could no longer be confirmed. A refund record is pending.",
+      title: "Refund pending",
+      text: "We received your payment, but couldn't confirm your order. Your refund is pending. View your order for updates.",
     };
   }
 
-  if (transaction && ["Failed", "Expired", "RefundFailed"].includes(transaction.status)) {
+  if (transaction?.status === "Refunded") {
+    return {
+      tone: "success",
+      icon: "OK",
+      title: "Payment refunded",
+      text: "Your refund has been processed. It may take some time to appear in your account, depending on your bank.",
+    };
+  }
+
+  if (transaction?.status === "RefundFailed") {
     return {
       tone: "danger",
       icon: "!",
-      title: "Payment was not completed",
-      text: transaction.failureReason ?? "This payment attempt cannot be used anymore.",
+      title: "Your refund needs attention",
+      text: "We couldn't complete your refund. Please contact support with your order reference for help.",
+    };
+  }
+
+  if (transaction && ["Failed", "Expired"].includes(transaction.status)) {
+    return {
+      tone: "danger",
+      icon: "!",
+      title: transaction.status === "Expired" ? "Payment expired" : "Payment unsuccessful",
+      text: transaction.status === "Expired"
+        ? "The time to complete this payment has ended. View your order to see the available payment options."
+        : "We couldn't complete your payment. View your order to check its status and available payment options.",
     };
   }
 
@@ -83,8 +120,8 @@ function getResultCopy(
     return {
       tone: "danger",
       icon: "!",
-      title: "Unable to verify payment response",
-      text: verification.reason ?? "The VNPAY response signature is invalid.",
+      title: "We couldn't confirm your payment",
+      text: "Please check your order for the latest payment status before trying to pay again.",
     };
   }
 
@@ -92,16 +129,16 @@ function getResultCopy(
     return {
       tone: "danger",
       icon: "!",
-      title: "Payment was not completed",
-      text: verification.reason ?? "VNPAY returned a failed or cancelled transaction.",
+      title: "Payment not completed",
+      text: "Your payment wasn't completed. View your order to check its status and available payment options.",
     };
   }
 
   return {
     tone: "pending",
     icon: "...",
-    title: "Confirming payment",
-    text: "We are checking the payment result from VNPAY.",
+    title: "Confirming your payment",
+    text: "Please wait a moment while we confirm your payment. You can also check for updates in your order details.",
   };
 }
 
@@ -134,14 +171,10 @@ export default function VnPayReturnMain() {
           ?? findGuid(searchParams.get("vnp_OrderInfo"));
 
         setOrderId(nextOrderId);
-      } catch (requestError) {
+      } catch {
         if (!active) return;
 
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Unable to verify the VNPAY return response.",
-        );
+        setError("We couldn't confirm your payment right now. Please check your order for updates before trying to pay again.");
 
         const fallbackOrderId =
           searchParams.get("orderId")
@@ -190,11 +223,7 @@ export default function VnPayReturnMain() {
         if (cancelled) return;
 
         if (!(requestError instanceof ApiClientError && requestError.status === 404)) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "Unable to load the order payment status.",
-          );
+          setError("We're having trouble loading your payment details. Please view your order for the latest updates.");
         }
       }
 
@@ -237,23 +266,22 @@ export default function VnPayReturnMain() {
             <span>{copy.text}</span>
 
             <dl className="payment-facts">
-              {orderId ? <div><dt>Order ID</dt><dd>{orderId}</dd></div> : null}
-              {order ? <div><dt>Order status</dt><dd>{order.status}</dd></div> : null}
+              {orderId ? <div><dt>Order reference</dt><dd>{orderId}</dd></div> : null}
+              {order ? <div><dt>Order status</dt><dd>{ORDER_STATUS_LABELS[order.status] ?? "Updating"}</dd></div> : null}
               {transaction ? (
                 <>
-                  <div><dt>Payment status</dt><dd>{getTransactionStatusLabel(transaction.status)}</dd></div>
-                  <div><dt>Amount</dt><dd>{formatPaymentPrice(transaction.amount)}</dd></div>
-                  <div><dt>Paid at</dt><dd>{formatPaymentDate(transaction.paidAt)}</dd></div>
-                  <div><dt>VNPAY transaction</dt><dd>{transaction.gatewayTransactionNo ?? "-"}</dd></div>
+                  <div><dt>Payment status</dt><dd>{PAYMENT_STATUS_LABELS[transaction.status] ?? "Updating"}</dd></div>
+                  <div><dt>Payment amount</dt><dd>{formatPaymentPrice(transaction.amount)}</dd></div>
+                  {transaction.paidAt ? <div><dt>Payment date</dt><dd>{formatPaymentDate(transaction.paidAt)}</dd></div> : null}
+                  {transaction.gatewayTransactionNo ? <div><dt>Transaction reference</dt><dd>{transaction.gatewayTransactionNo}</dd></div> : null}
                 </>
               ) : verification ? (
                 <>
-                  <div><dt>Gateway ref</dt><dd>{verification.gatewayRef ?? "-"}</dd></div>
-                  <div><dt>Amount</dt><dd>{verification.amount ? formatPaymentPrice(verification.amount) : "-"}</dd></div>
-                  <div><dt>VNPAY response</dt><dd>{verification.gatewayResponseCode ?? "-"}</dd></div>
+                  {verification.gatewayRef ? <div><dt>Payment reference</dt><dd>{verification.gatewayRef}</dd></div> : null}
+                  {verification.amount !== null ? <div><dt>Payment amount</dt><dd>{formatPaymentPrice(verification.amount)}</dd></div> : null}
                 </>
               ) : (
-                <div><dt>Payment status</dt><dd>Checking</dd></div>
+                <div><dt>Payment status</dt><dd>Checking your payment</dd></div>
               )}
             </dl>
 
@@ -267,7 +295,7 @@ export default function VnPayReturnMain() {
             </div>
 
             <p className="payment-result-card__note">
-              Final payment state is updated by VNPAY IPN, so this page may take a few seconds to catch up.
+              You can check the latest payment updates in your order details.
             </p>
           </section>
         </div>

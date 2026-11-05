@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   formatPaymentPrice,
-  formatRemainingSeconds,
   getRemainingSeconds,
 } from "@/components/payment/payment-view-utils";
 import { ApiClientError } from "@/lib/api/client";
@@ -15,25 +14,13 @@ import { getTransactionByOrderId, type TransactionResponse } from "@/lib/api/pay
 const POLL_INTERVAL_MS = 1500;
 const MAX_WAIT_MS = 120000;
 
-function formatElapsedTime(milliseconds: number) {
-  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-
-  if (minutes > 0) {
-    return `${minutes}m ${String(rest).padStart(2, "0")}s`;
-  }
-
-  return `${seconds}s`;
-}
-
 export default function PaymentProcessingMain() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const { accessToken } = useAuth();
   const [transaction, setTransaction] = useState<TransactionResponse | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [message, setMessage] = useState("Waiting for the payment gateway to prepare your checkout link.");
+  const [message, setMessage] = useState("You'll be taken to VNPAY to complete your payment.");
   const [error, setError] = useState("");
   const [now, setNow] = useState(() => Date.now());
   const [hasRedirected, setHasRedirected] = useState(false);
@@ -80,38 +67,34 @@ export default function PaymentProcessingMain() {
           if (remainingSeconds === null || remainingSeconds > 0) {
             redirectedRef.current = true;
             setHasRedirected(true);
-            setMessage("Redirecting you to VNPAY.");
+            setMessage("Taking you to VNPAY to complete your payment.");
             window.location.href = nextTransaction.checkoutUrl;
             return;
           }
         }
 
         if (nextTransaction.status === "Success") {
-          setMessage("Payment is already completed. Opening your order details.");
+          setMessage("Your payment is complete. Taking you to your order.");
           window.location.replace(`/orders/${encodeURIComponent(orderId)}`);
           return;
         }
 
         if (["Failed", "Expired", "RefundPending", "Refunded", "RefundFailed"].includes(nextTransaction.status)) {
-          setMessage("This payment attempt can no longer be used.");
+          setMessage("Please view your order for the latest payment details.");
           return;
         }
       } catch (requestError) {
         if (cancelled) return;
 
         if (requestError instanceof ApiClientError && requestError.status === 404) {
-          setMessage("Your order is saved. Waiting for inventory reservation and payment creation.");
+          setMessage("We're getting your payment ready. You'll be taken to VNPAY shortly.");
         } else {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "Unable to check the payment transaction.",
-          );
+          setError("We're having trouble checking your payment. Please wait a moment or view your order for updates.");
         }
       }
 
       if (currentElapsedMs >= MAX_WAIT_MS) {
-        setMessage("The order was created, but the payment gateway is taking longer than expected.");
+        setMessage("Your order is saved. Please view your order to continue with payment.");
         return;
       }
 
@@ -130,32 +113,32 @@ export default function PaymentProcessingMain() {
 
   const remainingSeconds = getRemainingSeconds(transaction?.expiresAt ?? null, now);
   const canOpenOrder = Boolean(orderId);
-  const isTimedOut = elapsedMs >= MAX_WAIT_MS && !hasRedirected;
-  const elapsedLabel = formatElapsedTime(elapsedMs);
-  const maxWaitLabel = formatElapsedTime(MAX_WAIT_MS);
+  const isPaymentUnavailable = Boolean(
+    transaction && transaction.status !== "Pending" && transaction.status !== "Success",
+  );
+  const isTimedOut = elapsedMs >= MAX_WAIT_MS
+    && !hasRedirected
+    && !isPaymentUnavailable
+    && transaction?.status !== "Success";
   const isWaitingForRedirect =
-    !isTimedOut
+    Boolean(orderId)
+    && !isTimedOut
     && !hasRedirected
     && (!transaction || transaction.status === "Pending");
-  const nextStepLabel = transaction
-    ? transaction.status === "Pending"
-      ? transaction.checkoutUrl
-        ? "Redirecting to VNPAY"
-        : "Waiting for VNPAY checkout"
-      : "Review this order"
-    : "Preparing VNPAY checkout";
-  const checkoutLinkLabel = transaction
-    ? transaction.status === "Pending"
-      ? transaction.checkoutUrl
-        ? "Ready"
-        : "Still being created"
-      : "No active checkout link"
-    : "Creating secure link";
-  const paymentWindowLabel = transaction?.status === "Pending" && transaction.checkoutUrl
-    ? formatRemainingSeconds(remainingSeconds)
-    : transaction
-      ? "Not available"
-      : "Starts once the link is ready";
+  const title = !orderId
+    ? "Find your order"
+    : transaction?.status === "Success"
+      ? "Payment complete"
+      : isPaymentUnavailable
+        ? "View your payment details"
+        : isTimedOut
+          ? "This is taking a little longer"
+          : hasRedirected
+            ? "Continue to VNPAY"
+            : "Getting your payment ready";
+  const iconTone = !orderId || isTimedOut || isPaymentUnavailable
+    ? "warning"
+    : transaction?.status === "Success" ? "success" : "pending";
 
   return (
     <main className="main payment-page">
@@ -172,52 +155,42 @@ export default function PaymentProcessingMain() {
       <div className="page-content">
         <div className="container">
           <section className="payment-result-card" aria-live="polite">
-            <span className={`payment-result-card__icon is-pending${isWaitingForRedirect ? " is-spinning" : ""}`} aria-hidden="true">
-              <i className="icon-refresh" />
+            <span className={`payment-result-card__icon is-${iconTone}${isWaitingForRedirect ? " is-spinning" : ""}`} aria-hidden="true">
+              {iconTone === "warning" ? "!" : iconTone === "success" ? <i className="icon-check" /> : <i className="icon-refresh" />}
             </span>
             <p>VNPAY payment</p>
-            <h1>Preparing secure checkout</h1>
-            <span>{message}</span>
+            <h1>{title}</h1>
+            <span>{orderId ? message : "Choose an order to continue with payment."}</span>
 
-            <div className="payment-processing-wait" role="status">
-              <span className="payment-processing-wait__spinner" aria-hidden="true" />
-              <div className="payment-processing-wait__copy">
-                <strong>Waiting for VNPAY</strong>
-                <span>Keep this page open. We will redirect you automatically when checkout is ready.</span>
+            {isWaitingForRedirect ? (
+              <div className="payment-processing-wait" role="status">
+                <span className="payment-processing-wait__spinner" aria-hidden="true" />
+                <div className="payment-processing-wait__copy">
+                  <strong>Connecting to VNPAY</strong>
+                  <span>Please keep this page open. You&apos;ll be redirected automatically.</span>
+                </div>
               </div>
-              <span className="payment-processing-wait__time">{elapsedLabel} / {maxWaitLabel}</span>
-            </div>
+            ) : null}
 
-            {orderId ? (
-              <dl className="payment-facts">
-                <div><dt>Order</dt><dd>Created and saved</dd></div>
-                <div><dt>Next step</dt><dd>{nextStepLabel}</dd></div>
-                {transaction ? (
-                  <>
-                    <div><dt>Total to pay</dt><dd>{formatPaymentPrice(transaction.amount)}</dd></div>
-                    <div><dt>VNPAY link</dt><dd>{checkoutLinkLabel}</dd></div>
-                    <div><dt>Payment window</dt><dd>{paymentWindowLabel}</dd></div>
-                  </>
-                ) : (
-                  <div><dt>VNPAY link</dt><dd>{checkoutLinkLabel}</dd></div>
-                )}
+            {orderId && transaction ? (
+              <dl className="payment-processing-total">
+                <div>
+                  <dt>{transaction.status === "Pending" ? "Total to pay" : "Order total"}</dt>
+                  <dd>{formatPaymentPrice(transaction.amount)}</dd>
+                </div>
               </dl>
-            ) : (
-              <div className="alert alert-danger" role="alert">
-                Missing order id. Please open this payment from your order details.
-              </div>
-            )}
+            ) : null}
 
             {error ? <div className="alert alert-danger" role="alert">{error}</div> : null}
             {isTimedOut && canOpenOrder ? (
               <div className="alert alert-warning" role="status">
-                VNPAY is taking longer than expected. You can open the order details page and use the VNPAY payment link manually when it appears.
+                You can continue with payment from your order once it&apos;s ready.
               </div>
             ) : null}
 
             <div className="payment-result-card__actions">
               {transaction?.checkoutUrl && transaction.status === "Pending" && remainingSeconds !== 0 ? (
-                <a className="btn btn-primary" href={transaction.checkoutUrl}>Open VNPAY</a>
+                <a className="btn btn-primary" href={transaction.checkoutUrl}>Pay with VNPAY</a>
               ) : null}
               {canOpenOrder ? (
                 <Link href={`/orders/${encodeURIComponent(orderId ?? "")}`} className="btn btn-outline-primary-2">
@@ -228,15 +201,11 @@ export default function PaymentProcessingMain() {
               )}
             </div>
 
-            {isTimedOut ? (
+            {hasRedirected ? (
               <p className="payment-result-card__note">
-                You can safely leave this page. The order detail page will keep checking and show the VNPAY link as soon as it is ready.
+                If VNPAY hasn&apos;t opened, select Pay with VNPAY to continue.
               </p>
-            ) : (
-              <p className="payment-result-card__note">
-                You can wait here for automatic redirect, or open the order detail page and pay from the saved link.
-              </p>
-            )}
+            ) : null}
           </section>
         </div>
       </div>
