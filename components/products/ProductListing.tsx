@@ -26,7 +26,15 @@ type ProductListingProps = {
 
 const PRICE_MIN = 0;
 const PRICE_MAX = Number.POSITIVE_INFINITY;
+const DISTANCE_OPTIONS = [2, 5, 10, 20] as const;
+const PICKUP_DAY_OPTIONS = [
+  { value: "all", label: "Any day" },
+  { value: "today", label: "Today" },
+  { value: "tomorrow", label: "Tomorrow" },
+  { value: "later", label: "Later" },
+] as const;
 const ABOVE_THE_FOLD_PRODUCT_COUNT = 3;
+const BAGS_PER_BATCH = 12;
 const PRODUCT_LISTING_CARD_IMAGE_SIZES = "(max-width: 575px) calc(100vw - 30px), (max-width: 991px) calc(50vw - 30px), (max-width: 1199px) calc(37.5vw - 30px), 255px";
 const priceFormatter = new Intl.NumberFormat("en-US");
 
@@ -97,12 +105,15 @@ export default function ProductListing({
   const [categories, setCategories] = useState(initialCategory ? [initialCategory] : []);
   const [minPrice, setMinPrice] = useState(PRICE_MIN);
   const [maxPrice, setMaxPrice] = useState(PRICE_MAX);
+  const [pickupDay, setPickupDay] = useState<ListingBag["pickupDay"] | "all">("all");
+  const [maxDistance, setMaxDistance] = useState(Number.POSITIVE_INFINITY);
   const [priceDraft, setPriceDraft] = useState({ min: "", max: "" });
   const [sort, setSort] = useState(normalizeSort(initialSort));
   const [bags, setBags] = useState<ListingBag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(BAGS_PER_BATCH);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const filterDialogRef = useRef<HTMLDivElement>(null);
   const deferredQuery = useDeferredValue(query);
@@ -190,24 +201,28 @@ export default function ProductListing({
     [priceDraft],
   );
   const hasPriceFilter = minPrice > PRICE_MIN || Number.isFinite(maxPrice);
-  const hasActiveFilters = Boolean(query.trim()) || categories.length > 0 || hasPriceFilter;
-  const activeFilterCount = Number(Boolean(query.trim())) + categories.length + Number(hasPriceFilter);
+  const hasPickupDayFilter = pickupDay !== "all";
+  const hasDistanceFilter = Boolean(coordinates) && Number.isFinite(maxDistance);
+  const hasActiveFilters = Boolean(query.trim()) || categories.length > 0 || hasPriceFilter || hasPickupDayFilter || hasDistanceFilter;
+  const activeFilterCount = Number(Boolean(query.trim())) + categories.length + Number(hasPriceFilter) + Number(hasPickupDayFilter) + Number(hasDistanceFilter);
   const visibleBags = useMemo(
     () =>
       filterBags(scopedBags, {
         query: deferredQuery,
         categories,
-        pickupDay: "all",
+        pickupDay,
         minPrice,
         maxPrice,
         minDistance: 0,
-        maxDistance: Number.POSITIVE_INFINITY,
+        maxDistance: hasDistanceFilter ? maxDistance : Number.POSITIVE_INFINITY,
         sort,
       }),
-    [categories, deferredQuery, maxPrice, minPrice, scopedBags, sort],
+    [categories, deferredQuery, hasDistanceFilter, maxDistance, maxPrice, minPrice, pickupDay, scopedBags, sort],
   );
+  const shownBags = visibleBags.slice(0, visibleCount);
 
   function toggleCategory(category: string) {
+    setVisibleCount(BAGS_PER_BATCH);
     setCategories((current) =>
       current.includes(category)
         ? current.filter((item) => item !== category)
@@ -216,10 +231,13 @@ export default function ProductListing({
   }
 
   function clearFilters() {
+    setVisibleCount(BAGS_PER_BATCH);
     setQuery("");
     setCategories([]);
     setMinPrice(PRICE_MIN);
     setMaxPrice(PRICE_MAX);
+    setPickupDay("all");
+    setMaxDistance(Number.POSITIVE_INFINITY);
     setPriceDraft({ min: "", max: "" });
     setSort("popularity");
   }
@@ -227,6 +245,7 @@ export default function ProductListing({
   function applyPriceFilter() {
     if (!priceValidation.isValid) return;
 
+    setVisibleCount(BAGS_PER_BATCH);
     setMinPrice(priceValidation.min);
     setMaxPrice(priceValidation.max);
     setPriceDraft({
@@ -236,6 +255,7 @@ export default function ProductListing({
   }
 
   function clearPriceFilter() {
+    setVisibleCount(BAGS_PER_BATCH);
     setMinPrice(PRICE_MIN);
     setMaxPrice(PRICE_MAX);
     setPriceDraft({ min: "", max: "" });
@@ -293,7 +313,10 @@ export default function ProductListing({
               id="product-search"
               className="form-control"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setVisibleCount(BAGS_PER_BATCH);
+              }}
               placeholder={storeName ? `Search ${storeName}` : "Search bags, stores, or food categories"}
             />
           </div>
@@ -351,7 +374,7 @@ export default function ProductListing({
               <div className="toolbox">
                 <div className="toolbox-left">
                   <div className="toolbox-info" role="status" aria-live="polite" aria-atomic="true">
-                    Showing <span>{visibleBags.length} of {scopedBags.length}</span> surprise bags
+                    Showing <span>{shownBags.length} of {visibleBags.length}</span> surprise bags
                   </div>
                 </div>
                 <div className="toolbox-right">
@@ -363,7 +386,10 @@ export default function ProductListing({
                         id="sortby"
                         className="form-control"
                         value={sort}
-                        onChange={(event) => setSort(event.target.value)}
+                        onChange={(event) => {
+                          setSort(event.target.value);
+                          setVisibleCount(BAGS_PER_BATCH);
+                        }}
                       >
                         <option value="popularity">Most Popular</option>
                         <option value="pickup">Pickup Soonest</option>
@@ -383,7 +409,10 @@ export default function ProductListing({
                     <button
                       type="button"
                       className="product-listing-filter-chip"
-                      onClick={() => setQuery("")}
+                      onClick={() => {
+                        setQuery("");
+                        setVisibleCount(BAGS_PER_BATCH);
+                      }}
                       aria-label={`Remove search filter: ${query.trim()}`}
                     >
                       Search: {query.trim()} <span aria-hidden="true">&times;</span>
@@ -410,21 +439,61 @@ export default function ProductListing({
                       {formatPriceFilter(minPrice, maxPrice)} <span aria-hidden="true">&times;</span>
                     </button>
                   ) : null}
+                  {hasPickupDayFilter ? (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      onClick={() => {
+                        setPickupDay("all");
+                        setVisibleCount(BAGS_PER_BATCH);
+                      }}
+                      aria-label={`Remove pickup day filter: ${PICKUP_DAY_OPTIONS.find((option) => option.value === pickupDay)?.label}`}
+                    >
+                      Pickup: {PICKUP_DAY_OPTIONS.find((option) => option.value === pickupDay)?.label} <span aria-hidden="true">&times;</span>
+                    </button>
+                  ) : null}
+                  {hasDistanceFilter ? (
+                    <button
+                      type="button"
+                      className="product-listing-filter-chip"
+                      onClick={() => {
+                        setMaxDistance(Number.POSITIVE_INFINITY);
+                        setVisibleCount(BAGS_PER_BATCH);
+                      }}
+                      aria-label={`Remove distance filter: Within ${maxDistance} km`}
+                    >
+                      Within {maxDistance} km <span aria-hidden="true">&times;</span>
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
               {visibleBags.length ? (
-                <div className="row product-listing-grid">
-                  {visibleBags.map((bag, index) => (
-                    <div className="col-12 col-sm-6 col-xl-4" key={bag.slug}>
-                      <SurpriseBagCard
-                        bag={bag}
-                        eager={index < ABOVE_THE_FOLD_PRODUCT_COUNT}
-                        imageSizes={PRODUCT_LISTING_CARD_IMAGE_SIZES}
-                      />
+                <>
+                  <div className="row product-listing-grid" id="product-listing-results">
+                    {shownBags.map((bag, index) => (
+                      <div className="col-12 col-sm-6 col-xl-4" key={bag.slug}>
+                        <SurpriseBagCard
+                          bag={bag}
+                          eager={index < ABOVE_THE_FOLD_PRODUCT_COUNT}
+                          imageSizes={PRODUCT_LISTING_CARD_IMAGE_SIZES}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {shownBags.length < visibleBags.length ? (
+                    <div className="product-listing-load-more">
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary-2"
+                        aria-controls="product-listing-results"
+                        onClick={() => setVisibleCount((current) => current + BAGS_PER_BATCH)}
+                      >
+                        Load more
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  ) : null}
+                </>
               ) : (
                 <div className="product-listing-empty">
                   <h2>No surprise bags match your filters</h2>
@@ -497,6 +566,78 @@ export default function ProductListing({
                       </div>
                     ))}
                   </div>
+                </FilterWidget>
+
+                <FilterWidget id="pickup-day-filter" title="Pickup day">
+                  <div className="filter-items">
+                    {PICKUP_DAY_OPTIONS.map(({ value, label }) => (
+                      <div className="filter-item" key={value}>
+                        <div className="custom-control custom-radio">
+                          <input
+                            type="radio"
+                            className="custom-control-input"
+                            name="pickup-day"
+                            id={`pickup-day-${value}`}
+                            checked={pickupDay === value}
+                            onChange={() => {
+                              setPickupDay(value);
+                              setVisibleCount(BAGS_PER_BATCH);
+                            }}
+                          />
+                          <label className="custom-control-label" htmlFor={`pickup-day-${value}`}>{label}</label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </FilterWidget>
+
+                <FilterWidget id="distance-filter" title="Distance">
+                  <div className="filter-items">
+                    <div className="filter-item">
+                      <div className="custom-control custom-radio">
+                        <input
+                          type="radio"
+                          className="custom-control-input"
+                          name="distance"
+                          id="distance-any"
+                          checked={!hasDistanceFilter}
+                          onChange={() => {
+                            setMaxDistance(Number.POSITIVE_INFINITY);
+                            setVisibleCount(BAGS_PER_BATCH);
+                          }}
+                        />
+                        <label className="custom-control-label" htmlFor="distance-any">Any distance</label>
+                      </div>
+                    </div>
+                    {DISTANCE_OPTIONS.map((distance) => (
+                      <div className="filter-item" key={distance}>
+                        <div className="custom-control custom-radio">
+                          <input
+                            type="radio"
+                            className="custom-control-input"
+                            name="distance"
+                            id={`distance-${distance}`}
+                            checked={hasDistanceFilter && maxDistance === distance}
+                            onChange={() => {
+                              setMaxDistance(distance);
+                              setVisibleCount(BAGS_PER_BATCH);
+                            }}
+                            disabled={!coordinates}
+                          />
+                          <label className="custom-control-label" htmlFor={`distance-${distance}`}>
+                            Within {distance} km
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {!coordinates && (
+                    <p className="product-listing-distance-hint">
+                      {isUserLocationLoading ? "Loading your saved address..." : (
+                        <>Add a saved address with a map location in your <Link href="/profile">profile</Link> to filter by distance.</>
+                      )}
+                    </p>
+                  )}
                 </FilterWidget>
 
                 <FilterWidget id="price-filter" title="Price">
