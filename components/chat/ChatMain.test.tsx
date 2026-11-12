@@ -156,4 +156,44 @@ describe("ChatMain", () => {
       "info",
     );
   });
+
+  it("renders open-full-page link and close button in widget variant", async () => {
+    const onClose = vi.fn();
+
+    render(<ChatMain variant="widget" onClose={onClose} />);
+    await waitFor(() => expect(chatApi.getChatHistory).toHaveBeenCalled());
+
+    const expandLink = screen.getByRole("link", { name: /open full chat page/i });
+    expect(expandLink).toHaveAttribute("href", "/chat");
+
+    fireEvent.click(expandLink);
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    const closeButton = screen.getByRole("button", { name: /close chat/i });
+    fireEvent.click(closeButton);
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
+  it("renders compact auth prompt with expand and close actions in unauthenticated widget variant", async () => {
+    mockUseAuth.mockReturnValue({
+      accessToken: null,
+      isInitialized: true,
+      currentUser: null,
+    });
+    const onClose = vi.fn();
+
+    render(<ChatMain variant="widget" onClose={onClose} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/sign in to chat with our ai assistant/i)).toBeInTheDocument();
+    });
+
+    const expandLink = screen.getByRole("link", { name: /open full chat page/i });
+    expect(expandLink).toHaveAttribute("href", "/chat");
+
+    const signInLink = screen.getByRole("link", { name: /sign in/i });
+    expect(signInLink).toHaveAttribute("href", "/login?redirect=/chat");
+    fireEvent.click(signInLink);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });
