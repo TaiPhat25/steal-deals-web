@@ -9,6 +9,7 @@ import AuthProvider from "@/components/auth/AuthProvider";
 import CartProvider from "@/components/cart/CartProvider";
 import ToastProvider from "@/components/notifications/ToastProvider";
 import UserLocationProvider from "@/components/location/UserLocationProvider";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,6 +28,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <button id="scroll-top" title="Back to Top">
               <i className="icon-arrow-up"></i>
             </button>
+            <ChatWidget />
             <MobileMenu />
             <InteractiveHandlers />
           </ToastProvider>

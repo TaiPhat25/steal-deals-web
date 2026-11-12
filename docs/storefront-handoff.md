@@ -63,13 +63,13 @@ admin and seller dashboards.
   `storeId` when building `/stores/[id]` URLs; presentation slugs remain only
   as a fallback for legacy static data.
 
-The customer AI Support Chatbot is implemented at `/chat` (`app/(store)/chat/page.tsx` rendering `components/chat/ChatMain.tsx`). It connects to the Store Service (`POST /api/store/chat`, `GET /api/store/chat`, `DELETE /api/store/chat`) using Bearer tokens via `useAuth`. Chat supports dual-source proximity querying (browser GPS with fallback to saved profile coordinates from `useUserLocation()`), renders compact interactive deal carousels for `suggestedBags` (`ChatBagCard`) and `suggestedStores` (`ChatStoreCard`), enforces 1-500 char message bounds, provides starter prompt pills (`ChatStarterPills`), and enables session resets via `DELETE /api/store/chat` with toast notifications.
+The customer AI Support Chatbot is implemented at `/chat` (`app/(store)/chat/page.tsx` rendering `components/chat/ChatMain.tsx`) and as a floating bottom-right popup launcher (`components/chat/ChatWidget.tsx`, mounted in `components/layout/SiteLayout.tsx` on non-`/chat` storefront pages without a top-header nav link). The widget renders `ChatMain` in compact `widget` mode with a button to expand directly to the full `/chat` page. Both connect to the Store Service (`POST /api/store/chat`, `GET /api/store/chat`, `DELETE /api/store/chat`) using Bearer tokens via `useAuth`, support dual-source proximity querying (browser GPS with fallback to saved profile coordinates from `useUserLocation()`), render interactive deal carousels for `suggestedBags` (`ChatBagCard`) and `suggestedStores` (`ChatStoreCard`), enforce 1-500 char message bounds, provide starter prompt pills (`ChatStarterPills`), and enable session resets via `DELETE /api/store/chat` with toast notifications.
 
 The storefront currently exposes 20 routes or route patterns:
 
 | Route | Main component | Current data/behavior |
 | --- | --- | --- |
-| `/chat` | `components/chat/ChatMain.tsx` | Authenticated Store Service AI chatbot with interactive deal carousels, dual GPS/profile location, and session history management |
+| `/chat` | `components/chat/ChatMain.tsx` | Authenticated Store Service AI chatbot page (linked from the floating `ChatWidget` popup) with interactive deal carousels, dual GPS/profile location, and session history management |
 | `/` | Home sections under `components/home` | Store Service-backed categories, bags, and stores with shared loading/error/empty states, retry, a React carousel, and drag scrolling |
 | `/about` | `components/about/AboutMain.tsx` | StealDeals purpose, principles, and three-step food-rescue explanation using local assets |
 | `/cart` | `components/cart/CartMain.tsx` | Legacy client-side cart UI; authenticated mutations are mirrored to Cart Service, but initial state is not restored from Redis |

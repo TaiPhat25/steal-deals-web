@@ -25,7 +25,7 @@ export default function Header() {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const { items: headerCartItems, itemCount: headerCartCount, subtotal: headerCartTotal } = useCart();
 
-  const isNavItemActive = (item: "home" | "products" | "stores" | "about" | "contact" | "chat") => {
+  const isNavItemActive = (item: "home" | "products" | "stores" | "about" | "contact") => {
     switch (item) {
       case "home":
         return pathname === "/";
@@ -37,8 +37,6 @@ export default function Header() {
         return pathname === "/about";
       case "contact":
         return pathname === "/contact";
-      case "chat":
-        return pathname === "/chat";
     }
   };
 
@@ -819,14 +817,6 @@ export default function Header() {
                       className={isNavItemActive("contact") ? "active" : undefined}
                     >
                       Contact Us
-                    </Link>
-                  </li>
-                  <li className={isNavItemActive("chat") ? "active" : undefined}>
-                    <Link
-                      href="/chat"
-                      className={isNavItemActive("chat") ? "active" : undefined}
-                    >
-                      AI Assistant
                     </Link>
                   </li>
                   {/* <li className="megamenu-list">
