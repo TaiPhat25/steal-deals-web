@@ -17,7 +17,13 @@ import ChatStarterPills from "./ChatStarterPills";
 const MAX_MESSAGE_LENGTH = 500;
 const BOT_AVATAR_SRC = "/assets/images/brand/ai-bot-avatar.png";
 
-export default function ChatMain() {
+interface ChatMainProps {
+  variant?: "page" | "widget";
+  onClose?: () => void;
+}
+
+export default function ChatMain({ variant = "page", onClose }: ChatMainProps = {}) {
+  const isWidget = variant === "widget";
   const { accessToken, isInitialized, currentUser } = useAuth();
   const { coordinates: profileCoords } = useUserLocation();
   const { showToast } = useToast();
@@ -205,8 +211,10 @@ export default function ChatMain() {
     e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
   };
 
-  // 1. Unauthenticated Visitor State
-  if (isInitialized && !accessToken) {
+  const isUnauthenticated = isInitialized && !accessToken;
+
+  // Full-page unauthenticated state keeps the standalone centered auth card
+  if (!isWidget && isUnauthenticated) {
     return (
       <div className="chat-page-container">
         <div className="chat-auth-card">
@@ -238,192 +246,276 @@ export default function ChatMain() {
   }
 
   return (
-    <div className="chat-page-container">
-      <div className="chat-window">
+    <div className={isWidget ? "chat-widget-body" : "chat-page-container"}>
+      <div className={`chat-window ${isWidget ? "chat-window--widget" : ""}`}>
         {/* Chat Header Bar */}
-        <header className="chat-header">
+        <header className={`chat-header ${isWidget ? "chat-header--widget" : ""}`}>
           <div className="chat-header__info">
             <div className="chat-header__avatar">
               <Image
                 src={BOT_AVATAR_SRC}
                 alt="StealDeals Bot"
-                width={38}
-                height={38}
+                width={isWidget ? 30 : 38}
+                height={isWidget ? 30 : 38}
                 className="chat-avatar-img"
               />
               <span className="chat-header__status-dot" title="Online"></span>
             </div>
             <div>
-              <h3 className="chat-header__title">StealDeals AI Assistant</h3>
+              <h3 className="chat-header__title">
+                {isWidget ? "StealDeals AI" : "StealDeals AI Assistant"}
+              </h3>
               <p className="chat-header__subtitle">
-                {currentUser?.name ? `Helping ${currentUser.name}` : "Surplus food & store finder"}
+                {isUnauthenticated
+                  ? "Sign in required"
+                  : isWidget
+                    ? (currentUser?.name ?? "AI Support")
+                    : (currentUser?.name ? `Helping ${currentUser.name}` : "Surplus food & store finder")}
               </p>
             </div>
           </div>
 
           <div className="chat-header__actions">
-            {/* Location Pill */}
-            {gpsCoords ? (
-              <span className="chat-location-pill chat-location-pill--active" title="Using Browser GPS">
-                <i className="la la-crosshairs" aria-hidden="true"></i> GPS Active
-              </span>
-            ) : profileCoords ? (
-              <button
-                type="button"
-                onClick={handleRequestGps}
-                disabled={isRequestingGps}
-                className="chat-location-pill chat-location-pill--profile"
-                title="Using Saved Address Coordinates. Click to switch to GPS."
-              >
-                <i className="icon-map-marker" aria-hidden="true"></i> Saved Address (Use GPS)
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleRequestGps}
-                disabled={isRequestingGps}
-                className="chat-location-pill chat-location-pill--off"
-                title="Enable Location for Distance Sorting"
-              >
-                <i className="icon-map-marker" aria-hidden="true"></i> {isRequestingGps ? "Acquiring..." : "Enable GPS"}
-              </button>
+            {!isUnauthenticated && (
+              <>
+                {/* Location Pill */}
+                {gpsCoords ? (
+                  <span className="chat-location-pill chat-location-pill--active" title="Using Browser GPS">
+                    <i className="la la-crosshairs" aria-hidden="true"></i>{" "}
+                    {isWidget ? "GPS" : "GPS Active"}
+                  </span>
+                ) : profileCoords ? (
+                  <button
+                    type="button"
+                    onClick={handleRequestGps}
+                    disabled={isRequestingGps}
+                    className="chat-location-pill chat-location-pill--profile"
+                    title="Using Saved Address Coordinates. Click to switch to GPS."
+                  >
+                    <i className="icon-map-marker" aria-hidden="true"></i>{" "}
+                    {isWidget ? "Saved" : "Saved Address (Use GPS)"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleRequestGps}
+                    disabled={isRequestingGps}
+                    className="chat-location-pill chat-location-pill--off"
+                    title="Enable Location for Distance Sorting"
+                  >
+                    <i className="icon-map-marker" aria-hidden="true"></i>{" "}
+                    {isRequestingGps ? (isWidget ? "..." : "Acquiring...") : (isWidget ? "GPS Off" : "Enable GPS")}
+                  </button>
+                )}
+
+                {/* Clear Chat Button */}
+                <button
+                  type="button"
+                  onClick={handleClearChat}
+                  disabled={messages.length === 0 || isSending}
+                  className="chat-header__clear-btn"
+                  title="Clear Conversation History"
+                  aria-label="Clear chat"
+                >
+                  <i className="la la-trash" aria-hidden="true"></i>
+                  {!isWidget && <span>Clear Chat</span>}
+                </button>
+              </>
             )}
 
-            {/* Clear Chat Button */}
-            <button
-              type="button"
-              onClick={handleClearChat}
-              disabled={messages.length === 0 || isSending}
-              className="chat-header__clear-btn"
-              title="Clear Conversation History"
-            >
-              <i className="la la-trash" aria-hidden="true"></i>
-              <span>Clear Chat</span>
-            </button>
+            {isWidget && (
+              <>
+                <Link
+                  href="/chat"
+                  onClick={onClose}
+                  className="chat-header__icon-btn"
+                  title="Open full chat page"
+                  aria-label="Open full chat page"
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="15 3 21 3 21 9" />
+                    <polyline points="9 21 3 21 3 15" />
+                    <line x1="21" y1="3" x2="14" y2="10" />
+                    <line x1="3" y1="21" x2="10" y2="14" />
+                  </svg>
+                </Link>
+
+                {onClose && (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="chat-header__icon-btn"
+                    title="Close chat"
+                    aria-label="Close chat"
+                  >
+                    <i className="icon-close" aria-hidden="true"></i>
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </header>
 
-        {/* Message Stream */}
-        <div
-          ref={messagesContainerRef}
-          className="chat-messages"
-          role="log"
-          aria-live="polite"
-        >
-          {isLoadingHistory ? (
-            <div className="chat-loading-state">
-              <div className="spinner-border text-primary" role="status">
-                <span className="sr-only">Loading conversation...</span>
-              </div>
-              <p>Loading your chat history...</p>
-            </div>
-          ) : loadError ? (
-            <div className="chat-error-banner">
-              <p>{loadError}</p>
-              <button
-                type="button"
-                className="btn btn-outline-primary-2 btn-sm"
-                onClick={() => accessToken && void loadHistory(accessToken)}
-              >
-                Retry
-              </button>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="chat-empty-state">
-              <div className="chat-empty-state__icon" aria-hidden="true">
-                <Image
-                  src={BOT_AVATAR_SRC}
-                  alt="StealDeals Bot"
-                  width={56}
-                  height={56}
-                  className="chat-avatar-img"
-                />
-              </div>
-              <h4>Welcome to StealDeals Assistant!</h4>
-              <p>
-                Ask me about today&apos;s surprise bags, nearby bakery and market deals, pickup
-                hours, or how our food rescue community works.
-              </p>
-              <ChatStarterPills
-                disabled={isSending}
-                onSelectPrompt={(prompt) => void handleSend(prompt)}
+        {isUnauthenticated ? (
+          <div className="chat-auth-card chat-auth-card--widget">
+            <div className="chat-auth-card__icon" aria-hidden="true">
+              <Image
+                src={BOT_AVATAR_SRC}
+                alt="StealDeals Bot"
+                width={48}
+                height={48}
+                className="chat-avatar-img"
               />
             </div>
-          ) : (
-            <>
-              {messages.map((msg) => (
-                <ChatMessageItem key={msg.id} message={msg} />
-              ))}
-              {isSending && (
-                <div className="chat-message-row chat-message-row--model">
-                  <div className="chat-avatar" aria-hidden="true">
+            <h2>Sign in to chat with our AI Assistant</h2>
+            <p>
+              Connect with StealDeals AI to discover nearby surplus food, receive personalized
+              surprise bag recommendations, and check pickup windows.
+            </p>
+            <div className="chat-auth-card__actions">
+              <Link href="/login?redirect=/chat" onClick={onClose} className="btn btn-primary btn-sm">
+                Sign In to Continue
+              </Link>
+              <Link href="/register" onClick={onClose} className="btn btn-outline-primary-2 btn-sm">
+                Create an Account
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Message Stream */}
+            <div
+              ref={messagesContainerRef}
+              className="chat-messages"
+              role="log"
+              aria-live="polite"
+            >
+              {isLoadingHistory ? (
+                <div className="chat-loading-state">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="sr-only">Loading conversation...</span>
+                  </div>
+                  <p>Loading your chat history...</p>
+                </div>
+              ) : loadError ? (
+                <div className="chat-error-banner">
+                  <p>{loadError}</p>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary-2 btn-sm"
+                    onClick={() => accessToken && void loadHistory(accessToken)}
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="chat-empty-state">
+                  <div className="chat-empty-state__icon" aria-hidden="true">
                     <Image
                       src={BOT_AVATAR_SRC}
                       alt="StealDeals Bot"
-                      width={28}
-                      height={28}
+                      width={isWidget ? 44 : 56}
+                      height={isWidget ? 44 : 56}
                       className="chat-avatar-img"
                     />
                   </div>
-                  <div className="chat-message-content">
-                    <div className="chat-bubble chat-bubble--model chat-bubble--thinking">
-                      <span className="chat-typing-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </span>
-                      <span className="chat-typing-text">StealDeals is finding deals...</span>
-                    </div>
-                  </div>
+                  <h4>Welcome to StealDeals Assistant!</h4>
+                  <p>
+                    Ask me about today&apos;s surprise bags, nearby bakery and market deals, pickup
+                    hours, or how our food rescue community works.
+                  </p>
+                  <ChatStarterPills
+                    disabled={isSending}
+                    onSelectPrompt={(prompt) => void handleSend(prompt)}
+                  />
                 </div>
+              ) : (
+                <>
+                  {messages.map((msg) => (
+                    <ChatMessageItem key={msg.id} message={msg} />
+                  ))}
+                  {isSending && (
+                    <div className="chat-message-row chat-message-row--model">
+                      <div className="chat-avatar" aria-hidden="true">
+                        <Image
+                          src={BOT_AVATAR_SRC}
+                          alt="StealDeals Bot"
+                          width={28}
+                          height={28}
+                          className="chat-avatar-img"
+                        />
+                      </div>
+                      <div className="chat-message-content">
+                        <div className="chat-bubble chat-bubble--model chat-bubble--thinking">
+                          <span className="chat-typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </span>
+                          <span className="chat-typing-text">StealDeals is finding deals...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </div>
-
-        {/* Bottom Input Area */}
-        <form
-          className="chat-input-bar"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleSend();
-          }}
-        >
-          <div className="chat-input-wrapper">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={inputText}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask StealDeals AI about surprise bags, stores, or pickup..."
-              maxLength={MAX_MESSAGE_LENGTH}
-              disabled={isSending || isLoadingHistory}
-              className="chat-textarea"
-            />
-            <div className="chat-input-meta">
-              <span className={`chat-char-count ${inputText.length > 450 ? "text-warning" : ""}`}>
-                {inputText.length}/{MAX_MESSAGE_LENGTH}
-              </span>
-              <button
-                type="submit"
-                disabled={!inputText.trim() || isSending || isLoadingHistory}
-                className="chat-send-btn"
-                aria-label="Send message"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                </svg>
-              </button>
             </div>
-          </div>
-        </form>
+
+            {/* Bottom Input Area */}
+            <form
+              className="chat-input-bar"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSend();
+              }}
+            >
+              <div className="chat-input-wrapper">
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={inputText}
+                  onChange={handleTextareaChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask StealDeals AI about surprise bags, stores, or pickup..."
+                  maxLength={MAX_MESSAGE_LENGTH}
+                  disabled={isSending || isLoadingHistory}
+                  className="chat-textarea"
+                />
+                <div className="chat-input-meta">
+                  <span className={`chat-char-count ${inputText.length > 450 ? "text-warning" : ""}`}>
+                    {inputText.length}/{MAX_MESSAGE_LENGTH}
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={!inputText.trim() || isSending || isLoadingHistory}
+                    className="chat-send-btn"
+                    aria-label="Send message"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );
