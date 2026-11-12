@@ -2561,6 +2561,12 @@ a.profile-action-link.text-primary:focus-visible {
   width: 100%;
 }
 
+.product-listing-load-more {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0 3rem;
+}
+
 .product-listing-active-filters {
   align-items: center;
   display: flex;
@@ -3237,6 +3243,23 @@ a.profile-action-link.text-primary:focus-visible {
   padding: 0;
   border: 0;
   background: transparent;
+}
+
+.product-listing-distance-hint {
+  margin: 1rem 0 0;
+  color: #666;
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+
+.product-listing-distance-hint a {
+  color: #3f7800;
+  text-decoration: underline;
+}
+
+.product-listing-filter-panel .custom-control-input:focus-visible ~ .custom-control-label::before {
+  outline: 0.2rem solid #3f7800;
+  outline-offset: 0.2rem;
 }
 
 .filter-range {
