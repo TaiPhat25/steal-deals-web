@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRedisCart } from "@/components/cart/useRedisCart";
 import { getProfile } from "@/lib/api/account";
@@ -10,6 +10,8 @@ import { checkoutFromCart } from "@/lib/api/order";
 import { BAG_FALLBACK_IMAGE } from "@/lib/image-assets";
 import type { OrderResponse } from "@/lib/api/dashboard-types";
 import type { UserAddress } from "@/lib/api/store-types";
+import CheckoutFeedback from "./CheckoutFeedback";
+import { submitStoreOrders, type CheckoutFailure } from "./checkout-results";
 
 type DeliveryType = "Pickup" | "Delivery";
 
@@ -63,7 +65,7 @@ export default function NewCheckoutMain() {
   const router = useRouter();
   const { accessToken, currentUser } = useAuth();
   const {
-    groups,
+    groups: cartGroups,
     isLoading,
     isMutating,
     error: cartError,
@@ -87,8 +89,14 @@ export default function NewCheckoutMain() {
   const [createdOrders, setCreatedOrders] = useState<OrderResponse[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [failures, setFailures] = useState<CheckoutFailure[]>([]);
+  const submissionInFlight = useRef(false);
+  const needsOrderCheck = failures.some((failure) => failure.requiresOrderCheck);
   const [deselectedStoreIds, setDeselectedStoreIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const groups = useMemo(() => cartGroups.filter((group) =>
+    !createdOrders.some((order) => order.storeId === group.storeId),
+  ), [cartGroups, createdOrders]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -170,7 +178,9 @@ export default function NewCheckoutMain() {
   }
 
   async function submitOrders() {
+    if (submissionInFlight.current || needsOrderCheck) return;
     setError("");
+    setFailures([]);
     setCartError("");
 
     if (groups.length === 0) {
@@ -198,24 +208,28 @@ export default function NewCheckoutMain() {
       return;
     }
 
+    submissionInFlight.current = true;
     setSubmitting(true);
     setSubmitted(false);
 
     try {
-      const orders = await Promise.all(
-        selectedGroups.map((group) =>
-          checkoutFromCart(accessToken, {
-            storeId: group.storeId,
-            contactNameSnapshot: customerInfo.fullName.trim(),
-            contactPhoneSnapshot: customerInfo.phone.trim(),
-            deliveryType,
-            deliveryAddress: deliveryType === "Delivery" ? deliveryAddress.trim() : "",
-          }),
-        ),
+      const result = await submitStoreOrders(selectedGroups, (group) =>
+        checkoutFromCart(accessToken, {
+          storeId: group.storeId,
+          contactNameSnapshot: customerInfo.fullName.trim(),
+          contactPhoneSnapshot: customerInfo.phone.trim(),
+          deliveryType,
+          deliveryAddress: deliveryType === "Delivery" ? deliveryAddress.trim() : "",
+        }),
       );
 
+      const orders = [...createdOrders, ...result.orders];
+      // Keep successful order IDs before refreshing carts; refresh failure must not hide them.
       setCreatedOrders(orders);
+      setFailures(result.failures);
       await refresh();
+
+      if (result.failures.length > 0) return;
 
       if (orders.length === 1) {
         router.push(`/checkout/payment-processing?orderId=${encodeURIComponent(orders[0].id)}`);
@@ -231,6 +245,7 @@ export default function NewCheckoutMain() {
           : "Unable to place the order. Please try again.",
       );
     } finally {
+      submissionInFlight.current = false;
       setSubmitting(false);
     }
   }
@@ -268,6 +283,8 @@ export default function NewCheckoutMain() {
             </div>
             <span>{selectedItemCount} {selectedItemCount === 1 ? "bag" : "bags"} selected</span>
           </header>
+
+          {!submitted && <CheckoutFeedback orders={createdOrders} failures={failures} />}
 
           {submitted ? (
             <section className="checkout-success" aria-live="polite">
@@ -416,7 +433,7 @@ export default function NewCheckoutMain() {
                         <strong>{selectedGroups.length} of {groups.length} store carts selected</strong>
                         <p>Each selected store cart will create one order when you place the order.</p>
                       </div>
-                      <button type="button" className="btn btn-outline-primary-2" onClick={toggleAllStoreSelections}>
+                      <button type="button" className="btn btn-outline-primary-2" onClick={toggleAllStoreSelections} disabled={submitting}>
                         {allGroupsSelected ? "Deselect all" : "Select all"}
                       </button>
                     </div>
@@ -435,6 +452,7 @@ export default function NewCheckoutMain() {
                               <input
                                 type="checkbox"
                                 checked={selectedStoreIds.includes(group.storeId)}
+                                disabled={submitting}
                                 onChange={() => toggleStoreSelection(group.storeId)}
                               />
                               <span>
@@ -452,9 +470,9 @@ export default function NewCheckoutMain() {
                                 <strong>{formatPrice(line.unitPriceSnapshot)}</strong>
                               </div>
                               <div className="checkout-line__quantity">
-                                <button type="button" aria-label={`Decrease quantity of ${line.bagNameSnapshot}`} onClick={() => void updateQuantity(group.storeId, line.bagId, line.quantity - 1)} disabled={isMutating || line.quantity <= 1}>-</button>
-                                <input aria-label={`Quantity of ${line.bagNameSnapshot}`} type="text" inputMode="numeric" pattern="[0-9]*" value={line.quantity} disabled={isMutating} onChange={(event) => void updateQuantity(group.storeId, line.bagId, Number(event.target.value.replace(/\D/g, "") || 1))} />
-                                <button type="button" aria-label={`Increase quantity of ${line.bagNameSnapshot}`} onClick={() => void updateQuantity(group.storeId, line.bagId, line.quantity + 1)} disabled={isMutating}>+</button>
+                                <button type="button" aria-label={`Decrease quantity of ${line.bagNameSnapshot}`} onClick={() => void updateQuantity(group.storeId, line.bagId, line.quantity - 1)} disabled={submitting || isMutating || line.quantity <= 1}>-</button>
+                                <input aria-label={`Quantity of ${line.bagNameSnapshot}`} type="text" inputMode="numeric" pattern="[0-9]*" value={line.quantity} disabled={submitting || isMutating} onChange={(event) => void updateQuantity(group.storeId, line.bagId, Number(event.target.value.replace(/\D/g, "") || 1))} />
+                                <button type="button" aria-label={`Increase quantity of ${line.bagNameSnapshot}`} onClick={() => void updateQuantity(group.storeId, line.bagId, line.quantity + 1)} disabled={submitting || isMutating}>+</button>
                               </div>
                               <strong className="checkout-line__total">{formatPrice(line.lineTotal)}</strong>
                             </div>
@@ -502,7 +520,7 @@ export default function NewCheckoutMain() {
                 <div className="checkout-summary__row"><span>Voucher discount</span><strong>{appliedVoucherDiscount ? `- ${formatPrice(appliedVoucherDiscount)}` : "-"}</strong></div>
                 <div className="checkout-summary__total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
                 {(error || cartError) && <div className="alert alert-danger" role="alert">{error || cartError}</div>}
-                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting || isLoading || isMutating || selectedGroups.length === 0}>{submitting ? "Preparing VNPAY..." : "Place order and pay"} <span aria-hidden="true">&#8594;</span></button>
+                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting || needsOrderCheck || isLoading || isMutating || selectedGroups.length === 0}>{submitting ? "Preparing VNPAY..." : "Place order and pay"} <span aria-hidden="true">&#8594;</span></button>
                 <p className="checkout-summary__note">By placing your order, you agree to collect the bags during the listed pickup window.</p>
               </aside>
             </form>

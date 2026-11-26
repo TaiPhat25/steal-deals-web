@@ -25,6 +25,8 @@ const ORDERS: OrderResponse[] = Array.from({ length: 12 }, (_, index) => {
     pickupCode: index % 5 === 0 ? null : String(5821 + index),
     status: statuses[index % statuses.length],
     pickupDeadline: `2026-07-${String(30 - index % 3).padStart(2, "0")}T18:30:00+07:00`,
+    canMarkNoShow: false,
+    noShowIneligibleReason: null,
     createdAt: `2026-07-${String(30 - index % 6).padStart(2, "0")}T09:15:00+07:00`,
     updatedAt: `2026-07-${String(30 - index % 6).padStart(2, "0")}T09:20:00+07:00`,
     items: [{

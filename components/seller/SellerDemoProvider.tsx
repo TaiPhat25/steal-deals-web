@@ -13,6 +13,7 @@ import {
 } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { listStoreOrders } from "@/lib/api/order";
+import { ApiClientError } from "@/lib/api/client";
 import { getMyStore, listStoreBags } from "@/lib/api/store";
 import { BRAND_NAME } from "@/lib/brand";
 import type {
@@ -32,6 +33,7 @@ export type OrderStatus =
   | "InventoryReservationFailed"
   | "PaymentFailed"
   | "Confirmed"
+  | "NoShow"
   | "Cancelled";
 export type SellerOrder = Omit<OrderResponse, "status"> & { status: string };
 
@@ -69,11 +71,11 @@ export const DEMO_PRODUCTS: SurplusBag[] = [
 ];
 
 const INITIAL_ORDERS: SellerOrder[] = [
-  { id: "40000000-0000-0000-0000-000000000001", userId: "50000000-0000-0000-0000-000000000001", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "Linh Nguyen", contactPhoneSnapshot: "+84 901 100 001", deliveryFee: 0, voucherDiscount: 0, totalAmount: 60000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: "5821", status: "Pending", pickupDeadline: "2026-07-30T18:30:00+07:00", createdAt: "2026-07-30T09:15:00+07:00", updatedAt: "2026-07-30T09:15:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000001", bagId: "30000000-0000-0000-0000-000000000101", bagNameSnapshot: "Bakery Surprise Bag", unitPriceSnapshot: 60000, quantity: 1, subtotal: 60000 }] },
-  { id: "40000000-0000-0000-0000-000000000002", userId: "50000000-0000-0000-0000-000000000002", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "Daniel Lee", contactPhoneSnapshot: "+84 901 100 002", deliveryFee: 0, voucherDiscount: 10000, totalAmount: 150000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: "1934", status: "Confirmed", pickupDeadline: "2026-07-30T15:00:00+07:00", createdAt: "2026-07-30T08:50:00+07:00", updatedAt: "2026-07-30T09:05:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000002", bagId: "30000000-0000-0000-0000-000000000102", bagNameSnapshot: "Fresh Lunch Bag", unitPriceSnapshot: 80000, quantity: 2, subtotal: 160000 }] },
-  { id: "40000000-0000-0000-0000-000000000003", userId: "50000000-0000-0000-0000-000000000003", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "Mai Tran", contactPhoneSnapshot: "+84 901 100 003", deliveryFee: 0, voucherDiscount: 0, totalAmount: 100000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: null, status: "PaymentFailed", pickupDeadline: "2026-07-30T19:30:00+07:00", createdAt: "2026-07-29T17:40:00+07:00", updatedAt: "2026-07-29T17:42:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000003", bagId: "30000000-0000-0000-0000-000000000105", bagNameSnapshot: "Grocery Essentials", unitPriceSnapshot: 100000, quantity: 1, subtotal: 100000 }] },
-  { id: "40000000-0000-0000-0000-000000000004", userId: "50000000-0000-0000-0000-000000000004", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "An Pham", contactPhoneSnapshot: "+84 901 100 004", deliveryFee: 0, voucherDiscount: 0, totalAmount: 120000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: null, status: "InventoryReservationFailed", pickupDeadline: null, createdAt: "2026-07-29T16:10:00+07:00", updatedAt: "2026-07-29T16:11:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000004", bagId: "30000000-0000-0000-0000-000000000101", bagNameSnapshot: "Bakery Surprise Bag", unitPriceSnapshot: 60000, quantity: 2, subtotal: 120000 }] },
-  { id: "40000000-0000-0000-0000-000000000005", userId: "50000000-0000-0000-0000-000000000005", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "", contactPhoneSnapshot: "", deliveryFee: 0, voucherDiscount: 0, totalAmount: 50000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: null, status: "Cancelled", pickupDeadline: "2026-07-29T20:00:00+07:00", createdAt: "2026-07-29T14:00:00+07:00", updatedAt: "2026-07-29T14:20:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000005", bagId: "30000000-0000-0000-0000-000000000103", bagNameSnapshot: "Fruit and Veg Rescue", unitPriceSnapshot: 50000, quantity: 1, subtotal: 50000 }] },
+  { id: "40000000-0000-0000-0000-000000000001", userId: "50000000-0000-0000-0000-000000000001", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "Linh Nguyen", contactPhoneSnapshot: "+84 901 100 001", deliveryFee: 0, voucherDiscount: 0, totalAmount: 60000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: "5821", status: "Pending", pickupDeadline: "2026-07-30T18:30:00+07:00", canMarkNoShow: false, noShowIneligibleReason: "Demo orders cannot be changed.", createdAt: "2026-07-30T09:15:00+07:00", updatedAt: "2026-07-30T09:15:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000001", bagId: "30000000-0000-0000-0000-000000000101", bagNameSnapshot: "Bakery Surprise Bag", unitPriceSnapshot: 60000, quantity: 1, subtotal: 60000 }] },
+  { id: "40000000-0000-0000-0000-000000000002", userId: "50000000-0000-0000-0000-000000000002", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "Daniel Lee", contactPhoneSnapshot: "+84 901 100 002", deliveryFee: 0, voucherDiscount: 10000, totalAmount: 150000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: "1934", status: "Confirmed", pickupDeadline: "2026-07-30T15:00:00+07:00", canMarkNoShow: false, noShowIneligibleReason: "Demo orders cannot be changed.", createdAt: "2026-07-30T08:50:00+07:00", updatedAt: "2026-07-30T09:05:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000002", bagId: "30000000-0000-0000-0000-000000000102", bagNameSnapshot: "Fresh Lunch Bag", unitPriceSnapshot: 80000, quantity: 2, subtotal: 160000 }] },
+  { id: "40000000-0000-0000-0000-000000000003", userId: "50000000-0000-0000-0000-000000000003", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "Mai Tran", contactPhoneSnapshot: "+84 901 100 003", deliveryFee: 0, voucherDiscount: 0, totalAmount: 100000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: null, status: "PaymentFailed", pickupDeadline: "2026-07-30T19:30:00+07:00", canMarkNoShow: false, noShowIneligibleReason: "Demo orders cannot be changed.", createdAt: "2026-07-29T17:40:00+07:00", updatedAt: "2026-07-29T17:42:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000003", bagId: "30000000-0000-0000-0000-000000000105", bagNameSnapshot: "Grocery Essentials", unitPriceSnapshot: 100000, quantity: 1, subtotal: 100000 }] },
+  { id: "40000000-0000-0000-0000-000000000004", userId: "50000000-0000-0000-0000-000000000004", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "An Pham", contactPhoneSnapshot: "+84 901 100 004", deliveryFee: 0, voucherDiscount: 0, totalAmount: 120000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: null, status: "InventoryReservationFailed", pickupDeadline: null, canMarkNoShow: false, noShowIneligibleReason: "Demo orders cannot be changed.", createdAt: "2026-07-29T16:10:00+07:00", updatedAt: "2026-07-29T16:11:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000004", bagId: "30000000-0000-0000-0000-000000000101", bagNameSnapshot: "Bakery Surprise Bag", unitPriceSnapshot: 60000, quantity: 2, subtotal: 120000 }] },
+  { id: "40000000-0000-0000-0000-000000000005", userId: "50000000-0000-0000-0000-000000000005", storeId: STORE_ID, storeNameSnapshot: DEMO_STORE_NAME, contactNameSnapshot: "", contactPhoneSnapshot: "", deliveryFee: 0, voucherDiscount: 0, totalAmount: 50000, deliveryType: "Pickup", deliveryAddress: "18 Nguyen Hue, District 1, Ho Chi Minh City", pickupCode: null, status: "Cancelled", pickupDeadline: "2026-07-29T20:00:00+07:00", canMarkNoShow: false, noShowIneligibleReason: "Demo orders cannot be changed.", createdAt: "2026-07-29T14:00:00+07:00", updatedAt: "2026-07-29T14:20:00+07:00", items: [{ id: "60000000-0000-0000-0000-000000000005", bagId: "30000000-0000-0000-0000-000000000103", bagNameSnapshot: "Fruit and Veg Rescue", unitPriceSnapshot: 50000, quantity: 1, subtotal: 50000 }] },
 ];
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -117,6 +119,7 @@ type SellerDemoValue = {
   productsDemoReason: string;
   ordersLoading: boolean;
   ordersDemoReason: string;
+  ordersError: string;
   retryApi: () => void;
 };
 
@@ -133,6 +136,7 @@ export default function SellerDemoProvider({ children }: { children: ReactNode }
   const [productsDemoReason, setProductsDemoReason] = useState("");
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersDemoReason, setOrdersDemoReason] = useState("");
+  const [ordersError, setOrdersError] = useState("");
   const [reloadVersion, setReloadVersion] = useState(0);
   const retryApi = useCallback(() => setReloadVersion((version) => version + 1), []);
 
@@ -146,6 +150,7 @@ export default function SellerDemoProvider({ children }: { children: ReactNode }
       setSettingsDemoReason("");
       setProductsDemoReason("");
       setOrdersDemoReason("");
+      setOrdersError("");
 
       const fallback = (reason: string) => {
         setSettings(INITIAL_SETTINGS);
@@ -159,8 +164,18 @@ export default function SellerDemoProvider({ children }: { children: ReactNode }
         setOrdersLoading(false);
       };
 
+      const fail = (message: string) => {
+        setSettings({ ...INITIAL_SETTINGS, id: "", name: "Your store", isActive: false, isVerify: false });
+        setProducts([]);
+        setOrders([]);
+        setOrdersError(message);
+        setSettingsLoading(false);
+        setProductsLoading(false);
+        setOrdersLoading(false);
+      };
+
       if (!accessToken) {
-        fallback("A seller session is not available.");
+        fail("A seller session is not available.");
         return;
       }
 
@@ -185,15 +200,22 @@ export default function SellerDemoProvider({ children }: { children: ReactNode }
 
           if (storeOrders.status === "fulfilled") {
             setOrders(storeOrders.value);
-          } else {
+          } else if (storeOrders.reason instanceof TypeError) {
             setOrders(INITIAL_ORDERS);
-            setOrdersDemoReason(storeOrders.reason instanceof Error ? storeOrders.reason.message : "The Order Service could not be reached.");
+            setOrdersDemoReason("The Order Service could not be reached.");
+          } else {
+            setOrders([]);
+            setOrdersError(storeOrders.reason instanceof ApiClientError
+              ? storeOrders.reason.message
+              : "Unable to load store orders. Please try again.");
           }
           setProductsLoading(false);
           setOrdersLoading(false);
         })
         .catch((caught) => {
-          if (active) fallback(caught instanceof Error ? caught.message : "The Store Service could not be reached.");
+          if (!active) return;
+          if (caught instanceof TypeError) fallback("The Store Service could not be reached.");
+          else fail(caught instanceof Error ? caught.message : "Unable to load your store. Please try again.");
         });
     }, 0);
 
@@ -217,11 +239,13 @@ export default function SellerDemoProvider({ children }: { children: ReactNode }
       productsDemoReason,
       ordersLoading,
       ordersDemoReason,
+      ordersError,
       retryApi,
     }),
     [
       orders,
       ordersDemoReason,
+      ordersError,
       ordersLoading,
       products,
       productsDemoReason,

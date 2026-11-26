@@ -62,8 +62,8 @@ async function parseResponse(response: Response): Promise<unknown> {
     return null;
   }
 
-  const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json")) {
+  const contentType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  if (contentType === "application/json" || contentType.endsWith("+json")) {
     return response.json();
   }
 

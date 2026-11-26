@@ -236,8 +236,8 @@ export default function ProfileAccountSections({
           {profile.userTrustScore && (
             <div className="border p-4">
               <h3 className="mb-3">Trust score</h3>
-              <p className="h3 mb-2">{profile.userTrustScore.score}</p>
-              <p className="mb-0">Based on {profile.userTrustScore.totalOrders} orders</p>
+              <p className="h3 mb-2">{profile.userTrustScore.score}/100</p>
+              <p className="mb-0">Updated after payment and missed pickups.</p>
             </div>
           )}
         </div>

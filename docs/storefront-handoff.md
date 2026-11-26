@@ -11,10 +11,18 @@ For a cross-project summary and the complete customer-to-seller demo plan, see
 [`project-progress-summary.md`](./project-progress-summary.md).
 
 The local frontend environment uses HTTP service URLs: Identity `5158`, Store
-`5169`, and Order `5165`. Payment port `5155` is optional until online payment
-integration is started.
+`5169`, and Order `5165`. Payment uses port `5155` for the VNPAY checkout/return flow.
 
 ## Current state
+
+### Trust Score / NoShow frontend MVP — 2026-11-25
+
+- Profile reuses the existing Identity response and displays `userTrustScore.score/100`; null data remains hidden.
+- `/newcheckout` and legacy `/checkout` display backend cooldown/quota/dependency errors. Store requests settle independently: created order IDs/payment links are retained, failed carts remain, and known-success stores are excluded from retries. Unknown creation outcomes pause another submission and link to `/orders`.
+- Legacy checkout consumes a voucher once across partial retries and uses the existing VNPAY payment capability. Redis cart refresh failure preserves the previously loaded remaining carts.
+- Buyer orders show NoShow as “Not collected” while retaining the separate payment status. Only Confirmed orders offer review; a paid NoShow does not display pending-confirmation copy or another checkout link. NoShow is terminal for payment-return polling.
+- No new routes, trust-score management pages or frontend score calculations. Cancellation remains through VNPAY. No frontend confirmation of pickup is added.
+- At the user's request, newly added test files were removed, existing tests kept unchanged, and further test/lint/build execution stopped. UI review is performed by the user before deployment.
 
 The `(store)` route group is a Next.js App Router conversion of the Molla
 Bootstrap ecommerce template. It is visually separate from the Tailwind-based
@@ -47,8 +55,7 @@ admin and seller dashboards.
 - Product detail now loads the selected bag from the Store Service. The legacy
   `/cart` and `/checkout` routes use the in-memory cart, while the current
   product/header actions point to the parallel Redis-backed `/newcart` and
-  `/newcheckout` routes. Order history and shipping currently use static demo
-  data.
+  `/newcheckout` routes. Order history now reads the Order/Payment APIs; shipping remains a legacy demo.
 - The `Become a Seller` profile form now collects required latitude and
   longitude values and validates them against the Store Service coordinate
   ranges (`-90..90` and `-180..180`). It submits authenticated applications to
@@ -80,7 +87,7 @@ The storefront currently exposes 20 routes or route patterns:
 | `/login` | `components/login/LoginMain.tsx` | Identity Service login |
 | `/newcart` | `components/cart/NewCartMain.tsx` | Protected Cart Service/Redis cart with loading, error, quantity, removal, grouping, and totals |
 | `/newcheckout` | `components/checkout/NewCheckoutMain.tsx` | Protected Redis-cart checkout using profile and Order Service APIs; payment and voucher handling remain local UI state |
-| `/orders` | `components/orders/OrderHistoryMain.tsx` | Authenticated static order history with search and status filters |
+| `/orders` | `components/orders/OrderHistoryMain.tsx` | Order/Payment API-backed history with NoShow labels, search, filters and Confirmed-only reviews |
 | `/product?bag=` | `components/product/ProductMain.tsx` | Data-driven surprise-bag detail using Store Service data with static presentation fallbacks |
 | `/products` | `components/products/ProductListing.tsx` | Searchable/filterable Store Service-backed surprise-bag marketplace listing; cards use the API `imageUrl` with the original StealDeals surprise-bag placeholder as fallback |
 | `/profile` | `components/profile/ProfileMain.tsx` | Protected Identity Service profile and email verification |

@@ -91,6 +91,8 @@ export type OrderResponse = {
   pickupCode: string | null;
   status: string;
   pickupDeadline: string | null;
+  canMarkNoShow: boolean;
+  noShowIneligibleReason: string | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItemResponse[];
@@ -136,6 +138,7 @@ export const CURRENT_ORDER_STATUSES = [
   "InventoryReservationFailed",
   "PaymentFailed",
   "Confirmed",
+  "NoShow",
   "Cancelled",
 ] as const;
 
@@ -165,4 +168,3 @@ export type ReviewCategorySuggestionRequest = {
   iconUrl?: string | null;
   officialCategoryName?: string | null;
 };
-

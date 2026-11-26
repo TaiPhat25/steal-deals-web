@@ -33,7 +33,10 @@ Seller pages share client data boundaries through `SellerDemoProvider.tsx` or di
 - `/seller`: Overview metrics (confirmed pickups, remaining units expiring today, recent orders).
 - `/seller/products`: Surprise bag listing and status management connected to `/api/bags`.
 - `/seller/products/add`, `/seller/products/edit`, `/seller/products/details`: Bag create, edit, duplication, and status updates with pickup window validation.
-- `/seller/orders`: Store orders loaded via `GET /api/orders/store/{storeId}`, status progression via `PATCH /api/orders/{id}/status`, and CSV export.
+- `/seller/orders`: Store orders loaded via `GET /api/order/orders/store/{storeId}` with NoShow filter, pickup code/deadline search/display, refresh, history and CSV export.
+- `/seller/orders/details?id=...`: Fresh `GET /api/order/orders/{id}` supplies `canMarkNoShow` and `noShowIneligibleReason`. The existing dashboard dialog confirms manual inventory verification before `POST /api/order/orders/{id}/no-show`; a successful response updates detail/shared state. Conflicts reload the order. Pending requests and late responses are scoped to the current order/session.
+- `/seller` and order detail no longer offer manual Confirm/Cancel. Payment events determine Confirmed; pickup handover remains a manual pickup-code check.
+- Order/store bootstrap HTTP failures show real errors instead of fake successful mutations. Network fallback orders remain read-only for NoShow. Seller pages do not display or edit buyer trust scores.
 - `/seller/store-reviews`: Store reviews loaded via `GET /api/reviews/store/me`, reply management (`PATCH`/`DELETE /api/reviews/{id}/reply`), and reporting moderation.
 - `/seller/category-requests`: Dedicated category suggestion portal:
   - Submits new category requests via `POST /api/category-suggestions`.
@@ -65,6 +68,10 @@ When backend services are unreachable due to a network-level failure, affected p
 - Assets live under `public/dashboard`: `product-placeholder.png` and `favicon0a4b.ico`.
 
 ---
+
+## Current implementation scope — 2026-11-25
+
+The Trust Score frontend implementation is complete. At the user's request, newly added tests were removed and no further test/lint/build commands are run in this task. Existing test files are unchanged; the user reviews UI before deploy.
 
 ## Validation Commands
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { getReceivedPaymentDescription, isSettledOrderStatus } from "@/components/orders/order-view-utils";
 import {
   formatPaymentDate,
   formatPaymentPrice,
@@ -24,6 +25,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
   InventoryReservationFailed: "Items no longer available",
   PaymentFailed: "Payment unsuccessful",
   Confirmed: "Confirmed",
+  NoShow: "Not collected",
   Cancelled: "Cancelled",
 };
 
@@ -60,6 +62,15 @@ function getResultCopy(
   transaction: TransactionResponse | null,
   order: OrderResponse | null,
 ) {
+  if (transaction?.status === "Success" && order?.status === "NoShow") {
+    return {
+      tone: "warning",
+      icon: "!",
+      title: "Payment received, order not collected",
+      text: getReceivedPaymentDescription(order.status),
+    };
+  }
+
   if (transaction?.status === "Success" && order?.status === "Confirmed") {
     return {
       tone: "success",
@@ -74,7 +85,7 @@ function getResultCopy(
       tone: "success",
       icon: "OK",
       title: "Payment received",
-      text: "Your payment was successful. We're updating your order details.",
+      text: getReceivedPaymentDescription(order?.status),
     };
   }
 
@@ -215,7 +226,7 @@ export default function VnPayReturnMain() {
         setTransaction(nextTransaction);
         setError("");
 
-        const orderIsSettled = ["Confirmed", "PaymentFailed", "InventoryReservationFailed", "Cancelled"].includes(nextOrder.status);
+        const orderIsSettled = isSettledOrderStatus(nextOrder.status);
         const transactionIsSettled = nextTransaction.status !== "Pending";
 
         if (orderIsSettled && transactionIsSettled) return;
@@ -243,7 +254,7 @@ export default function VnPayReturnMain() {
   }, [accessToken, orderId]);
 
   const copy = getResultCopy(verification, transaction, order);
-  const tone = transaction ? getPaymentStatusTone(transaction.status) : copy.tone;
+  const tone = order?.status === "NoShow" ? copy.tone : transaction ? getPaymentStatusTone(transaction.status) : copy.tone;
 
   return (
     <main className="main payment-page">
