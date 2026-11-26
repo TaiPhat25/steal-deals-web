@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { getOrderStatusLabel, getReceivedPaymentDescription } from "@/components/orders/order-view-utils";
 import {
   canPayTransaction,
   formatPaymentDate,
@@ -17,13 +18,6 @@ import { ApiClientError } from "@/lib/api/client";
 import { getOrder } from "@/lib/api/order";
 import { getTransactionByOrderId, type TransactionResponse } from "@/lib/api/payment";
 import type { OrderResponse } from "@/lib/api/dashboard-types";
-
-function getOrderStatusLabel(status: string) {
-  if (status === "ReadyForPickup") return "Ready for pickup";
-  if (status === "InventoryReservationFailed") return "Inventory unavailable";
-  if (status === "PaymentFailed") return "Payment failed";
-  return status;
-}
 
 function getOrderReference(orderId: string) {
   return `#${orderId.slice(0, 8).toUpperCase()}`;
@@ -47,9 +41,7 @@ function getPaymentDescription(order: OrderResponse | null, transaction: Transac
   }
   if (!transaction) return "No online payment transaction is available for this order.";
   if (transaction.status === "Pending") return "Use the VNPAY link before it expires.";
-  if (transaction.status === "Success" && order.status !== "Confirmed") {
-    return "VNPAY has accepted the payment. The order confirmation event may still be processing.";
-  }
+  if (transaction.status === "Success") return getReceivedPaymentDescription(order.status);
   if (transaction.status === "RefundPending") {
     return "The payment arrived after the order could not be confirmed, so refund handling is pending.";
   }
@@ -200,8 +192,8 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
   }, [accessToken, order, orderId, transaction]);
 
   const remainingSeconds = getRemainingSeconds(transaction?.expiresAt ?? null, now);
-  const canPay = canPayTransaction(transaction, now);
-  const hasCheckoutUrl = hasPendingCheckoutUrl(transaction);
+  const canPay = order?.status === "Pending" && canPayTransaction(transaction, now);
+  const hasCheckoutUrl = order?.status === "Pending" && hasPendingCheckoutUrl(transaction);
   const paymentTone = transaction ? getPaymentStatusTone(transaction.status) : "pending";
   const orderReference = getOrderReference(orderId);
   const paymentWindowLabel = getPaymentWindowLabel(transaction, remainingSeconds);
@@ -288,7 +280,7 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
                       <div className="payment-link-fact">
                         <dt>VNPAY link</dt>
                         <dd>
-                          {transaction?.checkoutUrl ? (
+                          {hasCheckoutUrl && transaction?.checkoutUrl ? (
                             <a href={transaction.checkoutUrl} onClick={() => {
                               if (transaction.gatewayRef) {
                                 window.localStorage.setItem(`vnpay-order:${transaction.gatewayRef}`, orderId);
@@ -323,15 +315,18 @@ export default function OrderDetailMain({ orderId }: { orderId: string }) {
 
                   <section className="shipping-panel" aria-labelledby="order-location-title">
                     <div className="shipping-panel__heading">
-                      <div><p>{order.deliveryType === "Pickup" ? "Pickup information" : "Delivery information"}</p><h2 id="order-location-title">Where to receive your order</h2></div>
+                      <div><p>{order.deliveryType === "Pickup" ? "Pickup information" : "Delivery information"}</p><h2 id="order-location-title">{order.status === "NoShow" ? "Pickup record" : "Where to receive your order"}</h2></div>
                     </div>
                     <div className="shipping-location">
                       <div><span>{order.deliveryType === "Pickup" ? "Pickup from" : "Delivery to"}</span><strong>{order.deliveryType === "Pickup" ? order.storeNameSnapshot : order.deliveryAddress}</strong></div>
                       <div><span>{order.deliveryType === "Pickup" ? "Pickup address" : "Contact name"}</span><strong>{order.deliveryType === "Pickup" ? order.deliveryAddress || "Store pickup" : order.contactNameSnapshot}</strong></div>
                       <div><span>Contact phone</span><strong>{order.contactPhoneSnapshot}</strong></div>
+                      {order.deliveryType === "Pickup" && order.pickupDeadline ? (
+                        <div><span>Pickup deadline</span><strong>{formatPaymentDate(order.pickupDeadline)}</strong></div>
+                      ) : null}
                     </div>
                     {order.pickupCode ? (
-                      <div className="shipping-pickup-code"><span>Pickup code</span><strong>{order.pickupCode}</strong><p>Show this code to the store when collecting your order.</p></div>
+                      <div className="shipping-pickup-code"><span>Pickup code</span><strong>{order.pickupCode}</strong><p>{order.status === "NoShow" ? "This code identifies the order marked as not collected." : "Show this code to the store when collecting your order."}</p></div>
                     ) : null}
                   </section>
 

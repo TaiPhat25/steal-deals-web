@@ -97,7 +97,6 @@ export function useRedisCart() {
           ? requestError.message
           : "Unable to load your cart. Please try again.",
       );
-      setCarts([]);
     } finally {
       setIsLoading(false);
     }

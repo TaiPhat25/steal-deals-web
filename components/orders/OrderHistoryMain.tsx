@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import ReviewDialog from "@/components/orders/ReviewDialog";
+import { canReviewOrder, getOrderStatusLabel } from "@/components/orders/order-view-utils";
 import {
   canPayTransaction,
   formatPaymentPrice,
@@ -34,13 +35,6 @@ function formatOrderDateTime(value: string) {
   }).format(new Date(value));
 }
 
-function getOrderStatusLabel(status: string) {
-  if (status === "ReadyForPickup") return "Ready for pickup";
-  if (status === "InventoryReservationFailed") return "Inventory unavailable";
-  if (status === "PaymentFailed") return "Payment failed";
-  return status;
-}
-
 function getOrderPaymentText(order: OrderResponse, transaction: TransactionResponse | null) {
   if (transaction?.status === "Pending" && transaction.checkoutUrl) return "Ready to pay";
   if (transaction?.status) return getTransactionStatusLabel(transaction.status);
@@ -62,10 +56,6 @@ function getFulfillmentDetail(order: OrderResponse) {
   }
 
   return order.deliveryAddress || "Delivery address saved";
-}
-
-function canReviewOrder(order: OrderResponse) {
-  return order.status === "Pending" || order.status === "Completed";
 }
 
 function getReviewKey(orderId: string, bagId: string) {
@@ -251,7 +241,7 @@ export default function OrderHistoryMain() {
               {paginatedOrders.map((order) => {
                 const transaction = transactionsByOrderId[order.id] ?? null;
                 const remainingSeconds = getRemainingSeconds(transaction?.expiresAt ?? null, now);
-                const canPay = canPayTransaction(transaction, now);
+                const canPay = order.status === "Pending" && canPayTransaction(transaction, now);
                 const itemCount = getOrderItemCount(order);
 
                 return (
@@ -272,7 +262,7 @@ export default function OrderHistoryMain() {
                             <span>{item.quantity} x</span>
                             <strong>{item.bagNameSnapshot}</strong>
                             <span>{formatPaymentPrice(item.subtotal)}</span>
-                            {canReviewOrder(order) ? (
+                            {canReviewOrder(order.status) ? (
                               reviewedItems.has(getReviewKey(order.id, item.bagId)) ? (
                                 <span className="order-history-review-status" role="status">
                                   Reviewed

@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cartBagKey, useCart } from "@/components/cart/CartProvider";
 import { getProfile } from "@/lib/api/account";
 import { createOrder } from "@/lib/api/order";
 import type { CreateOrderRequest, OrderResponse } from "@/lib/api/dashboard-types";
 import type { UserAddress } from "@/lib/api/store-types";
+import CheckoutFeedback from "./CheckoutFeedback";
+import { submitStoreOrders, type CheckoutFailure } from "./checkout-results";
 
 type DeliveryType = "Pickup" | "Delivery";
 
@@ -28,7 +30,7 @@ function formatAddress(address: UserAddress) {
 
 export default function CheckoutMain() {
   const { accessToken, currentUser } = useAuth();
-  const { items: lines, itemCount, subtotal, updateQuantity, clearCart } = useCart();
+  const { items: lines, itemCount, subtotal, updateQuantity, removeItem } = useCart();
   const [customerInfo, setCustomerInfo] = useState({
     fullName: currentUser?.name ?? "",
     email: currentUser?.email ?? "",
@@ -38,13 +40,16 @@ export default function CheckoutMain() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("new");
-  const [paymentMethod, setPaymentMethod] = useState("CashOnPickup");
+  const [paymentMethod, setPaymentMethod] = useState("OnlinePayment");
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [createdOrders, setCreatedOrders] = useState<OrderResponse[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [failures, setFailures] = useState<CheckoutFailure[]>([]);
+  const submissionInFlight = useRef(false);
+  const needsOrderCheck = failures.some((failure) => failure.requiresOrderCheck);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -94,20 +99,26 @@ export default function CheckoutMain() {
       grouped.set(groupKey, group);
     });
 
-    return [...grouped.values()];
-  }, [lines]);
+    return [...grouped.values()].filter((group) =>
+      !createdOrders.some((order) => order.storeId === group.storeId),
+    );
+  }, [createdOrders, lines]);
 
   const deliveryFee = deliveryType === "Delivery" ? groups.length * 25000 : 0;
-  const total = Math.max(0, subtotal + deliveryFee - voucherDiscount);
+  const appliedVoucherDiscount = createdOrders.some((order) => order.voucherDiscount > 0)
+    ? 0 : voucherDiscount;
+  const total = Math.max(0, subtotal + deliveryFee - appliedVoucherDiscount);
 
   function applyVoucher() {
     setVoucherDiscount(voucherCode.trim().toUpperCase() === "STEAL10" ? 10000 : 0);
   }
 
   async function submitOrders() {
+    if (submissionInFlight.current || needsOrderCheck) return;
     setError("");
+    setFailures([]);
 
-    if (lines.length === 0) {
+    if (groups.length === 0) {
       setError("Your cart is empty. Add a surprise bag before placing an order.");
       return;
     }
@@ -132,6 +143,7 @@ export default function CheckoutMain() {
       return;
     }
 
+    submissionInFlight.current = true;
     setSubmitting(true);
 
     try {
@@ -141,7 +153,7 @@ export default function CheckoutMain() {
         contactNameSnapshot: customerInfo.fullName.trim(),
         contactPhoneSnapshot: customerInfo.phone.trim(),
         deliveryFee: deliveryType === "Delivery" ? 25000 : 0,
-        voucherDiscount: groupIndex === 0 ? voucherDiscount : 0,
+        voucherDiscount: groupIndex === 0 ? appliedVoucherDiscount : 0,
         deliveryType,
         deliveryAddress: deliveryType === "Delivery" ? deliveryAddress.trim() : "",
         items: group.lines.map(({ bag, quantity }) => ({
@@ -152,13 +164,21 @@ export default function CheckoutMain() {
         })),
       }));
 
-      const orders = await Promise.all(
-        requests.map((request) => createOrder(accessToken, request)),
+      const result = await submitStoreOrders(
+        requests.map((request) => ({
+          storeId: request.storeId,
+          storeName: request.storeNameSnapshot,
+          request,
+        })),
+        (store) => createOrder(accessToken, store.request),
       );
 
-      setCreatedOrders(orders);
-      clearCart();
-      setSubmitted(true);
+      setCreatedOrders((current) => [...current, ...result.orders]);
+      setFailures(result.failures);
+      const completedStoreIds = new Set(result.orders.map((order) => order.storeId));
+      groups.filter((group) => completedStoreIds.has(group.storeId as string))
+        .forEach((group) => group.lines.forEach((line) => removeItem(cartBagKey(line.bag))));
+      setSubmitted(result.failures.length === 0);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -166,6 +186,7 @@ export default function CheckoutMain() {
           : "Unable to place the order. Please try again.",
       );
     } finally {
+      submissionInFlight.current = false;
       setSubmitting(false);
     }
   }
@@ -204,6 +225,8 @@ export default function CheckoutMain() {
             <span>{itemCount} {itemCount === 1 ? "bag" : "bags"} in your order</span>
           </header>
 
+          {!submitted && <CheckoutFeedback orders={createdOrders} failures={failures} />}
+
           {submitted ? (
             <section className="checkout-success" aria-live="polite">
               <span className="checkout-success__icon" aria-hidden="true">&#10003;</span>
@@ -212,7 +235,7 @@ export default function CheckoutMain() {
               <span>The store now has your saved contact details for this order.</span>
               <div className="checkout-success__orders">
                 {createdOrders.map((order) => (
-                  <span key={order.id}>Order #{order.id.slice(0, 8)} · {order.status}</span>
+                  <Link key={order.id} href={`/checkout/payment-processing?orderId=${encodeURIComponent(order.id)}`}>Pay for {order.storeNameSnapshot} · #{order.id.slice(0, 8)}</Link>
                 ))}
               </div>
               <div className="checkout-success__actions">
@@ -357,9 +380,9 @@ export default function CheckoutMain() {
                               <strong>{formatPrice(line.bag.salePrice)}</strong>
                             </div>
                             <div className="checkout-line__quantity">
-                              <button type="button" aria-label={`Decrease quantity of ${line.bag.name}`} onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity - 1)} disabled={line.quantity <= 1}>-</button>
-                              <input aria-label={`Quantity of ${line.bag.name}`} type="text" inputMode="numeric" pattern="[0-9]*" value={line.quantity} onChange={(event) => updateQuantity(cartBagKey(line.bag), Number(event.target.value.replace(/\D/g, "") || 1))} />
-                              <button type="button" aria-label={`Increase quantity of ${line.bag.name}`} onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity + 1)} disabled={line.quantity >= line.bag.remainingQuantity}>+</button>
+                              <button type="button" aria-label={`Decrease quantity of ${line.bag.name}`} onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity - 1)} disabled={submitting || line.quantity <= 1}>-</button>
+                              <input aria-label={`Quantity of ${line.bag.name}`} type="text" inputMode="numeric" pattern="[0-9]*" disabled={submitting} value={line.quantity} onChange={(event) => updateQuantity(cartBagKey(line.bag), Number(event.target.value.replace(/\D/g, "") || 1))} />
+                              <button type="button" aria-label={`Increase quantity of ${line.bag.name}`} onClick={() => updateQuantity(cartBagKey(line.bag), line.quantity + 1)} disabled={submitting || line.quantity >= line.bag.remainingQuantity}>+</button>
                             </div>
                             <strong className="checkout-line__total">{formatPrice(line.bag.salePrice * line.quantity)}</strong>
                           </div>
@@ -376,17 +399,17 @@ export default function CheckoutMain() {
                     <span className="checkout-panel__step">4</span>
                   </div>
                   <div className="checkout-payment-list">
-                    <label className={`checkout-payment${paymentMethod === "CashOnPickup" ? " is-selected" : ""}`}>
-                      <input type="radio" name="paymentMethod" value="CashOnPickup" checked={paymentMethod === "CashOnPickup"} onChange={(event) => setPaymentMethod(event.target.value)} />
-                      <span><strong>Cash on pickup</strong><small>Pay when you collect your bags from the store.</small></span>
+                    <label className="checkout-payment is-disabled">
+                      <input type="radio" name="paymentMethod" value="CashOnPickup" checked={paymentMethod === "CashOnPickup"} onChange={(event) => setPaymentMethod(event.target.value)} disabled />
+                      <span><strong>Cash on pickup</strong><small>Coming soon.</small></span>
                     </label>
-                    <label className={`checkout-payment${paymentMethod === "BankTransfer" ? " is-selected" : ""}`}>
-                      <input type="radio" name="paymentMethod" value="BankTransfer" checked={paymentMethod === "BankTransfer"} onChange={(event) => setPaymentMethod(event.target.value)} />
-                      <span><strong>Bank transfer</strong><small>Receive payment instructions after placing the order.</small></span>
+                    <label className="checkout-payment is-disabled">
+                      <input type="radio" name="paymentMethod" value="BankTransfer" checked={paymentMethod === "BankTransfer"} onChange={(event) => setPaymentMethod(event.target.value)} disabled />
+                      <span><strong>Bank transfer</strong><small>Coming soon.</small></span>
                     </label>
                     <label className={`checkout-payment${paymentMethod === "OnlinePayment" ? " is-selected" : ""}`}>
                       <input type="radio" name="paymentMethod" value="OnlinePayment" checked={paymentMethod === "OnlinePayment"} onChange={(event) => setPaymentMethod(event.target.value)} />
-                      <span><strong>Online payment</strong><small>Use an online payment gateway when it is connected.</small></span>
+                      <span><strong>VNPAY online payment</strong><small>Pay through VNPAY after the store inventory is reserved.</small></span>
                     </label>
                   </div>
                 </section>
@@ -402,10 +425,10 @@ export default function CheckoutMain() {
                   <label htmlFor="voucher-code">Voucher code</label>
                   <div><input id="voucher-code" type="text" value={voucherCode} onChange={(event) => setVoucherCode(event.target.value)} placeholder="Optional" /><button type="button" onClick={applyVoucher}>Apply</button></div>
                 </div>
-                <div className="checkout-summary__row"><span>Voucher discount</span><strong>{voucherDiscount ? `- ${formatPrice(voucherDiscount)}` : "-"}</strong></div>
+                <div className="checkout-summary__row"><span>Voucher discount</span><strong>{appliedVoucherDiscount ? `- ${formatPrice(appliedVoucherDiscount)}` : "-"}</strong></div>
                 <div className="checkout-summary__total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
                 {error && <div className="alert alert-danger" role="alert">{error}</div>}
-                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting}>{submitting ? "Placing order..." : "Place order"} <span aria-hidden="true">&#8594;</span></button>
+                <button type="submit" className="btn btn-primary checkout-submit" disabled={submitting || needsOrderCheck || groups.length === 0}>{submitting ? "Placing order..." : "Place order"} <span aria-hidden="true">&#8594;</span></button>
                 <p className="checkout-summary__note">By placing your order, you agree to collect the bags during the listed pickup window.</p>
               </aside>
             </form>

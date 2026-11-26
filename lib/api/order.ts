@@ -67,3 +67,11 @@ export function updateOrderStatus(accessToken: string, id: string, status: strin
     orderApiBaseUrl(),
   );
 }
+
+export function markOrderNoShow(accessToken: string, id: string) {
+  return apiRequest<OrderResponse>(
+    `/api/order/orders/${encodeURIComponent(id)}/no-show`,
+    { method: "POST", headers: bearer(accessToken) },
+    orderApiBaseUrl(),
+  );
+}
